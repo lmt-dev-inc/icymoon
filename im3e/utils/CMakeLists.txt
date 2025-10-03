@@ -1,9 +1,11 @@
 add_library(im3e_utils STATIC
+    src/camera_transforms.cpp
     src/stats_provider.cpp
     src/stream_logger.cpp
     src/stream_logger.h
     src/view_frustum.cpp
     src/vk_utils.cpp
+    camera_transforms.h
     imgui_utils.h
     loggers.h
     math_utils.h

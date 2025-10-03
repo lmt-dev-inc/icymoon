@@ -3,6 +3,7 @@
 #include "anari_device.h"
 
 #include <im3e/api/gui.h>
+#include <im3e/utils/camera_transforms.h>
 #include <im3e/utils/loggers.h>
 #include <im3e/utils/view_frustum.h>
 
@@ -16,6 +17,8 @@ public:
     AnariMapCamera(std::shared_ptr<AnariDevice> pAnDevice);
 
     void commitChanges();
+
+    auto createProperties() -> std::shared_ptr<IPropertyGroup>;
 
     void onMouseMove(const glm::vec2& rClipOffset, const std::array<bool, 3U>& rMouseButtonsDown) override;
     void onMouseWheel(float scrollSteps) override;
@@ -34,19 +37,9 @@ private:
     std::shared_ptr<anari::api::Camera> m_pAnCamera;
 
     bool m_needsCommit{true};
+    std::shared_ptr<std::function<void()>> m_pOnTransformChanged;
 
-    struct PerspectiveState
-    {
-        float fovY{std::numbers::pi_v<float> / 3.0F};
-        float aspectRatio{1.0F};
-        float near{0.1F};
-        float far{10'000.0F};
-
-        void setCameraParameters(ANARIDevice anDevice, ANARICamera anCamera) const;
-
-        auto generateMatrix() const -> glm::mat4;
-    };
-    PerspectiveState m_perspective;
+    PerspectiveProjection m_perspective;
 
     struct ViewState
     {
