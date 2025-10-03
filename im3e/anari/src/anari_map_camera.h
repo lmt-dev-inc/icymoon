@@ -39,32 +39,13 @@ private:
     bool m_needsCommit{true};
     std::shared_ptr<std::function<void()>> m_pOnTransformChanged;
 
+    glm::vec3 m_targetPoint{};
+    float m_distanceToTarget{1400.0F};
+    float m_angleX{};
+    float m_angleY{};
+
     PerspectiveProjection m_perspective;
-
-    struct ViewState
-    {
-        glm::vec3 targetPoint{};
-        float distanceToTarget{1400.0F};
-        float angleX{};
-        float angleY{};
-
-        void update();
-        void setCameraParameters(ANARIDevice anDevice, ANARICamera anCamera) const;
-
-        auto generateMatrix() const -> glm::mat4;
-
-        auto getPosition() const -> const glm::vec3& { return m_position; }
-        auto getDirection() const -> const glm::vec3& { return m_direction; }
-        auto getUp() const -> const glm::vec3& { return m_up; }
-        auto getRight() const -> const glm::vec3& { return m_right; }
-
-    private:
-        glm::vec3 m_position;
-        glm::vec3 m_direction;
-        glm::vec3 m_up;
-        glm::vec3 m_right;
-    };
-    ViewState m_view;
+    ViewTransform m_view;
 
     ViewFrustum m_viewFrustum;
 };
