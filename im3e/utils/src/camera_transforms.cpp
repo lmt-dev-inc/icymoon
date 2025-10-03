@@ -63,7 +63,8 @@ PerspectiveProjection::PerspectiveProjection(std::weak_ptr<std::function<void()>
                 m_matrixDirty = true;
             },
     }))
-  , m_pPropertyGroup(createPropertyGroup("Perspective Projection", {m_pFovY, m_pAspectRatio, m_pNear, m_pFar}))
+  , m_pPropertyGroup(createPropertyGroup("Perspective Projection",
+                                         {m_pFovY, createReadOnlyPropertyValueProxy(m_pAspectRatio), m_pNear, m_pFar}))
 {
 }
 

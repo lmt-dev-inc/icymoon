@@ -28,6 +28,8 @@ public:
 
     virtual void setAnyValue(std::any value) = 0;
 
+    virtual auto isReadOnly() const -> bool { return false; }
+
     virtual auto getDescription() const -> std::string = 0;
     virtual auto getType() const -> std::type_index = 0;
     virtual auto getAnyValue() const -> std::any = 0;

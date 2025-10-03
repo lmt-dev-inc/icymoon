@@ -1,5 +1,6 @@
 #include "imgui_property_control.h"
 
+#include <im3e/utils/core/types.h>
 #include <im3e/utils/imgui_utils.h>
 
 #include <imgui.h>
@@ -15,6 +16,16 @@ template <class T>
 auto typeIndex()
 {
     return std::type_index(typeid(T));
+}
+
+auto createReadOnlyScope(const IPropertyValue& rProperty) -> UniquePtrWithDeleter<const void>
+{
+    if (rProperty.isReadOnly())
+    {
+        ImGui::BeginDisabled();
+        return {&rProperty, [](auto*) { ImGui::EndDisabled(); }};
+    }
+    return {};
 }
 
 class ImguiBasePropertyControl : public IImguiPropertyControl
@@ -65,6 +76,7 @@ public:
 
     void draw() override
     {
+        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
         if (ImGui::InputText(fmt::format("##{}", m_pProperty->getName()).c_str(), &m_value);
             ImGui::IsItemDeactivatedAfterEdit())
         {
@@ -88,6 +100,7 @@ public:
 
     void draw() override
     {
+        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
         if (ImGui::Checkbox(fmt::format("##{}", m_pProperty->getName()).c_str(), &m_value))
         {
             m_pProperty->setAnyValue(m_value);
@@ -106,6 +119,7 @@ public:
       : ImguiBasePropertyControl(std::move(pProperty))
       , m_value(any_cast<int32_t>(m_pProperty->getAnyValue()))
     {
+        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
         if (auto anyMinValueOpt = m_pProperty->getAnyMinValue(); anyMinValueOpt.has_value())
         {
             m_minValue = std::any_cast<int32_t>(anyMinValueOpt.value());
@@ -118,6 +132,7 @@ public:
 
     void draw() override
     {
+        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
         const auto inputId = fmt::format("##{}", m_pProperty->getName());
         if (m_minValue.has_value() && m_maxValue.has_value())
         {
@@ -161,6 +176,7 @@ public:
 
     void draw() override
     {
+        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
         const auto inputId = fmt::format("##{}", m_pProperty->getName());
         if (m_minValue.has_value() && m_maxValue.has_value())
         {
@@ -205,6 +221,7 @@ public:
 
     void draw() override
     {
+        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
         const auto inputId = fmt::format("##{}", m_pProperty->getName());
         if (m_minValue.has_value() && m_maxValue.has_value())
         {
@@ -240,6 +257,7 @@ public:
 
     void draw() override
     {
+        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
         if (ImGui::InputFloat3(fmt::format("##{}", m_pProperty->getName()).c_str(), glm::value_ptr(m_value));
             ImGui::IsItemDeactivatedAfterEdit())
         {
@@ -263,6 +281,7 @@ public:
 
     void draw() override
     {
+        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
         if (ImGui::InputFloat4(fmt::format("##{}", m_pProperty->getName()).c_str(), glm::value_ptr(m_value));
             ImGui::IsItemDeactivatedAfterEdit())
         {
@@ -288,6 +307,7 @@ public:
     {
         std::vector<float> value{m_value.w, m_value.x, m_value.y, m_value.z};
 
+        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
         if (ImGui::InputFloat4(fmt::format("##{}", m_pProperty->getName()).c_str(), value.data());
             ImGui::IsItemDeactivatedAfterEdit())
         {
