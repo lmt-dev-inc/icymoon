@@ -1,5 +1,10 @@
 .venv
-.vscode
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
 __pycache__
 build
 CMakeUserPresets.json
