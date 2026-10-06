@@ -65,7 +65,7 @@ conan create ./recipes/open_usd --build=missing
 Once complete, the following environment variables will be appended to get easy access to tools such as usdview:
 
 | Environment Variable | Value to add                         |
-|----------------------|--------------------------------------|
+| -------------------- | ------------------------------------ |
 | `PYTHONPATH`         | `<path_to_OpenUSD>/build/lib/python` |
 | `PATH`               | `<path_to_OpenUSD>/build/bin`        |
 
@@ -78,7 +78,7 @@ Dependencies are automatically downloaded and installed using `conan install`.
 To do so, run the `conan install` command from the root folder with one of the profiles under the `profiles` folder:
 
 ```base
-conan install . -pr:a ../profiles/<my_profile> --build=missing
+conan install . -pr:a ./profiles/<my_profile> --build=missing
 ```
 
 > Important: On Linux, conan may fail due to missing packages. In this case, a command of the form "apt-get install ..." will appear in the error message. Use this command in sudo to install the missing packages.
