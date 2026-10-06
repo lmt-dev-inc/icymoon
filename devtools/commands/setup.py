@@ -1,4 +1,4 @@
-"""`dev.py setup`: create .venv and install build tools."""
+"""`dev.py setup`: Create .venv and install build tools."""
 import os
 import shutil
 import subprocess

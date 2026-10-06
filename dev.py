@@ -6,26 +6,25 @@ This script only uses the Python standard library so that it can run before
 the virtual environment exists.
 """
 
-import argparse
-import os
-from pathlib import Path
-import shutil
-import subprocess
 import sys
-
-from devtools.commands import setup
-from devtools.common import REQUIREMENTS, VENV_CONAN, VENV_DIR, VENV_PYTHON, is_venv_active, run
+import argparse
+import subprocess
 
 MIN_PYTHON = (3, 10)
-COMMANDS = [setup]
 
 # Enforce required minimum version for Python interpreter:
+# Must be run before any import of devtools to ensure a clear error message when 
+# the version requirement is not met:
 if sys.version_info < MIN_PYTHON:
         sys.exit(
             f"Python {'.'.join(map(str, MIN_PYTHON))}+ is required "
             f"(found {sys.version.split()[0]})"
         )
 
+from devtools.commands import install, setup
+from devtools.common import REQUIREMENTS, VENV_CONAN, VENV_DIR, VENV_PYTHON, is_venv_active, run
+
+COMMANDS = [setup, install]
 
 def main():
     parser = argparse.ArgumentParser(description="IcyMoon developer tasks")
