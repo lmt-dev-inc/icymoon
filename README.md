@@ -1,40 +1,68 @@
 # IcyMoon
 
 - [How to Build](#how-to-build)
-  - [Dependencies](#dependencies)
-  - [ANARI SDK](#anari-sdk)
-  - [VisRTX - Optional](#visrtx---optional)
-  - [OpenUSD - Optional](#openusd---optional)
-  - [Conan](#conan)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [dev.py Commands](#devpy-commands)
+  - [Optional Dependencies](#optional-dependencies)
+    - [VisRTX](#visrtx)
+    - [OpenUSD](#openusd)
   - [Compiling](#compiling)
   - [Running tests](#running-tests)
   - [Test Coverage with GCC](#test-coverage-with-gcc)
+- [Development with VS Code](#development-with-vs-code)
 
 
 ## How to Build
 
-### Dependencies
+The project is built with Conan and CMake. Both are installed in a local Python virtual environment (`.venv`) by `dev.py`, at the versions pinned in `requirements.txt`. You don't need to install them yourself.
+
+### Prerequisites
 
 The following must be installed manually:
 
-- [Conan](https://conan.io/downloads.html) (tested with 2.9.2)
+- Python 3.10+ with the `venv` module (on Debian/Ubuntu: `sudo apt install python3-venv`)
+- GCC 11 (`gcc-11` and `g++-11`)
 - [Vulkan SDK](https://vulkan.lunarg.com/) (tested with 1.3.290.0)
-- [ANARI SDK](https://github.com/KhronosGroup/ANARI-SDK) (tested with 0.14.0)
-- [VisRTX](https://github.com/NVIDIA/VisRTX) (tested with 0.12.0) - optional
-- [OpenUSD](https://github.com/PixarAnimationStudios/OpenUSD) (tested with 24.11) - optional
 
-### ANARI SDK
+Other dependencies, including the [ANARI SDK](https://github.com/KhronosGroup/ANARI-SDK) (0.14.1), are downloaded or built by Conan.
 
-ANARI SDK needs to be manually added to your local Conan cache. To do so, from the root folder of this project, run:
+### Quick Start
+
+From the root folder:
 
 ```bash
-conan create ./recipes/anari
+python3 dev.py setup              # create .venv and install conan and cmake
+source .venv/bin/activate
+python3 dev.py install gcc-debug  # install dependencies and generate CMake presets
+cmake --preset gcc-debug
+cmake --build --preset gcc-debug
 ```
 
-### VisRTX - Optional
+> On Linux, Conan may install missing system packages with `apt-get` and ask for your sudo password.
+
+### dev.py Commands
+
+Run `python3 dev.py -h` or `python3 dev.py <command> -h` for full help.
+
+| Command                                | Description                                                                                                                                                                              |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setup [--recreate]`                   | Creates `.venv`, installs the tools from `requirements.txt` and detects a default Conan profile. `--recreate` deletes `.venv` first; deactivate the virtual environment before using it. |
+| `install [config\|group ...] [--all]`  | Exports the local recipes under `recipes/` and runs `conan install` for each configuration. Without arguments, installs the `gcc` group. `--all` installs every configuration.           |
+| `lock [--update pkg ...] [--recreate]` | Creates or updates `conan.lock` for every configuration. Without options, only missing entries are added. `--update` upgrades the given packages. `--recreate` relocks everything.       |
+
+Available configurations: `gcc-debug`, `gcc-release` and `gcc-coverage_on-debug`. The `gcc` group contains all three. Each configuration maps to a profile under `profiles/` and produces a CMake preset with the same name.
+
+`conan.lock` pins the exact version and revision of every dependency, and `dev.py install` applies it automatically. Run `dev.py lock` after changing requirements in `conanfile.py` or a recipe under `recipes/`, then review and commit the `conan.lock` diff.
+
+To add a configuration, add a profile under `profiles/` and register it in `CONFIGS` (and optionally `GROUPS`) in `devtools/configs.py`.
+
+### Optional Dependencies
+
+#### VisRTX
 
 Clone the [VisRTX](https://github.com/NVIDIA/VisRTX) GitHub repo and checkout the right version:
-```
+```bash
 git clone https://github.com/NVIDIA/VisRTX.git
 git checkout v0.12.0
 ```
@@ -42,10 +70,9 @@ git checkout v0.12.0
 Dependencies to install:
 - [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=22.04&target_type=deb_local)
 - [OptiX](https://developer.nvidia.com/designworks/optix/download)
-- 
 
 Build and install using CMake:
-```
+```bash
 cd /path/to/visrtx
 mkdir build
 cd build
@@ -54,44 +81,30 @@ make
 make install
 ```
 
-### OpenUSD - Optional
+#### OpenUSD
 
-OpenUSD needs to be manually added to your Conan local cache. To do so, from the root folder of this project, run:
+[OpenUSD](https://github.com/PixarAnimationStudios/OpenUSD) (tested with 24.11) is not required by the project, so `dev.py install` doesn't build it. To add it to your local Conan cache, activate the virtual environment and run from the root folder:
 
 ```bash
 conan create ./recipes/open_usd --build=missing
 ```
 
-Once complete, the following environment variables will be appended to get easy access to tools such as usdview:
+To use tools such as usdview, source the Conan build environment of your configuration. It appends the following environment variables:
 
 | Environment Variable | Value to add                         |
 | -------------------- | ------------------------------------ |
 | `PYTHONPATH`         | `<path_to_OpenUSD>/build/lib/python` |
 | `PATH`               | `<path_to_OpenUSD>/build/bin`        |
 
-These variables will be available when using the Conan virtual environment (see `conanbuild.sh` below).
-
-### Conan
-
-The project is compiled using Conan and CMake.
-Dependencies are automatically downloaded and installed using `conan install`.
-To do so, run the `conan install` command from the root folder with one of the profiles under the `profiles` folder:
-
-```base
-conan install . -pr:a ./profiles/<my_profile> --build=missing
-```
-
-> Important: On Linux, conan may fail due to missing packages. In this case, a command of the form "apt-get install ..." will appear in the error message. Use this command in sudo to install the missing packages.
-
-We use Conan to download some tools needed for compilation (e.g. CMake). To use these tools during compilation, we need to first start a virtual environment. To do so, Conan generates a `conanbuild.sh` and `deactivate_conanbuild.sh` scripts for each profile, located under `build/<my_profile>/generators/`. For example, to build `gcc-debug`, we start the corresponding virtual environment as follows:
-
 ```bash
 source build/<my_preset>/generators/conanbuild.sh
 ```
 
-The install command also creates a `CMakeUserPresets.json` file in the root folder. The latter will contain a CMake Preset for each Conan profile. They can be listed using cmake as follows:
+### Compiling
 
-```base
+`dev.py install` creates a `CMakeUserPresets.json` file in the root folder with one preset per installed configuration. List them with:
+
+```bash
 cmake --list-presets
 
 Available configure presets:
@@ -100,9 +113,7 @@ Available configure presets:
   "gcc-release" - 'gcc-release' config
 ```
 
-### Compiling
-
-Once we have CMake Presets and an active Conan virtual environment, the project can be compiled with a chosen preset from the root folder:
+With the virtual environment active, configure and build with a chosen preset from the root folder:
 
 ```bash
 cmake --preset <my_preset>
@@ -134,16 +145,23 @@ ctest --preset gcc-debug -L "integration_test" # to run integration tests only
 
 ### Test Coverage with GCC
 
-Test coverage is currently supported with lcov via the conan profile `gcc-coverage_on-debug`:
+Test coverage is supported with lcov via the `gcc-coverage_on-debug` configuration:
 ```bash
-cd build
-conan install .. --pr ../profiles/gcc-coverage_on-debug --build=missing
-cd ..
-source build/gcc-coverage_on-debug/generators/conanbuild.sh
+python3 dev.py install gcc-coverage_on-debug
 cmake --preset gcc-coverage_on-debug
 cmake --build --preset gcc-coverage_on-debug --target im3e_test_coverage
 ```
 
-There exists multiple cmake targets to generate different test coverage reports:
+There are several CMake targets that generate different test coverage reports:
 - `im3e_test_coverage`: combines the coverage of all tests
 - `im3e_unit_test_coverage`: generate a report for unit tests only (excluding integration tests)
+
+
+## Development with VS Code
+
+The repository includes a shared VS Code setup under `.vscode/`:
+
+- `extensions.json` recommends CMake Tools, C/C++ and Python.
+- `settings.json` makes CMake Tools use the Conan-generated presets, which also tell it which CMake binary to use. VS Code picks up `.venv` automatically and activates it in new terminals. Run `python3 dev.py setup` and `python3 dev.py install` before opening the folder.
+- It also sets shared editor conventions: format on save and a ruler at 120 columns.
+- `launch.json` provides a gdb "Launch" configuration for the target selected in CMake Tools.
