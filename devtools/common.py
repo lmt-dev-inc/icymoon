@@ -1,4 +1,5 @@
 """Paths and helpers shared by all devtools."""
+import json
 import os
 import subprocess
 import sys
@@ -6,6 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REQUIREMENTS = ROOT / "requirements.txt"
+RECIPES_DIR = ROOT / "recipes"
+LOCKFILE = ROOT / "conan.lock"
 
 VENV_DIR = ROOT / ".venv"
 VENV_BIN = VENV_DIR / ("Scripts" if os.name == "nt" else "bin")
@@ -18,6 +21,16 @@ def run(cmd: list[str | Path], **kwargs) -> None:
     print(">>", " ".join(processed_cmd), flush=True)
     subprocess.run(processed_cmd, cwd=ROOT, check=True, **kwargs)
 
+def run_output(cmd: list[str | Path]) -> str:
+    """Like run(), but return the command's standard output instead of displaying it.
+
+    Standard error is still displayed, so progress and error messages remain visible.
+    """
+    processed_cmd = [str(c) for c in cmd]
+    print(">>", " ".join(processed_cmd), flush=True)
+    result = subprocess.run(processed_cmd, cwd=ROOT, check=True, stdout=subprocess.PIPE, text=True)
+    return result.stdout
+
 def is_venv_active() -> bool:
     """True if this script is executed by the interpreter of .venv."""
     return Path(sys.prefix).resolve() == VENV_DIR.resolve()
@@ -26,3 +39,16 @@ def require_venv() -> None:
     """Exit with a helpful message if `dev.py setup` has not been run."""
     if not VENV_CONAN.exists():
         sys.exit("Build tools not found. Run `python3 dev.py setup` first.")
+
+def export_local_recipes() -> list[str]:
+    """Add our own recipes (anari, open_usd) to the Conan cache and return their references.
+
+    Exporting is fast and keeps the same revision if a recipe hasn't changed. Packages
+    are then built on demand by `--build=missing`, only if a configuration needs them.
+    References have the form "name/version#revision", e.g. "anari/0.14.1#e2c0e73c...".
+    """
+    references = []
+    for conanfile in sorted(RECIPES_DIR.glob("*/conanfile.py")):
+        output = run_output([VENV_CONAN, "export", conanfile.parent, "--format=json"])
+        references.append(json.loads(output)["reference"])
+    return references

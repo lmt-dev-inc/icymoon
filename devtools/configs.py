@@ -9,6 +9,7 @@ Configuration names match the CMake preset names produced by Conan, so that
 `dev.py install gcc-debug` is followed by `cmake --preset gcc-debug`.
 """
 from dataclasses import dataclass
+from pathlib import Path
 
 from devtools.common import ROOT
 
@@ -20,6 +21,12 @@ class Config:
     host: str
     build: str | None = None
 
+    def profile_args(self) -> list[str | Path]:
+        """Conan command-line arguments selecting the profiles of this configuration."""
+        if self.build is None:
+            return ["-pr:a", PROFILES_DIR / self.host]
+        return ["-pr:h", PROFILES_DIR / self.host, "-pr:b", PROFILES_DIR / self.build]
+
 
 CONFIGS: dict[str, Config] = {
     "gcc-debug": Config(host="gcc-debug"),
@@ -29,7 +36,7 @@ CONFIGS: dict[str, Config] = {
 
 # Shortcuts for installing several configurations at once
 GROUPS: dict[str, list[str]] = {
-    "gcc": ["gcc-debug", "gcc-release"],
+    "gcc": ["gcc-debug", "gcc-coverage_on-debug", "gcc-release"],
 }
 
 DEFAULT_GROUP = "gcc"

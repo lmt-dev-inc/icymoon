@@ -1,10 +1,8 @@
 """`dev.py install`: Run `conan install` for one or more build configurations."""
 import sys
 
-from devtools.common import ROOT, VENV_CONAN, require_venv, run
-from devtools.configs import CONFIGS, DEFAULT_GROUP, GROUPS, PROFILES_DIR, Config
-
-RECIPES_DIR = ROOT / "recipes"
+from devtools.common import ROOT, VENV_CONAN, export_local_recipes, require_venv, run
+from devtools.configs import CONFIGS, DEFAULT_GROUP, GROUPS, Config
 
 
 def register(subparsers):
@@ -28,7 +26,7 @@ def execute(args):
     require_venv()
     names = list(CONFIGS) if args.all else _resolve(args.names or [DEFAULT_GROUP])
 
-    _export_local_recipes()
+    export_local_recipes()
     for name in names:
         _install(name, CONFIGS[name])
 
@@ -60,21 +58,6 @@ def _resolve(names: list[str]) -> list[str]:
     return resolved
 
 
-def _export_local_recipes():
-    """Add our own recipes (anari, open_usd) to the Conan cache.
-
-    Exporting is fast and does nothing if a recipe hasn't changed. Packages are
-    then built on demand by `--build=missing`, only if a configuration needs them.
-    """
-    for conanfile in sorted(RECIPES_DIR.glob("*/conanfile.py")):
-        run([VENV_CONAN, "export", conanfile.parent])
-
-
 def _install(name: str, config: Config):
-    if config.build is None:
-        profiles = ["-pr:a", PROFILES_DIR / config.host]
-    else:
-        profiles = ["-pr:h", PROFILES_DIR / config.host, "-pr:b", PROFILES_DIR / config.build]
-
     print(f"\n=== {name} ===", flush=True)
-    run([VENV_CONAN, "install", ROOT, *profiles, "--build=missing"])
+    run([VENV_CONAN, "install", ROOT, *config.profile_args(), "--build=missing"])

@@ -21,10 +21,10 @@ if sys.version_info < MIN_PYTHON:
             f"(found {sys.version.split()[0]})"
         )
 
-from devtools.commands import install, setup
+from devtools.commands import install, lock, setup
 from devtools.common import REQUIREMENTS, VENV_CONAN, VENV_DIR, VENV_PYTHON, is_venv_active, run
 
-COMMANDS = [setup, install]
+COMMANDS = [setup, install, lock]
 
 def main():
     parser = argparse.ArgumentParser(description="IcyMoon developer tasks")
