@@ -4,7 +4,7 @@ import os
 
 
 class IcyMoonEngineRecipe(ConanFile):
-    name = "icy_moon_engine"
+    name = "icymoon_engine"
     version = "0.1"
     package_type = "application"
     build_policy = "missing"

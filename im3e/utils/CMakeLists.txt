@@ -26,7 +26,7 @@ target_link_libraries(im3e_utils
     fmt::fmt
     glm::glm
     im3e_utils_core
-    vulkan-memory-allocator::vulkan-memory-allocator
+    GPUOpen::VulkanMemoryAllocator
     Vulkan::Headers
   PRIVATE
     whereami::whereami
