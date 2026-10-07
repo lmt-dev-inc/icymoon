@@ -31,6 +31,8 @@ class IcyMoonEngineRecipe(ConanFile):
     }
 
     default_options = {
+        # Fix for build errors with boost 1.91.0, required by GDAL through arrow:
+        "boost/*:without_cobalt": True, 
         "coverage": None,
         "cimg/*:enable_fftw": False,
         "cimg/*:enable_jpeg": True,
