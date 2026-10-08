@@ -16,10 +16,10 @@ MIN_PYTHON = (3, 10)
 # Must be run before any import of devtools to ensure a clear error message when 
 # the version requirement is not met:
 if sys.version_info < MIN_PYTHON:
-        sys.exit(
-            f"Python {'.'.join(map(str, MIN_PYTHON))}+ is required "
-            f"(found {sys.version.split()[0]})"
-        )
+    sys.exit(
+        f"Python {'.'.join(map(str, MIN_PYTHON))}+ is required "
+        f"(found {sys.version.split()[0]})"
+    )
 
 from devtools.commands import install, lock, setup
 

@@ -33,7 +33,7 @@ def require_venv_active() -> None:
     if not VENV_CONAN.exists():
         sys.exit("Build tools not found. Run `python3 dev.py setup` first.")
     if not is_venv_active():
-        sys.exit(f"Virtual environment not active. Run `source {VENV_DIR.relative_to(ROOT)}/bin/activate` first.")
+        sys.exit(f"Virtual environment not active.")
 
 def export_local_recipes() -> list[str]:
     """Add our own recipes (anari, open_usd) to the Conan cache and return their references.

@@ -1,13 +1,38 @@
-"""Helpers to read conan.lock and compare it with the local recipes."""
+"""Helpers to read and write conan.lock and compare it with the local recipes."""
 import json
+from pathlib import Path
+from typing import Callable
 
 from devtools.common import LOCKFILE
 
+# Lockfile sections listing entries of the form "name/version#revision%timestamp"
+SECTIONS = ("requires", "build_requires", "python_requires")
 
-def read_entries() -> list[str]:
+
+def strip_timestamp(entry: str) -> str:
+    """"name/version#revision%timestamp" -> "name/version#revision"."""
+    return entry.split("%")[0]
+
+
+def package_name(entry: str) -> str:
+    """Package name of a lockfile entry or recipe reference."""
+    return entry.split("/")[0]
+
+
+def read_entries(path: Path = LOCKFILE) -> list[str]:
     """Entries of the lockfile, of the form "name/version#revision%timestamp"."""
-    lockfile = json.loads(LOCKFILE.read_text())
-    return lockfile.get("requires", []) + lockfile.get("build_requires", []) + lockfile.get("python_requires", [])
+    content = json.loads(path.read_text())
+    return [entry for section in SECTIONS for entry in content.get(section, [])]
+
+
+def rewrite_entries(transform: Callable[[str], str], path: Path = LOCKFILE):
+    """Replace every entry of the lockfile with `transform(entry)`."""
+    content = json.loads(path.read_text())
+    for section in SECTIONS:
+        if section in content:
+            content[section] = [transform(entry) for entry in content[section]]
+    # Same formatting as Conan, so that only actual changes show in the diff
+    path.write_text(json.dumps(content, indent=4) + "\n")
 
 
 def changed_packages(entries: list[str], references: list[str]) -> list[str]:
@@ -16,10 +41,10 @@ def changed_packages(entries: list[str], references: list[str]) -> list[str]:
     Packages that aren't locked at all (e.g. open_usd, which nothing requires) are not
     reported: `conan lock create` adds them if a configuration requires them.
     """
-    locked_references = {entry.split("%")[0] for entry in entries}
-    locked_names = {entry.split("/")[0] for entry in entries}
+    locked_references = {strip_timestamp(entry) for entry in entries}
+    locked_names = {package_name(entry) for entry in entries}
     return [
-        reference.split("/")[0]
+        package_name(reference)
         for reference in references
-        if reference.split("/")[0] in locked_names and reference not in locked_references
+        if package_name(reference) in locked_names and reference not in locked_references
     ]

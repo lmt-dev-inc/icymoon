@@ -5,7 +5,8 @@ It covers all configurations at once: each `conan install` only uses the
 entries relevant to its configuration. Conan picks up conan.lock automatically,
 so `dev.py install` needs no extra argument.
 """
-import json
+import os
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -42,27 +43,29 @@ def execute(args):
     require_venv_active()
 
     previous_entries = lockfile.read_entries() if LOCKFILE.exists() else []
-    if args.recreate and LOCKFILE.exists():
-        print(f"Removing {LOCKFILE}")
-        LOCKFILE.unlink()
-
     local_references = export_local_recipes()
 
-    # Entries removed from the lockfile are resolved again by `conan lock create`,
-    # while all other entries stay pinned
-    if LOCKFILE.exists():
-        packages = lockfile.changed_packages(previous_entries, local_references) + (args.update or [])
-        if packages:
-            _remove_from_lockfile(packages)
+    # Work on a copy so that conan.lock is left untouched if anything below fails. The
+    # directory is next to conan.lock so that the final os.replace() is atomic.
+    with tempfile.TemporaryDirectory(dir=LOCKFILE.parent, prefix=".lock-") as tmp:
+        working = Path(tmp) / LOCKFILE.name
+        if LOCKFILE.exists() and not args.recreate:
+            shutil.copy2(LOCKFILE, working)
 
-    # Check the remotes for newer versions and revisions of the packages being resolved
-    update_args = ["--update"] if args.recreate or args.update else []
+        # Entries removed from the lockfile are resolved again by `conan lock create`,
+        # while all other entries stay pinned
+        if working.exists():
+            packages = lockfile.changed_packages(previous_entries, local_references) + (args.update or [])
+            if packages:
+                _remove_from_lockfile(working, packages)
 
-    # Each configuration is locked separately with --lockfile-clean, still constrained by
-    # conan.lock so that pinned entries are kept. Entries used by no configuration are
-    # absent from every per-configuration lockfile, so the merge drops them.
-    lockfile_args = ["--lockfile", LOCKFILE] if LOCKFILE.exists() else []
-    with tempfile.TemporaryDirectory() as tmp:
+        # Check the remotes for newer versions and revisions of the packages being resolved
+        update_args = ["--update"] if args.recreate or args.update else []
+
+        # Each configuration is locked separately with --lockfile-clean, still constrained by
+        # the working lockfile so that pinned entries are kept. Entries used by no configuration
+        # are absent from every per-configuration lockfile, so the merge drops them.
+        lockfile_args = ["--lockfile", working] if working.exists() else []
         config_lockfiles = []
         for name, config in CONFIGS.items():
             print(f"\n=== {name} ===", flush=True)
@@ -78,22 +81,24 @@ def execute(args):
             config_lockfiles.append(config_lockfile)
 
         merge_args = [arg for path in config_lockfiles for arg in ("--lockfile", path)]
-        run([VENV_CONAN, "lock", "merge", *merge_args, "--lockfile-out", LOCKFILE])
+        run([VENV_CONAN, "lock", "merge", *merge_args, "--lockfile-out", working])
 
-    _restore_timestamps(previous_entries, local_references)
+        _restore_timestamps(working, previous_entries, local_references)
+        os.replace(working, LOCKFILE)
+
     print(f"\nUpdated {LOCKFILE.name}. Review the changes with `git diff {LOCKFILE.name}` and commit them.")
 
 
-def _remove_from_lockfile(packages: list[str]):
+def _remove_from_lockfile(path: Path, packages: list[str]):
     """Remove all versions of the given packages, whether used as requires or tool requires."""
-    cmd = [VENV_CONAN, "lock", "remove", "--lockfile", LOCKFILE, "--lockfile-out", LOCKFILE]
+    cmd = [VENV_CONAN, "lock", "remove", "--lockfile", path, "--lockfile-out", path]
     for package in packages:
         pattern = package if "/" in package else f"{package}/*"
         cmd += ["--requires", pattern, "--build-requires", pattern]
     run(cmd)
 
 
-def _restore_timestamps(previous_entries: list[str], local_references: list[str]):
+def _restore_timestamps(path: Path, previous_entries: list[str], local_references: list[str]):
     """Keep the previous timestamp of local recipes whose revision hasn't changed.
 
     Exporting a local recipe gives it a new timestamp even when its revision is
@@ -103,13 +108,8 @@ def _restore_timestamps(previous_entries: list[str], local_references: list[str]
     """
     local = set(local_references)
     previous = {
-        entry.split("%")[0]: entry
+        lockfile.strip_timestamp(entry): entry
         for entry in previous_entries
-        if entry.split("%")[0] in local
+        if lockfile.strip_timestamp(entry) in local
     }
-    content = json.loads(LOCKFILE.read_text())
-    for section in ("requires", "build_requires", "python_requires"):
-        if section in content:
-            content[section] = [previous.get(entry.split("%")[0], entry) for entry in content[section]]
-    # Same formatting as Conan, so that only actual changes show in the diff
-    LOCKFILE.write_text(json.dumps(content, indent=4) + "\n")
+    lockfile.rewrite_entries(lambda entry: previous.get(lockfile.strip_timestamp(entry), entry), path)
