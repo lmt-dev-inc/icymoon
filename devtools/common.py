@@ -44,7 +44,6 @@ def export_local_recipes() -> list[str]:
     """
     references = []
     for conanfile in sorted(RECIPES_DIR.glob("*/conanfile.py")):
-        result = run([VENV_CONAN, "export", conanfile.parent, "--format=json"])
-        output = result.stdout
-        references.append(json.loads(output)["reference"])
+        result = run([VENV_CONAN, "export", conanfile.parent, "--format=json"], stdout=subprocess.PIPE, text=True)
+        references.append(json.loads(result.stdout)["reference"])
     return references

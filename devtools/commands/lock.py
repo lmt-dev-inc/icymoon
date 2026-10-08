@@ -9,6 +9,7 @@ import json
 import tempfile
 from pathlib import Path
 
+from devtools import lockfile
 from devtools.common import LOCKFILE, ROOT, VENV_CONAN, export_local_recipes, require_venv_active, run
 from devtools.configs import CONFIGS
 
@@ -40,7 +41,7 @@ def register(subparsers):
 def execute(args):
     require_venv_active()
 
-    previous_entries = _read_entries() if LOCKFILE.exists() else []
+    previous_entries = lockfile.read_entries() if LOCKFILE.exists() else []
     if args.recreate and LOCKFILE.exists():
         print(f"Removing {LOCKFILE}")
         LOCKFILE.unlink()
@@ -50,7 +51,7 @@ def execute(args):
     # Entries removed from the lockfile are resolved again by `conan lock create`,
     # while all other entries stay pinned
     if LOCKFILE.exists():
-        packages = _changed_packages(previous_entries, local_references) + (args.update or [])
+        packages = lockfile.changed_packages(previous_entries, local_references) + (args.update or [])
         if packages:
             _remove_from_lockfile(packages)
 
@@ -76,32 +77,11 @@ def execute(args):
             ])
             config_lockfiles.append(config_lockfile)
 
-        merge_args = [arg for lockfile in config_lockfiles for arg in ("--lockfile", lockfile)]
+        merge_args = [arg for path in config_lockfiles for arg in ("--lockfile", path)]
         run([VENV_CONAN, "lock", "merge", *merge_args, "--lockfile-out", LOCKFILE])
 
     _restore_timestamps(previous_entries, local_references)
     print(f"\nUpdated {LOCKFILE.name}. Review the changes with `git diff {LOCKFILE.name}` and commit them.")
-
-
-def _read_entries() -> list[str]:
-    """Entries of the lockfile, of the form "name/version#revision%timestamp"."""
-    lockfile = json.loads(LOCKFILE.read_text())
-    return lockfile.get("requires", []) + lockfile.get("build_requires", []) + lockfile.get("python_requires", [])
-
-
-def _changed_packages(entries: list[str], references: list[str]) -> list[str]:
-    """Names of the locked packages whose exported revision differs from the one in the lockfile.
-
-    Packages that aren't locked at all (e.g. open_usd, which nothing requires) need no
-    removal: `conan lock create` adds them if a configuration requires them.
-    """
-    locked_references = {entry.split("%")[0] for entry in entries}
-    locked_names = {entry.split("/")[0] for entry in entries}
-    return [
-        reference.split("/")[0]
-        for reference in references
-        if reference.split("/")[0] in locked_names and reference not in locked_references
-    ]
 
 
 def _remove_from_lockfile(packages: list[str]):
@@ -127,9 +107,9 @@ def _restore_timestamps(previous_entries: list[str], local_references: list[str]
         for entry in previous_entries
         if entry.split("%")[0] in local
     }
-    lockfile = json.loads(LOCKFILE.read_text())
+    content = json.loads(LOCKFILE.read_text())
     for section in ("requires", "build_requires", "python_requires"):
-        if section in lockfile:
-            lockfile[section] = [previous.get(entry.split("%")[0], entry) for entry in lockfile[section]]
+        if section in content:
+            content[section] = [previous.get(entry.split("%")[0], entry) for entry in content[section]]
     # Same formatting as Conan, so that only actual changes show in the diff
-    LOCKFILE.write_text(json.dumps(lockfile, indent=4) + "\n")
+    LOCKFILE.write_text(json.dumps(content, indent=4) + "\n")

@@ -1,7 +1,8 @@
 """`dev.py install`: Run `conan install` for one or more build configurations."""
 import sys
 
-from devtools.common import ROOT, VENV_CONAN, export_local_recipes, require_venv_active, run
+from devtools import lockfile
+from devtools.common import LOCKFILE, ROOT, VENV_CONAN, export_local_recipes, require_venv_active, run
 from devtools.configs import CONFIGS, DEFAULT_GROUP, GROUPS, Config
 
 
@@ -28,7 +29,17 @@ def execute(args):
         sys.exit("--all installs every configuration: don't combine it with configuration names")
     names = list(CONFIGS) if args.all else _resolve(args.names or [DEFAULT_GROUP])
 
-    export_local_recipes()
+    # conan.lock pins the revision of local recipes, so edits to them would be ignored
+    # (or fail to resolve on a fresh machine) until the lockfile is updated
+    local_references = export_local_recipes()
+    if LOCKFILE.exists():
+        outdated = lockfile.changed_packages(lockfile.read_entries(), local_references)
+        if outdated:
+            sys.exit(
+                f"conan.lock pins an outdated revision of: {', '.join(outdated)}\n"
+                "Run `python3 dev.py lock` to update it, then commit conan.lock."
+            )
+
     for name in names:
         _install(name, CONFIGS[name])
 
