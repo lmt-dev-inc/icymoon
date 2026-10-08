@@ -44,7 +44,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.conan2
-          key: ${{ matrix.os }}-conan-${{ hashFiles('conan.lock', 'conanfile.py', 'recipes/**/conanfile.py', 'profiles/**') }}
+          # conan.lock pins every revision, including local recipes. conanfile.py (dependency
+          # options) and profiles (settings) also change the binaries, but not the lockfile.
+          key: ${{ matrix.os }}-conan-${{ hashFiles('conan.lock', 'conanfile.py', 'profiles/**') }}
           restore-keys: |
             ${{ matrix.os }}-conan-
 
