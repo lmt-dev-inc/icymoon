@@ -79,7 +79,7 @@ def execute(args):
         merge_args = [arg for lockfile in config_lockfiles for arg in ("--lockfile", lockfile)]
         run([VENV_CONAN, "lock", "merge", *merge_args, "--lockfile-out", LOCKFILE])
 
-    _restore_timestamps(previous_entries)
+    _restore_timestamps(previous_entries, local_references)
     print(f"\nUpdated {LOCKFILE.name}. Review the changes with `git diff {LOCKFILE.name}` and commit them.")
 
 
@@ -113,17 +113,23 @@ def _remove_from_lockfile(packages: list[str]):
     run(cmd)
 
 
-def _restore_timestamps(previous_entries: list[str]):
-    """Keep the previous timestamp of entries whose revision hasn't changed.
+def _restore_timestamps(previous_entries: list[str], local_references: list[str]):
+    """Keep the previous timestamp of local recipes whose revision hasn't changed.
 
     Exporting a local recipe gives it a new timestamp even when its revision is
     unchanged, and `conan lock create` copies that timestamp into the lockfile.
     Restoring it ensures conan.lock only changes when a revision actually changes.
+    Remote packages are left untouched: their timestamp is set by the server.
     """
-    previous = {entry.split("%")[0]: entry for entry in previous_entries}
-    text = LOCKFILE.read_text()
-    for entry in _read_entries():
-        old_entry = previous.get(entry.split("%")[0])
-        if old_entry and old_entry != entry:
-            text = text.replace(f'"{entry}"', f'"{old_entry}"')
-    LOCKFILE.write_text(text)
+    local = set(local_references)
+    previous = {
+        entry.split("%")[0]: entry
+        for entry in previous_entries
+        if entry.split("%")[0] in local
+    }
+    lockfile = json.loads(LOCKFILE.read_text())
+    for section in ("requires", "build_requires", "python_requires"):
+        if section in lockfile:
+            lockfile[section] = [previous.get(entry.split("%")[0], entry) for entry in lockfile[section]]
+    # Same formatting as Conan, so that only actual changes show in the diff
+    LOCKFILE.write_text(json.dumps(lockfile, indent=4) + "\n")
