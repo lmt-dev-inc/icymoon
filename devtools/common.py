@@ -35,10 +35,12 @@ def is_venv_active() -> bool:
     """True if this script is executed by the interpreter of .venv."""
     return Path(sys.prefix).resolve() == VENV_DIR.resolve()
 
-def require_venv() -> None:
+def require_venv_active() -> None:
     """Exit with a helpful message if `dev.py setup` has not been run."""
     if not VENV_CONAN.exists():
         sys.exit("Build tools not found. Run `python3 dev.py setup` first.")
+    if not is_venv_active():
+        sys.exit(f"Virtual environment not active. Run `source {VENV_DIR.relative_to(ROOT)}/bin/activate` first.")
 
 def export_local_recipes() -> list[str]:
     """Add our own recipes (anari, open_usd) to the Conan cache and return their references.

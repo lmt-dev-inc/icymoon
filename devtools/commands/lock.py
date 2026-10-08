@@ -7,7 +7,7 @@ so `dev.py install` needs no extra argument.
 """
 import json
 
-from devtools.common import LOCKFILE, ROOT, VENV_CONAN, export_local_recipes, require_venv, run
+from devtools.common import LOCKFILE, ROOT, VENV_CONAN, export_local_recipes, require_venv_active, run
 from devtools.configs import CONFIGS
 
 
@@ -36,7 +36,7 @@ def register(subparsers):
 
 
 def execute(args):
-    require_venv()
+    require_venv_active()
 
     previous_entries = _read_entries() if LOCKFILE.exists() else []
     if args.recreate and LOCKFILE.exists():

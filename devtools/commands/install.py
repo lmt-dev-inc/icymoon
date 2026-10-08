@@ -1,7 +1,7 @@
 """`dev.py install`: Run `conan install` for one or more build configurations."""
 import sys
 
-from devtools.common import ROOT, VENV_CONAN, export_local_recipes, require_venv, run
+from devtools.common import ROOT, VENV_CONAN, export_local_recipes, require_venv_active, run
 from devtools.configs import CONFIGS, DEFAULT_GROUP, GROUPS, Config
 
 
@@ -23,7 +23,7 @@ def register(subparsers):
 
 
 def execute(args):
-    require_venv()
+    require_venv_active()
     names = list(CONFIGS) if args.all else _resolve(args.names or [DEFAULT_GROUP])
 
     export_local_recipes()
