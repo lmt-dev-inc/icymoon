@@ -49,7 +49,7 @@ Run `python3 dev.py -h` or `python3 dev.py <command> -h` for full help.
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `setup [--recreate]`                   | Creates `.venv`, installs the tools from `requirements.txt` and detects a default Conan profile. `--recreate` deletes `.venv` first; deactivate the virtual environment before using it. |
 | `install [config\|group ...] [--all]`  | Exports the local recipes under `recipes/` and runs `conan install` for each configuration. Without arguments, installs the `gcc` group. `--all` installs every configuration.           |
-| `lock [--update pkg ...] [--recreate]` | Creates or updates `conan.lock` for every configuration. Without options, only missing entries are added. `--update` upgrades the given packages. `--recreate` relocks everything.       |
+| `lock [--update pkg ...] [--recreate]` | Creates or updates `conan.lock` for every configuration. Without options, missing entries are added and unused ones removed. `--update` upgrades the given packages. `--recreate` relocks everything. |
 
 Available configurations: `gcc-debug`, `gcc-release` and `gcc-coverage_on-debug`. The `gcc` group contains all three. Each configuration maps to a profile under `profiles/` and produces a CMake preset with the same name.
 

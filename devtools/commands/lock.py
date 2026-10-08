@@ -6,6 +6,8 @@ entries relevant to its configuration. Conan picks up conan.lock automatically,
 so `dev.py install` needs no extra argument.
 """
 import json
+import tempfile
+from pathlib import Path
 
 from devtools.common import LOCKFILE, ROOT, VENV_CONAN, export_local_recipes, require_venv_active, run
 from devtools.configs import CONFIGS
@@ -15,8 +17,8 @@ def register(subparsers):
     parser = subparsers.add_parser(
         "lock",
         help="create or update conan.lock for every configuration",
-        description="Without options, only adds missing entries to conan.lock: "
-        "locked dependencies are never upgraded. Local recipes under recipes/ are "
+        description="Without options, adds missing entries to conan.lock and removes the "
+        "ones no configuration uses: locked dependencies are never upgraded. Local recipes under recipes/ are "
         "always relocked so that edits to them are picked up.",
     )
     mode = parser.add_mutually_exclusive_group()
@@ -55,16 +57,27 @@ def execute(args):
     # Check the remotes for newer versions and revisions of the packages being resolved
     update_args = ["--update"] if args.recreate or args.update else []
 
-    for name, config in CONFIGS.items():
-        print(f"\n=== {name} ===", flush=True)
-        lockfile_args = ["--lockfile", LOCKFILE] if LOCKFILE.exists() else []
-        run([
-            VENV_CONAN, "lock", "create", ROOT,
-            *config.profile_args(),
-            *lockfile_args,
-            "--lockfile-out", LOCKFILE,
-            *update_args,
-        ])
+    # Each configuration is locked separately with --lockfile-clean, still constrained by
+    # conan.lock so that pinned entries are kept. Entries used by no configuration are
+    # absent from every per-configuration lockfile, so the merge drops them.
+    lockfile_args = ["--lockfile", LOCKFILE] if LOCKFILE.exists() else []
+    with tempfile.TemporaryDirectory() as tmp:
+        config_lockfiles = []
+        for name, config in CONFIGS.items():
+            print(f"\n=== {name} ===", flush=True)
+            config_lockfile = Path(tmp) / f"{name}.lock"
+            run([
+                VENV_CONAN, "lock", "create", ROOT,
+                *config.profile_args(),
+                *lockfile_args,
+                "--lockfile-out", config_lockfile,
+                "--lockfile-clean",
+                *update_args,
+            ])
+            config_lockfiles.append(config_lockfile)
+
+        merge_args = [arg for lockfile in config_lockfiles for arg in ("--lockfile", lockfile)]
+        run([VENV_CONAN, "lock", "merge", *merge_args, "--lockfile-out", LOCKFILE])
 
     _restore_timestamps(previous_entries)
     print(f"\nUpdated {LOCKFILE.name}. Review the changes with `git diff {LOCKFILE.name}` and commit them.")
