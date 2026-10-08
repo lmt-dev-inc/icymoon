@@ -24,6 +24,8 @@ def register(subparsers):
 
 def execute(args):
     require_venv_active()
+    if args.all and args.names:
+        sys.exit("--all installs every configuration: don't combine it with configuration names")
     names = list(CONFIGS) if args.all else _resolve(args.names or [DEFAULT_GROUP])
 
     export_local_recipes()

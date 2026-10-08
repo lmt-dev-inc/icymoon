@@ -22,7 +22,6 @@ if sys.version_info < MIN_PYTHON:
         )
 
 from devtools.commands import install, lock, setup
-from devtools.common import REQUIREMENTS, VENV_CONAN, VENV_DIR, VENV_PYTHON, is_venv_active, run
 
 COMMANDS = [setup, install, lock]
 

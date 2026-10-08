@@ -15,21 +15,14 @@ VENV_BIN = VENV_DIR / ("Scripts" if os.name == "nt" else "bin")
 VENV_PYTHON = VENV_BIN / ("python.exe" if os.name == "nt" else "python")
 VENV_CONAN = VENV_BIN / ("conan.exe" if os.name == "nt" else "conan")
 
-def run(cmd: list[str | Path], **kwargs) -> None:
-    """Print a command, then run it from the project root. Raises on failure."""
-    processed_cmd = [str(c) for c in cmd]
-    print(">>", " ".join(processed_cmd), flush=True)
-    subprocess.run(processed_cmd, cwd=ROOT, check=True, **kwargs)
+def run(cmd: list[str | Path], **kwargs) -> subprocess.CompletedProcess:
+    """Print a command, then run it from the project root. Raises on failure.
 
-def run_output(cmd: list[str | Path]) -> str:
-    """Like run(), but return the command's standard output instead of displaying it.
-
-    Standard error is still displayed, so progress and error messages remain visible.
+    Extra keyword arguments are passed to `subprocess.run`.
     """
     processed_cmd = [str(c) for c in cmd]
     print(">>", " ".join(processed_cmd), flush=True)
-    result = subprocess.run(processed_cmd, cwd=ROOT, check=True, stdout=subprocess.PIPE, text=True)
-    return result.stdout
+    return subprocess.run(processed_cmd, cwd=ROOT, check=True, **kwargs)
 
 def is_venv_active() -> bool:
     """True if this script is executed by the interpreter of .venv."""
@@ -51,6 +44,7 @@ def export_local_recipes() -> list[str]:
     """
     references = []
     for conanfile in sorted(RECIPES_DIR.glob("*/conanfile.py")):
-        output = run_output([VENV_CONAN, "export", conanfile.parent, "--format=json"])
+        result = run([VENV_CONAN, "export", conanfile.parent, "--format=json"])
+        output = result.stdout
         references.append(json.loads(output)["reference"])
     return references
