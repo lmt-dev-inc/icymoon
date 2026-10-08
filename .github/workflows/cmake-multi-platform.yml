@@ -2,7 +2,7 @@ name: CMake on multiple platforms
 
 on:
   schedule:
-    - cron: '0 6 * * 1,4'  
+    - cron: '0 6 * * 1,4'
   workflow_dispatch:
   push:
     branches: ["main"]
@@ -19,81 +19,67 @@ jobs:
       fail-fast: false
 
       matrix:
-        os: [ubuntu-22.04]
-        build_type: [release]
-        c_compiler: [gcc]
-        include:
-          - os: ubuntu-22.04
-            c_compiler: gcc
-            cpp_compiler: g++
+        os: [ubuntu-26.04]
+        # dev.py configuration, also used as the CMake and CTest preset name
+        config: [gcc-release]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
-      - name: Set reusable strings
-        # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be
-        # used throughout the workflow file.
-        id: strings
-        shell: bash
+      - name: Install System Prerequisites
         run: |
-          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-          mkdir ${{ github.workspace }}/build
-          echo "cmake-preset=${{ matrix.c_compiler }}-${{ matrix.build_type }}" >> "$GITHUB_OUTPUT"
+          sudo apt-get update
+          sudo apt-get install -y gcc-11 g++-11 python3-venv
 
-      - name: Install Conan
-        id: conan
-        uses: turtlebrowser/get-conan@main
+      - name: Setup Virtual Environment
+        working-directory: ${{ github.workspace }}
+        run: |
+          python3 dev.py setup
+          echo "${{ github.workspace }}/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Restore Conan Cache
         id: conan-cache-restore
         uses: actions/cache/restore@v4
         with:
           path: ~/.conan2
-          key: ${{ runner.os }}-build-conan-cache-${{ hashFiles('**/conanfile.py') }}
+          # conan.lock pins every revision, including local recipes. conanfile.py (dependency
+          # options) and profiles (settings) also change the binaries, but not the lockfile.
+          key: ${{ matrix.os }}-${{ matrix.config }}-conan-${{ hashFiles('requirements.txt', 'conan.lock', 'conanfile.py', 'profiles/**') }}
           restore-keys: |
-            ${{ runner.os }}-build-conan-cache-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+            ${{ matrix.os }}-${{ matrix.config }}-conan-
+            ${{ matrix.os }}-
 
-      # - name: Install Python dependencies for OpenUSD
-      #   run: pip install PySide6 PyOpenGL
+      - name: Install Dependencies
+        working-directory: ${{ github.workspace }}
+        run: python3 dev.py install ${{ matrix.config }}
 
-      - name: Add ANARI SDK recipe
-        working-directory: ${{ github.workspace }}/recipes/anari
-        run: conan create . -pr:a ${{ github.workspace }}/profiles/${{ steps.strings.outputs.cmake-preset }} --build=missing
-
-      # - name: Conan Create OpenUSD
-      #   working-directory: ${{ github.workspace }}/recipes/open_usd
-      #   run: conan create . -pr:a ${{ github.workspace }}/profiles/${{ steps.strings.outputs.cmake-preset }} --build=missing
-
-      - name: Conan Install
-        working-directory: ${{ steps.strings.outputs.build-output-dir }}
-        run: conan install .. -pr:a ../profiles/${{ steps.strings.outputs.cmake-preset }} --build=missing
+      - name: Conan Prune Cache # drop recipes and binaries this run didn't use (old revisions)
+        if: steps.conan-cache-restore.outputs.cache-hit != 'true'
+        run: |
+          conan remove "*:*" --lru=1d --confirm
+          conan remove "*" --lru=1d --confirm
 
       - name: Conan Clean Cache # clean the Conan cache before saving it to reduce its size
+        if: steps.conan-cache-restore.outputs.cache-hit != 'true'
         run: conan cache clean
 
       - name: Save Conan Cache
-        id: conan-cache-save
+        if: steps.conan-cache-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: ~/.conan2
-          key: ${{ runner.os }}-build-conan-cache-${{ hashFiles('**/conanfile.py') }}
-
-      - name: Conan Virtual Environment
-        working-directory: ${{ github.workspace }}
-        run: source ${{ steps.strings.outputs.build-output-dir }}/${{ steps.strings.outputs.cmake-preset }}/generators/conanbuild.sh
+          key: ${{ steps.conan-cache-restore.outputs.cache-primary-key }}
 
       - name: Configure CMake
         working-directory: ${{ github.workspace }}
-        run: cmake --preset ${{ steps.strings.outputs.cmake-preset }}
+        run: cmake --preset ${{ matrix.config }}
 
       - name: Build
         working-directory: ${{ github.workspace }}
-        run: cmake --build --preset ${{ steps.strings.outputs.cmake-preset }} --parallel
+        run: cmake --build --preset ${{ matrix.config }} --parallel
 
       - name: Unit Tests
         working-directory: ${{ github.workspace }}
-        run: ctest --preset ${{ steps.strings.outputs.cmake-preset }} -L "unit_test" -j 10
+        run: ctest --preset ${{ matrix.config }} -L "unit_test" -j 10

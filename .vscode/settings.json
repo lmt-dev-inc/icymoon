@@ -1,0 +1,20 @@
+{
+    // C++ IntelliSense: include paths and defines come from the active CMake preset
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "cmake.useCMakePresets": "always",
+    "editor.formatOnSave": true,
+    "editor.acceptSuggestionOnCommitCharacter": false,
+    "editor.acceptSuggestionOnEnter": "off",
+    "editor.minimap.enabled": false,
+    "editor.rulers": [
+        120
+    ],
+    "files.associations": {
+        "*.rgen": "glsl",
+        "*.rchit": "glsl",
+        "*.rmiss": "glsl",
+        "*.rint": "glsl"
+    },
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.typeCheckingMode": "standard",
+}

@@ -4,13 +4,11 @@ import os
 
 
 class IcyMoonEngineRecipe(ConanFile):
-    name = "icy_moon_engine"
+    name = "icymoon_engine"
     version = "0.1"
     package_type = "application"
-    build_policy = "missing"
 
     settings = "os", "compiler", "build_type", "arch"
-    generators = "VirtualBuildEnv"
 
     requires = {
         "anari/0.14.1",
@@ -19,11 +17,14 @@ class IcyMoonEngineRecipe(ConanFile):
         "gdal/3.10.3",
         "glfw/3.4",
         "glm/1.0.1",
-        "gtest/1.15.0",
         "proj/9.3.1",  # required by GDAL
         "vulkan-headers/1.3.243.0",  # version depended on by vulkan-memory-allocator
         "vulkan-memory-allocator/cci.20231120",
         "whereami/cci.20220112",
+    }
+
+    test_requires = {
+        "gtest/1.15.0",
     }
 
     options = {
@@ -31,6 +32,8 @@ class IcyMoonEngineRecipe(ConanFile):
     }
 
     default_options = {
+        # Fix for build errors with boost 1.91.0, required by GDAL through arrow:
+        "boost/*:without_cobalt": True,
         "coverage": None,
         "cimg/*:enable_fftw": False,
         "cimg/*:enable_jpeg": True,
@@ -55,16 +58,17 @@ class IcyMoonEngineRecipe(ConanFile):
         cmake_layout(self)
 
     def generate(self):
-        toolChain = CMakeToolchain(self, generator="Ninja")
-        toolChain.presets_prefix = ""
+        toolchain = CMakeToolchain(self, generator="Ninja")
+        toolchain.presets_prefix = ""
 
-        if self.options.coverage == "on":
-            toolChain.cache_variables["TEST_COVERAGE"] = True
+        # Conan replaces the `options` dict with an Options object at runtime, which Pylance can't see
+        if self.options.coverage == "on": # pyright: ignore[reportAttributeAccessIssue]
+            toolchain.cache_variables["TEST_COVERAGE"] = True
 
         proj_res_path = os.path.join(self.dependencies["proj"].package_folder, "res")
-        toolChain.cache_variables["PROJ_RES_PATH"] = proj_res_path
+        toolchain.cache_variables["PROJ_RES_PATH"] = proj_res_path
 
-        toolChain.generate()
+        toolchain.generate()
 
         cmake = CMakeDeps(self)
         cmake.generate()
