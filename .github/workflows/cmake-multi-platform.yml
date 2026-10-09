@@ -13,15 +13,28 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
 
+    defaults:
+      run:
+        # Same scripts on every OS (Git Bash on Windows)
+        shell: bash
+
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations.
       # Consider changing this to true when your workflow is stable.
       fail-fast: false
 
       matrix:
-        os: [ubuntu-26.04]
-        # dev.py configuration, also used as the CMake and CTest preset name
-        config: [lnx-gcc-release]
+        include:
+          - os: ubuntu-26.04
+            # dev.py configuration, also used as the CMake and CTest preset name
+            config: lnx-gcc-release
+            python: python3
+            venv_bin: .venv/bin
+          # Pinned rather than windows-latest: the Windows profiles need Visual Studio 2022 (msvc 194)
+          - os: windows-2025
+            config: win-clang-release
+            python: python
+            venv_bin: .venv/Scripts
 
     steps:
       - uses: actions/checkout@v5
@@ -29,15 +42,18 @@ jobs:
           submodules: true
 
       - name: Install System Prerequisites
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-11 g++-11 python3-venv
 
+      # On Windows, also checks for Visual Studio 2022 with the C++ and Clang components, and
+      # installs the missing ones
       - name: Setup Virtual Environment
         working-directory: ${{ github.workspace }}
         run: |
-          python3 dev.py setup
-          echo "${{ github.workspace }}/.venv/bin" >> "$GITHUB_PATH"
+          ${{ matrix.python }} dev.py setup
+          echo "${{ github.workspace }}/${{ matrix.venv_bin }}" >> "$GITHUB_PATH"
 
       - name: Restore Conan Cache
         id: conan-cache-restore
@@ -53,7 +69,7 @@ jobs:
 
       - name: Install Dependencies
         working-directory: ${{ github.workspace }}
-        run: python3 dev.py install ${{ matrix.config }}
+        run: ${{ matrix.python }} dev.py install ${{ matrix.config }}
 
       - name: Conan Prune Cache # drop recipes and binaries this run didn't use (old revisions)
         if: steps.conan-cache-restore.outputs.cache-hit != 'true'
