@@ -3,6 +3,7 @@
 - [How to Build](#how-to-build)
   - [Prerequisites](#prerequisites)
   - [Quick Start](#quick-start)
+  - [Building on Windows](#building-on-windows)
   - [dev.py Commands](#devpy-commands)
   - [Optional Dependencies](#optional-dependencies)
     - [VisRTX](#visrtx)
@@ -40,9 +41,18 @@ cmake --preset lnx-gcc-debug
 cmake --build --preset lnx-gcc-debug
 ```
 
-On Windows, activate with `.venv\Scripts\activate` and use the `win-clang-debug` configuration instead.
+On Windows, use `python` instead of `python3` and the `win-clang-debug` configuration instead. See [Building on Windows](#building-on-windows) for how to activate the virtual environment.
 
 > On Linux, Conan may install missing system packages with `apt-get` and ask for your sudo password.
+
+### Building on Windows
+
+> Windows support is a work in progress: dependencies install and CMake configures, but the code doesn't compile yet.
+
+- `dev.py setup` installs the Visual Studio 2022 Build Tools if they are missing. The installer asks for administrator rights (UAC prompt).
+- Activate the virtual environment with `.venv\Scripts\Activate.ps1` in PowerShell, `.venv\Scripts\activate.bat` in cmd, or `source .venv/Scripts/activate` in Git Bash.
+- No Visual Studio developer prompt is needed: `dev.py install` writes the Visual Studio environment into the CMake presets, so `cmake --preset` and VS Code's CMake Tools work from any terminal. Run `dev.py install` again after updating the Build Tools, as the presets contain the paths of the installed toolset.
+- To run `clang-cl` or other Visual Studio tools by hand, use the "Developer PowerShell for VS 2022" from the Start menu.
 
 ### dev.py Commands
 
@@ -173,5 +183,5 @@ The repository includes a shared VS Code setup under `.vscode/`:
 
 - `extensions.json` recommends CMake Tools, C/C++ and Python.
 - `settings.json` makes CMake Tools use the Conan-generated presets, which also tell it which CMake binary to use. VS Code picks up `.venv` automatically and activates it in new terminals. Run `python3 dev.py setup` and `python3 dev.py install` before opening the folder.
-- It also sets shared editor conventions: format on save and a ruler at 120 columns.
-- `launch.json` provides a gdb "Launch" configuration for the target selected in CMake Tools.
+- It also sets shared editor conventions: format on save and a ruler at 120 columns, and highlights the extensionless Conan profiles under `profiles/` as INI files.
+- `launch.json` provides a gdb "Launch" configuration for the target selected in CMake Tools (Linux only for now).
