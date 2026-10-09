@@ -41,10 +41,10 @@ add_definitions(
     -DGLM_FORCE_SWIZZLE
 )
 
-if (MSVC)
+if (MSVC) # msvc and clang-cl
     # warning level 4 and all warnings as errors
     # system headers treated as external (i.e. no compiler warning on them)
-    add_compile_options(/W4 /WX /experimental:external /external:W0 /MP)
+    add_compile_options(/W4 /WX /external:W0)
 else()
     # lots of warnings and all warnings as errors
     add_compile_options(-Wall -Wextra -pedantic -Werror)
