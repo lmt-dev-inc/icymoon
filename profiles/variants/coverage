@@ -1,0 +1,11 @@
+# Debug build of our code, instrumented for test coverage. Same build types as variants/debug,
+# which isn't included so that "-debug" isn't appended to the name.
+[settings]
+build_type=Release
+&:build_type=Debug
+
+[options]
+&:coverage=on
+
+[conf]
+tools.cmake.cmake_layout:build_folder_vars += ['const.coverage', '!settings.build_type']

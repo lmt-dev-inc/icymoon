@@ -1,0 +1,8 @@
+[settings]
+os=Linux
+
+[conf]
+# Preset and build folder names start with the OS, so that they don't clash between OSes
+# (e.g. lnx-clang-debug and win-clang-debug), including in a clone shared by a dual boot machine.
+# Variants append the rest of the name.
+tools.cmake.cmake_layout:build_folder_vars = ['const.lnx', 'settings.compiler']

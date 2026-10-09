@@ -6,8 +6,9 @@ A configuration maps to one or two Conan profiles under profiles/:
   (e.g. Android); None means the host profile is used for both (-pr:a).
 
 Configuration names match the CMake preset names produced by Conan, so that
-`dev.py install gcc-debug` is followed by `cmake --preset gcc-debug`.
+`dev.py install lnx-gcc-debug` is followed by `cmake --preset lnx-gcc-debug`.
 """
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -29,14 +30,18 @@ class Config:
 
 
 CONFIGS: dict[str, Config] = {
-    "gcc-debug": Config(host="gcc-debug"),
-    "gcc-release": Config(host="gcc-release"),
-    "gcc-coverage_on-debug": Config(host="gcc-coverage_on-debug"),
+    "lnx-gcc-debug": Config(host="lnx-gcc-debug"),
+    "lnx-gcc-release": Config(host="lnx-gcc-release"),
+    "lnx-gcc-coverage": Config(host="lnx-gcc-coverage"),
+    "win-clang-debug": Config(host="win-clang-debug"),
+    "win-clang-release": Config(host="win-clang-release"),
+    "win-clang-coverage": Config(host="win-clang-coverage"),
 }
 
 # Shortcuts for installing several configurations at once
 GROUPS: dict[str, list[str]] = {
-    "gcc": ["gcc-debug", "gcc-coverage_on-debug", "gcc-release"],
+    "lnx": ["lnx-gcc-debug", "lnx-gcc-coverage", "lnx-gcc-release"],
+    "win": ["win-clang-debug", "win-clang-coverage", "win-clang-release"],
 }
 
-DEFAULT_GROUP = "gcc"
+DEFAULT_GROUP = "win" if os.name == "nt" else "lnx"

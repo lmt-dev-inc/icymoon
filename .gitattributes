@@ -1,0 +1,3 @@
+# Conan computes recipe revisions from the file contents: recipes must have the same line endings
+# on every OS, or conan.lock pins a different revision on Windows and Linux
+recipes/** text eol=lf

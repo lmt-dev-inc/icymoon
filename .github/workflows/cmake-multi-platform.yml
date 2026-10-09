@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-26.04]
         # dev.py configuration, also used as the CMake and CTest preset name
-        config: [gcc-release]
+        config: [lnx-gcc-release]
 
     steps:
       - uses: actions/checkout@v5
