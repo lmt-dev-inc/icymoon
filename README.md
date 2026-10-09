@@ -51,7 +51,7 @@ Run `python3 dev.py -h` or `python3 dev.py <command> -h` for full help.
 | Command                                | Description                                                                                                                                                                              |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `setup [--recreate]`                   | Creates `.venv`, installs the tools from `requirements.txt` and detects a default Conan profile. `--recreate` deletes `.venv` first; deactivate the virtual environment before using it. |
-| `install [config\|group ...] [--all]`  | Exports the local recipes under `recipes/` and runs `conan install` for each configuration. Without arguments, installs the group of the current OS (`lnx` or `win`). `--all` installs every configuration.           |
+| `install [config\|group ...] [--all]`  | Exports the local recipes under `recipes/` and runs `conan install` for each configuration. Without arguments, installs the group of the current OS (`lnx` or `win`). `--all` installs every configuration for the current OS. `install -h` lists the configurations and groups.           |
 | `lock [--update pkg ...] [--recreate]` | Creates or updates `conan.lock` for every configuration. Without options, missing entries are added and unused ones removed. `--update` upgrades the given packages. `--recreate` relocks everything. |
 
 Available configurations, named `<os>-<compiler>-<variant>` so that names never clash between OSes:
