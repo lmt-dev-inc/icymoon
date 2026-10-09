@@ -13,7 +13,10 @@
         "*.rgen": "glsl",
         "*.rchit": "glsl",
         "*.rmiss": "glsl",
-        "*.rint": "glsl"
+        "*.rint": "glsl",
+        // Conan profiles have no extension: highlight them as INI (without matching profiles/README.md)
+        "**/profiles/{base,os,compilers,variants}/*": "ini",
+        "**/profiles/*-*-*": "ini"
     },
     "python.terminal.activateEnvironment": true,
     "python.analysis.typeCheckingMode": "standard",
