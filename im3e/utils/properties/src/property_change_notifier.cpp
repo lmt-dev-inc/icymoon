@@ -3,13 +3,12 @@
 #include <im3e/utils/core/throw_utils.h>
 
 using namespace im3e;
-using namespace std;
 
-void PropertyChangeNotifier::registerOnChange(weak_ptr<function<void()>> pOnChangeCallback)
+void PropertyChangeNotifier::registerOnChange(std::weak_ptr<std::function<void()>> pOnChangeCallback)
 {
     throwIfArgNull(pOnChangeCallback.lock(), "Property cannot register null callback");
     throwIfArgNull(*pOnChangeCallback.lock(), "Property cannot register empty function");
-    m_pOnChangeCallbacks.emplace_back(move(pOnChangeCallback));
+    m_pOnChangeCallbacks.emplace_back(std::move(pOnChangeCallback));
 }
 
 void PropertyChangeNotifier::notifyChanged()

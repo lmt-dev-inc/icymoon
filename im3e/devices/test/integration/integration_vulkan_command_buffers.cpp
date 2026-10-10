@@ -4,12 +4,11 @@
 #include <im3e/test_utils/vk.h>
 
 using namespace im3e;
-using namespace std;
 
 struct VulkanCommandBuffersIntegration : public DeviceIntegrationTest
 {
-    shared_ptr<const IImageFactory> m_pImageFactory = getDevice()->getImageFactory();
-    shared_ptr<ICommandQueue> m_pCommandQueue = getDevice()->getCommandQueue();
+    std::shared_ptr<const IImageFactory> m_pImageFactory = getDevice()->getImageFactory();
+    std::shared_ptr<ICommandQueue> m_pCommandQueue = getDevice()->getCommandQueue();
 };
 
 TEST_F(VulkanCommandBuffersIntegration, clearColorImage)
@@ -34,7 +33,7 @@ TEST_F(VulkanCommandBuffersIntegration, clearColorImage)
         auto pImageMapping = pImage->map();
         auto* const pImageBegin = reinterpret_cast<uint32_t*>(pImageMapping->getData());
         auto* const pImageEnd = pImageBegin + pImageMapping->getSizeInBytes();
-        fill(pImageBegin, pImageEnd, 0U);
+        std::fill(pImageBegin, pImageEnd, 0U);
     }
     {
         auto pCommandBuffer = m_pCommandQueue->startScopedCommand("clearColorImage", CommandExecutionType::Sync);

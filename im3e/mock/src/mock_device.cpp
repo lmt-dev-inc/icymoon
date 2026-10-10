@@ -3,7 +3,6 @@
 #include <im3e/test_utils/test_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -22,18 +21,21 @@ public:
     }
     void waitForVkFence(VkFence vkFence) const override { m_rMock.waitForVkFence(vkFence); }
 
-    auto createLogger(string_view name) const -> unique_ptr<ILogger> override { return m_rMock.createLogger(name); }
+    auto createLogger(std::string_view name) const -> std::unique_ptr<ILogger> override
+    {
+        return m_rMock.createLogger(name);
+    }
 
-    auto getStatsProvider() -> shared_ptr<IStatsProvider> override { return m_rMock.getStatsProvider(); }
+    auto getStatsProvider() -> std::shared_ptr<IStatsProvider> override { return m_rMock.getStatsProvider(); }
 
     auto getVkInstance() const -> VkInstance override { return m_rMock.getVkInstance(); }
     auto getVkPhysicalDevice() const -> VkPhysicalDevice override { return m_rMock.getVkPhysicalDevice(); }
     auto getVkDevice() const -> VkDevice override { return m_rMock.getVkDevice(); }
     auto getFcts() const -> const VulkanDeviceFcts& override { return m_rMock.getFcts(); }
     auto getInstanceFcts() const -> const VulkanInstanceFcts& override { return m_rMock.getInstanceFcts(); }
-    auto getImageFactory() const -> shared_ptr<const IImageFactory> override { return m_rMock.getImageFactory(); }
-    auto getCommandQueue() const -> shared_ptr<const ICommandQueue> override { return m_rMock.getCommandQueue(); }
-    auto getCommandQueue() -> shared_ptr<ICommandQueue> override { return m_rMock.getCommandQueue(); }
+    auto getImageFactory() const -> std::shared_ptr<const IImageFactory> override { return m_rMock.getImageFactory(); }
+    auto getCommandQueue() const -> std::shared_ptr<const ICommandQueue> override { return m_rMock.getCommandQueue(); }
+    auto getCommandQueue() -> std::shared_ptr<ICommandQueue> override { return m_rMock.getCommandQueue(); }
 
 private:
     MockDevice& m_rMock;
@@ -64,7 +66,7 @@ MockDevice::MockDevice()
 
 MockDevice::~MockDevice() = default;
 
-auto MockDevice::createMockProxy() -> unique_ptr<IDevice>
+auto MockDevice::createMockProxy() -> std::unique_ptr<IDevice>
 {
-    return make_unique<MockProxyDevice>(*this);
+    return std::make_unique<MockProxyDevice>(*this);
 }

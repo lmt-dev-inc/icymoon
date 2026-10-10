@@ -7,7 +7,6 @@ static_assert(false, "Vulkan Loader does not support this platform at the moment
 #endif
 
 using namespace im3e;
-using namespace std;
 
 #define LOAD_GLOBAL_FCT(fctName) .fctName = reinterpret_cast<PFN_##fctName>(m_vkGetInstanceProcAddr(nullptr, #fctName))
 #define LOAD_INST_FCT(fctName) .fctName = reinterpret_cast<PFN_##fctName>(m_vkGetInstanceProcAddr(vkInstance, #fctName))
@@ -22,8 +21,8 @@ using namespace std;
 
 VulkanLoader::VulkanLoader(VulkanLoaderConfig config, UniquePtrWithDeleter<void> pLibrary,
                            PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr)
-  : m_config(move(config))
-  , m_pLibrary(throwIfArgNull(move(pLibrary), "Vulkan loader requires a library pointer"))
+  : m_config(std::move(config))
+  , m_pLibrary(throwIfArgNull(std::move(pLibrary), "Vulkan loader requires a library pointer"))
   , m_vkGetInstanceProcAddr(throwIfArgNull(vkGetInstanceProcAddr, "Vulkan loader requires vkGetInstanceProcAddr"))
   , m_vkGetDeviceProcAddr(throwIfArgNull(vkGetDeviceProcAddr, "Vulkan loader requires vkGetDeviceProcAddr"))
 {
@@ -157,9 +156,9 @@ auto VulkanLoader::loadVmaFcts(VkInstance vkInstance, VkDevice vkDevice) const -
     };
 }
 
-auto im3e::createVulkanLoader(VulkanLoaderConfig config) -> unique_ptr<IVulkanLoader>
+auto im3e::createVulkanLoader(VulkanLoaderConfig config) -> std::unique_ptr<IVulkanLoader>
 {
     vulkan_loader::VulkanLibraryLoader libraryLoader;
-    return make_unique<VulkanLoader>(move(config), move(libraryLoader.pLibrary), libraryLoader.vkGetInstanceProcAddr,
-                                     libraryLoader.vkGetDeviceProcAddr);
+    return std::make_unique<VulkanLoader>(std::move(config), std::move(libraryLoader.pLibrary),
+                                          libraryLoader.vkGetInstanceProcAddr, libraryLoader.vkGetDeviceProcAddr);
 }

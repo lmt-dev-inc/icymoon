@@ -5,7 +5,6 @@
 #include <filesystem>
 
 using namespace im3e;
-using namespace std;
 
 struct VulkanDeviceIntegration : public Test
 {
@@ -16,18 +15,18 @@ struct VulkanDeviceIntegration : public Test
         if (!s_pLogger)
         {
             auto* pTestSuite = testing::UnitTest::GetInstance()->current_test_suite();
-            auto suiteName = string(pTestSuite->name());
-            if (auto itFind = suiteName.find_first_of("/"); itFind != string::npos)
+            auto suiteName = std::string(pTestSuite->name());
+            if (auto itFind = suiteName.find_first_of("/"); itFind != std::string::npos)
             {
                 suiteName.erase(suiteName.find_first_of("/"));
             }
 
-            s_pLogger = createFileLogger(filesystem::path{fmt::format("{}.log", suiteName)});
+            s_pLogger = createFileLogger(std::filesystem::path{fmt::format("{}.log", suiteName)});
             s_pLogger->setLevelFilter(LogLevel::Debug);
         }
     }
 
-    static inline unique_ptr<ILogger> s_pLogger;
+    static inline std::unique_ptr<ILogger> s_pLogger;
     UniquePtrWithDeleter<ILoggerTracker> m_pLoggerTracker = s_pLogger->createGlobalTracker();
 };
 

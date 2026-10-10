@@ -3,14 +3,13 @@
 #include <algorithm>
 
 using namespace im3e;
-using namespace std;
 
 namespace im3e {
 
 class VulkanCommandBufferFuture : public ICommandBufferFuture
 {
 public:
-    VulkanCommandBufferFuture(weak_ptr<VulkanCommandBuffer> pCommandBuffer)
+    VulkanCommandBufferFuture(std::weak_ptr<VulkanCommandBuffer> pCommandBuffer)
       : m_pCommandBuffer(pCommandBuffer)
     {
     }
@@ -30,7 +29,7 @@ public:
     void markAsComplete() { m_isComplete = true; }
 
 private:
-    weak_ptr<VulkanCommandBuffer> m_pCommandBuffer;
+    std::weak_ptr<VulkanCommandBuffer> m_pCommandBuffer;
     bool m_isComplete = false;
 };
 
@@ -41,10 +40,10 @@ namespace {
 class VulkanCommandBarrierRecorder : public ICommandBarrierRecorder
 {
 public:
-    VulkanCommandBarrierRecorder(string_view name, shared_ptr<const ICommandBuffer> pCommandBuffer,
+    VulkanCommandBarrierRecorder(std::string_view name, std::shared_ptr<const ICommandBuffer> pCommandBuffer,
                                  const VulkanDeviceFcts& rFcts)
       : m_name(name)
-      , m_pCommandBuffer(throwIfArgNull(move(pCommandBuffer),
+      , m_pCommandBuffer(throwIfArgNull(std::move(pCommandBuffer),
                                         "Cannot create Vulkan command barrier recorder without a command buffer"))
       , m_rFcts(rFcts)
     {
@@ -97,14 +96,14 @@ public:
     }
 
 private:
-    const string m_name;
-    shared_ptr<const ICommandBuffer> m_pCommandBuffer;
+    const std::string m_name;
+    std::shared_ptr<const ICommandBuffer> m_pCommandBuffer;
     const VulkanDeviceFcts& m_rFcts;
-    vector<VkImageMemoryBarrier2> m_vkImageBarriers;
+    std::vector<VkImageMemoryBarrier2> m_vkImageBarriers;
 };
 
 void setVkObjectDebugName(VkDevice vkDevice, const VulkanDeviceFcts& rFcts, VkObjectType vkObjectType, void* pVkObject,
-                          string_view name)
+                          std::string_view name)
 {
     if (!rFcts.vkSetDebugUtilsObjectNameEXT)
     {
@@ -122,7 +121,7 @@ void setVkObjectDebugName(VkDevice vkDevice, const VulkanDeviceFcts& rFcts, VkOb
 }
 
 auto createVkCommandBuffer(VkDevice vkDevice, const VulkanDeviceFcts& rFcts, VkCommandPool vkCommandPool,
-                           string_view name)
+                           std::string_view name)
 {
     VkCommandBufferAllocateInfo vkAllocateInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -146,7 +145,7 @@ auto createVkCommandBuffer(VkDevice vkDevice, const VulkanDeviceFcts& rFcts, VkC
 }  // namespace
 
 VulkanCommandBuffer::VulkanCommandBuffer(const ICommandQueue& rQueue, const IDevice& rDevice,
-                                         VkCommandPool vkCommandPool, string_view name)
+                                         VkCommandPool vkCommandPool, std::string_view name)
   : m_rQueue(rQueue)
   , m_rDevice(rDevice)
   , m_pLogger(m_rDevice.createLogger(name))
@@ -166,12 +165,12 @@ VulkanCommandBuffer::~VulkanCommandBuffer()
     }
 }
 
-auto VulkanCommandBuffer::startScopedBarrier(string_view name) const -> unique_ptr<ICommandBarrierRecorder>
+auto VulkanCommandBuffer::startScopedBarrier(std::string_view name) const -> std::unique_ptr<ICommandBarrierRecorder>
 {
     return make_unique<VulkanCommandBarrierRecorder>(name, this->shared_from_this(), m_rDevice.getFcts());
 }
 
-auto VulkanCommandBuffer::createFuture() -> shared_ptr<ICommandBufferFuture>
+auto VulkanCommandBuffer::createFuture() -> std::shared_ptr<ICommandBufferFuture>
 {
     auto pFuture = make_shared<VulkanCommandBufferFuture>(this->shared_from_this());
     m_pFutures.emplace_back(pFuture);
@@ -184,7 +183,7 @@ void VulkanCommandBuffer::reset()
                     "Failed to reset command buffer");
 
     m_inFlight = false;
-    ranges::for_each(m_pFutures, [](auto& pFuture) { pFuture->markAsComplete(); });
+    std::ranges::for_each(m_pFutures, [](auto& pFuture) { pFuture->markAsComplete(); });
 
     // Note: we do not reset the fence here is that it remains marked as complete until we actually submit something
     // new to the queue. Otherwise, we risk waiting for the fence while nothing is executing.
@@ -194,7 +193,7 @@ void VulkanCommandBuffer::reset()
     m_pFutures.clear();
 }
 
-void VulkanCommandBuffer::beginRecording(string_view)
+void VulkanCommandBuffer::beginRecording(std::string_view)
 {
     VkCommandBufferBeginInfo vkBeginInfo{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -255,11 +254,11 @@ void VulkanCommandBuffer::waitForCompletion()
 
     const auto vkFence = m_pVkFence.get();
     logIfVkFailed(m_rDevice.getFcts().vkWaitForFences(m_rDevice.getVkDevice(), 1U, &vkFence, VK_TRUE,
-                                                      numeric_limits<uint64_t>::max()),
+                                                      std::numeric_limits<uint64_t>::max()),
                   *m_pLogger, "Failed to wait for fence while destroying command buffer");
 
     m_inFlight = false;
-    ranges::for_each(m_pFutures, [](auto& pFuture) { pFuture->markAsComplete(); });
+    std::ranges::for_each(m_pFutures, [](auto& pFuture) { pFuture->markAsComplete(); });
 
     this->reset();
 }

@@ -5,7 +5,6 @@
 #include <gmock/gmock.h>
 
 using namespace im3e;
-using namespace std;
 
 TEST(PropertyChangeNotifierTest, constructor)
 {
@@ -19,7 +18,7 @@ TEST(PropertyChangeNotifierTest, registerOnChange)
 
     bool called{};
     auto callback = [&] { called = true; };
-    auto pOnChanged = make_shared<function<void()>>(callback);
+    auto pOnChanged = std::make_shared<std::function<void()>>(callback);
     notifier.registerOnChange(pOnChanged);
 
     EXPECT_THAT(called, IsFalse());
@@ -33,7 +32,7 @@ TEST(PropertyChangeNotifierTest, notifyChangedAfterCallbackDeleted)
 
     bool called{};
     auto callback = [&] { called = true; };
-    auto pOnChanged = make_shared<function<void()>>(callback);
+    auto pOnChanged = std::make_shared<std::function<void()>>(callback);
     notifier.registerOnChange(pOnChanged);
 
     pOnChanged.reset();

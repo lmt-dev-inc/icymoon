@@ -1,7 +1,6 @@
 #include "mock_vulkan_loader.h"
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -43,7 +42,7 @@ MockVulkanLoader::MockVulkanLoader()
 
 MockVulkanLoader::~MockVulkanLoader() = default;
 
-auto MockVulkanLoader::createMockProxy() -> unique_ptr<IVulkanLoader>
+auto MockVulkanLoader::createMockProxy() -> std::unique_ptr<IVulkanLoader>
 {
-    return make_unique<MockProxyVulkanLoader>(*this);
+    return std::make_unique<MockProxyVulkanLoader>(*this);
 }

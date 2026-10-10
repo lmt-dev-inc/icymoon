@@ -8,13 +8,12 @@
 #include <ranges>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
-void insertIfUnique(const char* item, vector<const char*>& rItems)
+void insertIfUnique(const char* item, std::vector<const char*>& rItems)
 {
-    if (ranges::find(rItems, item) == rItems.end())
+    if (std::ranges::find(rItems, item) == rItems.end())
     {
         rItems.push_back(item);
     }
@@ -22,7 +21,7 @@ void insertIfUnique(const char* item, vector<const char*>& rItems)
 
 auto generateDeviceExtensions()
 {
-    vector<const char*> deviceExtensions;
+    std::vector<const char*> deviceExtensions;
 
     // For presentation:
     insertIfUnique(VK_KHR_SWAPCHAIN_EXTENSION_NAME, deviceExtensions);
@@ -38,7 +37,7 @@ auto generateDeviceExtensions()
     return deviceExtensions;
 }
 
-void addLayers(bool isVkValidationEnabled, vector<const char*>& rLayers)
+void addLayers(bool isVkValidationEnabled, std::vector<const char*>& rLayers)
 {
     if (isVkValidationEnabled)
     {
@@ -46,7 +45,7 @@ void addLayers(bool isVkValidationEnabled, vector<const char*>& rLayers)
     }
 }
 
-void addInstanceExtensions(bool isVkValidationEnabled, vector<const char*>& rExtensions)
+void addInstanceExtensions(bool isVkValidationEnabled, std::vector<const char*>& rExtensions)
 {
     // For presentation:
     insertIfUnique(VK_KHR_SURFACE_EXTENSION_NAME, rExtensions);
@@ -58,10 +57,10 @@ void addInstanceExtensions(bool isVkValidationEnabled, vector<const char*>& rExt
 }
 
 auto generateInstanceExtensions(const ILogger& logger, const VulkanGlobalFcts& rFcts, bool isVkValidationEnabled,
-                                const vector<const char*>& rRequiredExtensions)
+                                const std::vector<const char*>& rRequiredExtensions)
 {
-    vector<const char*> extensions;
-    ranges::for_each(rRequiredExtensions, [&](auto& rExtension) { insertIfUnique(rExtension, extensions); });
+    std::vector<const char*> extensions;
+    std::ranges::for_each(rRequiredExtensions, [&](auto& rExtension) { insertIfUnique(rExtension, extensions); });
     addInstanceExtensions(isVkValidationEnabled, extensions);
 
     logger.info("Checking support for required instance extensions");
@@ -71,7 +70,7 @@ auto generateInstanceExtensions(const ILogger& logger, const VulkanGlobalFcts& r
     bool allSupported = true;
     for (auto& rExtension : extensions)
     {
-        auto itFind = ranges::find_if(
+        auto itFind = std::ranges::find_if(
             supportedExtensions, [&](const auto& props) { return strcmp(rExtension, &props.extensionName[0]) == 0; });
 
         if (itFind != supportedExtensions.end())
@@ -84,14 +83,14 @@ auto generateInstanceExtensions(const ILogger& logger, const VulkanGlobalFcts& r
             allSupported = false;
         }
     }
-    throwIfFalse<runtime_error>(allSupported, "Some required instance extensions are not supported");
+    throwIfFalse<std::runtime_error>(allSupported, "Some required instance extensions are not supported");
 
     return extensions;
 }
 
 auto generateLayers(const ILogger& logger, const VulkanGlobalFcts& rFcts, bool isVkValidationEnabled)
 {
-    vector<const char*> layers;
+    std::vector<const char*> layers;
     addLayers(isVkValidationEnabled, layers);
 
     logger.info("Checking support for required layers");
@@ -102,8 +101,8 @@ auto generateLayers(const ILogger& logger, const VulkanGlobalFcts& rFcts, bool i
     auto itLayer = layers.begin();
     while (itLayer != layers.end())
     {
-        auto itFind = ranges::find_if(supportedLayers,
-                                      [&](const auto& props) { return strcmp(*itLayer, &props.layerName[0]) == 0; });
+        auto itFind = std::ranges::find_if(
+            supportedLayers, [&](const auto& props) { return strcmp(*itLayer, &props.layerName[0]) == 0; });
 
         if (itFind != supportedLayers.end())
         {
@@ -127,7 +126,7 @@ auto generateLayers(const ILogger& logger, const VulkanGlobalFcts& rFcts, bool i
 }  // namespace
 
 VulkanExtensions::VulkanExtensions(const ILogger& logger, const VulkanGlobalFcts& rFcts, bool isDebugEnabled,
-                                   const vector<const char*>& rRequiredInstanceExtensions)
+                                   const std::vector<const char*>& rRequiredInstanceExtensions)
   : m_debugUtilsEnabled(isDebugEnabled)
   , m_instanceExtensions(generateInstanceExtensions(logger, rFcts, m_debugUtilsEnabled, rRequiredInstanceExtensions))
   , m_deviceExtensions(generateDeviceExtensions())

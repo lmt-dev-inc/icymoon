@@ -10,7 +10,6 @@
 #include <algorithm>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -28,7 +27,7 @@ auto convertLocationToImGuiDir(IGuiWorkspace::Location location) -> ImGuiDir
 }
 
 void resetWorkspace(ImGuiID dockSpaceId, ImGuiDockNodeFlags dockspaceFlags, ImguiWorkspacePanelInfo& rCenterPanel,
-                    vector<ImguiWorkspacePanelInfo>& rPanelInfos)
+                    std::vector<ImguiWorkspacePanelInfo>& rPanelInfos)
 {
     ImGui::DockBuilderRemoveNode(dockSpaceId);  // clear any previous layout
     ImGui::DockBuilderAddNode(dockSpaceId, dockspaceFlags | ImGuiDockNodeFlags_DockSpace);
@@ -57,7 +56,7 @@ void resetWorkspace(ImGuiID dockSpaceId, ImGuiDockNodeFlags dockspaceFlags, Imgu
 
 }  // namespace
 
-ImguiWorkspace::ImguiWorkspace(string_view name)
+ImguiWorkspace::ImguiWorkspace(std::string_view name)
   : m_name(name)
 {
 }
@@ -147,11 +146,11 @@ void ImguiWorkspace::addPanel(Location location, std::shared_ptr<IGuiPanel> pPan
 
     if (location == Location::Center)
     {
-        m_centerPanel = move(panelInfo);
+        m_centerPanel = std::move(panelInfo);
     }
     else
     {
-        m_panelInfos.emplace_back(move(panelInfo));
+        m_panelInfos.emplace_back(std::move(panelInfo));
     }
 
     m_workspaceInitialized = false;  // need to reset the workspace to add the new panel
@@ -166,12 +165,12 @@ void ImguiWorkspace::onWindowResized(const VkExtent2D& rVkWindowSize, VkFormat v
     {
         m_centerPanel.pPanel->onWindowResized(m_windowSize, m_windowFormat, m_frameInFlightCount);
     }
-    ranges::for_each(m_panelInfos, [this](auto& rPanelInfo) {
+    std::ranges::for_each(m_panelInfos, [this](auto& rPanelInfo) {
         rPanelInfo.pPanel->onWindowResized(m_windowSize, m_windowFormat, m_frameInFlightCount);
     });
 }
 
-auto im3e::createImguiWorkspace(string_view name) -> shared_ptr<IGuiWorkspace>
+auto im3e::createImguiWorkspace(std::string_view name) -> std::shared_ptr<IGuiWorkspace>
 {
-    return make_shared<ImguiWorkspace>(name);
+    return std::make_shared<ImguiWorkspace>(name);
 }

@@ -3,7 +3,6 @@
 #include <im3e/utils/core/throw_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -54,10 +53,10 @@ auto createVkInstance(ILogger& rLogger, const VulkanGlobalFcts& rFcts, const Vul
 }  // namespace
 
 VulkanInstance::VulkanInstance(const ILogger& rLogger, bool isDebugEnabled,
-                               const vector<const char*>& rRequiredInstanceExtensions,
-                               unique_ptr<IVulkanLoader> pLoader)
+                               const std::vector<const char*>& rRequiredInstanceExtensions,
+                               std::unique_ptr<IVulkanLoader> pLoader)
   : m_pLogger(rLogger.createChild("VulkanInstance"))
-  , m_pLoader(throwIfArgNull(move(pLoader), "Vulkan instance requires a Vulkan loader"))
+  , m_pLoader(throwIfArgNull(std::move(pLoader), "Vulkan instance requires a Vulkan loader"))
   , m_globalFcts(m_pLoader->loadGlobalFcts())
   , m_extensions(rLogger, m_globalFcts, isDebugEnabled, rRequiredInstanceExtensions)
 {
@@ -68,7 +67,7 @@ VulkanInstance::VulkanInstance(const ILogger& rLogger, bool isDebugEnabled,
 
     if (isDebugEnabled)
     {
-        m_pDebugMessageHandler = make_unique<VulkanDebugMessageHandler>(*m_pLogger, m_fcts, m_pVkInstance.get());
+        m_pDebugMessageHandler = std::make_unique<VulkanDebugMessageHandler>(*m_pLogger, m_fcts, m_pVkInstance.get());
     }
 }
 

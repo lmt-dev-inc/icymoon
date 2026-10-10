@@ -3,7 +3,6 @@
 #include "vulkan_command_buffer.h"
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -22,12 +21,12 @@ auto createVkCommandPool(VkDevice vkDevice, const VulkanDeviceFcts& rFcts, uint3
     return makeVkUniquePtr<VkCommandPool>(vkDevice, vkCommandPool, rFcts.vkDestroyCommandPool);
 }
 
-class VulkanCommandQueue : public ICommandQueue, public enable_shared_from_this<VulkanCommandQueue>
+class VulkanCommandQueue : public ICommandQueue, public std::enable_shared_from_this<VulkanCommandQueue>
 {
 public:
-    VulkanCommandQueue(const IDevice& rDevice, VulkanCommandQueueInfo queueInfo, string_view name)
+    VulkanCommandQueue(const IDevice& rDevice, VulkanCommandQueueInfo queueInfo, std::string_view name)
       : m_rDevice(rDevice)
-      , m_queueInfo(move(queueInfo))
+      , m_queueInfo(std::move(queueInfo))
       , m_name(name)
       , m_pVkCommandPool(createVkCommandPool(m_rDevice.getVkDevice(), m_rDevice.getFcts(), queueInfo.queueFamilyIndex))
     {
@@ -41,7 +40,7 @@ public:
         }
     }
 
-    auto startScopedCommand(string_view name, CommandExecutionType executionType)
+    auto startScopedCommand(std::string_view name, CommandExecutionType executionType)
         -> UniquePtrWithDeleter<ICommandBuffer> override
     {
         this->_releaseCompletedCommands();
@@ -50,7 +49,7 @@ public:
         VulkanCommandBuffer* pCommandBuffer{};
         if (m_pAvailable.empty())
         {
-            m_pVkCommandBuffers.emplace_back(make_shared<VulkanCommandBuffer>(
+            m_pVkCommandBuffers.emplace_back(std::make_shared<VulkanCommandBuffer>(
                 *this, m_rDevice, m_pVkCommandPool.get(), fmt::format("{}_{}", m_name, m_pVkCommandBuffers.size())));
             pCommandBuffer = m_pVkCommandBuffers.back().get();
         }
@@ -105,18 +104,18 @@ private:
 
     const IDevice& m_rDevice;
     const VulkanCommandQueueInfo m_queueInfo;
-    const string m_name;
+    const std::string m_name;
 
     VkUniquePtr<VkCommandPool> m_pVkCommandPool;
-    vector<shared_ptr<VulkanCommandBuffer>> m_pVkCommandBuffers;
-    vector<VulkanCommandBuffer*> m_pInFlight;
-    vector<VulkanCommandBuffer*> m_pAvailable;
+    std::vector<std::shared_ptr<VulkanCommandBuffer>> m_pVkCommandBuffers;
+    std::vector<VulkanCommandBuffer*> m_pInFlight;
+    std::vector<VulkanCommandBuffer*> m_pAvailable;
 };
 
 }  // namespace
 
-auto im3e::createVulkanCommandQueue(const IDevice& rDevice, VulkanCommandQueueInfo queueInfo, string_view name)
-    -> shared_ptr<ICommandQueue>
+auto im3e::createVulkanCommandQueue(const IDevice& rDevice, VulkanCommandQueueInfo queueInfo, std::string_view name)
+    -> std::shared_ptr<ICommandQueue>
 {
-    return make_shared<VulkanCommandQueue>(rDevice, move(queueInfo), name);
+    return std::make_shared<VulkanCommandQueue>(rDevice, std::move(queueInfo), name);
 }

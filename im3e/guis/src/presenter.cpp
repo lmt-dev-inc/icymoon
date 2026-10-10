@@ -6,7 +6,6 @@
 #include <ranges>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -26,13 +25,13 @@ uint32_t determineImageCount(const VkSurfaceCapabilitiesKHR& vkCapabilities)
 {
     constexpr auto TargetImageCount = 2U;
 
-    auto imageCount = max(vkCapabilities.minImageCount, TargetImageCount);
-    return vkCapabilities.maxImageCount == 0 ? imageCount : min(imageCount, vkCapabilities.maxImageCount);
+    auto imageCount = std::max(vkCapabilities.minImageCount, TargetImageCount);
+    return vkCapabilities.maxImageCount == 0 ? imageCount : std::min(imageCount, vkCapabilities.maxImageCount);
 }
 
-VkSurfaceFormatKHR chooseSurfaceFormat(const ILogger& rLogger, const vector<VkSurfaceFormatKHR>& rVkSurfaceFormats)
+VkSurfaceFormatKHR chooseSurfaceFormat(const ILogger& rLogger, const std::vector<VkSurfaceFormatKHR>& rVkSurfaceFormats)
 {
-    auto itFind = ranges::find_if(rVkSurfaceFormats, [](const auto& rVkSurfaceFormat) {
+    auto itFind = std::ranges::find_if(rVkSurfaceFormats, [](const auto& rVkSurfaceFormat) {
         return rVkSurfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
                rVkSurfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     });
@@ -43,7 +42,7 @@ VkSurfaceFormatKHR chooseSurfaceFormat(const ILogger& rLogger, const vector<VkSu
         return *itFind;
     }
 
-    throwIfFalse<invalid_argument>(!rVkSurfaceFormats.empty(), "No surface format is supported");
+    throwIfFalse<std::invalid_argument>(!rVkSurfaceFormats.empty(), "No surface format is supported");
     rLogger.warning("Could not find preferred format, falling back to first available format");
     return rVkSurfaceFormats.front();
 }
@@ -52,7 +51,7 @@ VkExtent2D chooseExtent(const ILogger& rLogger, const VkSurfaceCapabilitiesKHR& 
 {
     const auto& rVkCurrentExtent = rVkCapabilities.currentExtent;
     const auto& rVkMaxExtent = rVkCapabilities.maxImageExtent;
-    const auto maxValue = numeric_limits<uint32_t>::max();
+    const auto maxValue = std::numeric_limits<uint32_t>::max();
 
     VkExtent2D vkExtent{
         .width = (rVkCurrentExtent.width == maxValue) ? rVkMaxExtent.width : rVkCurrentExtent.width,
@@ -65,7 +64,7 @@ VkExtent2D chooseExtent(const ILogger& rLogger, const VkSurfaceCapabilitiesKHR& 
 
 auto createVkSwapchainCreateInfo(const ILogger& rLogger, const IDevice& rDevice, VkSurfaceKHR vkSurface)
 {
-    throwIfNull<invalid_argument>(vkSurface, "WindowPresenter requires a surface");
+    throwIfNull<std::invalid_argument>(vkSurface, "WindowPresenter requires a surface");
 
     const auto& rInstFcts = rDevice.getInstanceFcts();
     const auto vkPhysicalDevice = rDevice.getVkPhysicalDevice();
@@ -121,9 +120,9 @@ auto getSwapchainImages(const IDevice& rDevice, VkSwapchainKHR vkSwapchain,
 
     auto pImageFactory = rDevice.getImageFactory();
 
-    vector<shared_ptr<IImage>> pImages;
+    std::vector<std::shared_ptr<IImage>> pImages;
     pImages.reserve(vkImages.size());
-    ranges::transform(vkImages, back_inserter(pImages), [&, n = 0](auto& rVkImage) mutable {
+    std::ranges::transform(vkImages, std::back_inserter(pImages), [&, n = 0](auto& rVkImage) mutable {
         auto pImage = pImageFactory->createProxyImage(rVkImage, ImageConfig{
                                                                     .name = fmt::format("SwapchainImage{}", n++),
                                                                     .vkExtent = rVkCreateInfo.imageExtent,
@@ -151,10 +150,11 @@ VkPresentInfoKHR makeVkPresentInfo(const VkSwapchainKHR* ppSwapchain, uint32_t* 
 
 }  // namespace
 
-Presenter::Presenter(shared_ptr<IDevice> pDevice, VkSurfaceKHR vkSurface, unique_ptr<IFramePipeline> pFramePipeline)
-  : m_pDevice(throwIfArgNull(move(pDevice), "Presenter requires a device"))
+Presenter::Presenter(std::shared_ptr<IDevice> pDevice, VkSurfaceKHR vkSurface,
+                     std::unique_ptr<IFramePipeline> pFramePipeline)
+  : m_pDevice(throwIfArgNull(std::move(pDevice), "Presenter requires a device"))
   , m_vkSurface(throwIfArgNull(vkSurface, "Presenter requires a surface"))
-  , m_pFramePipeline(throwIfArgNull(move(pFramePipeline), "Presenter requires a frame pipeline"))
+  , m_pFramePipeline(throwIfArgNull(std::move(pFramePipeline), "Presenter requires a frame pipeline"))
   , m_pLogger(m_pDevice->createLogger("Presenter"))
 {
     this->reset();
@@ -182,8 +182,8 @@ void Presenter::present()
     uint32_t imageIndex{};
     {
         auto vkResult = rFcts.vkAcquireNextImageKHR(m_pDevice->getVkDevice(), m_pVkSwapchain.get(),
-                                                    numeric_limits<uint64_t>::max(), pVkReadyToWriteSemaphore.get(),
-                                                    nullptr, &imageIndex);
+                                                    std::numeric_limits<uint64_t>::max(),
+                                                    pVkReadyToWriteSemaphore.get(), nullptr, &imageIndex);
         if (vkResult == VK_ERROR_OUT_OF_DATE_KHR)
         {
             m_isOutOfDate = true;
@@ -241,7 +241,7 @@ void Presenter::present()
 void Presenter::reset()
 {
     // Wait for any future we have left to make sure our swapchain images have all been processed:
-    ranges::for_each(m_pCommandFutures, [](auto& pFuture) {
+    std::ranges::for_each(m_pCommandFutures, [](auto& pFuture) {
         if (pFuture)
         {
             pFuture->waitForCompletion();
@@ -265,11 +265,11 @@ void Presenter::reset()
     // We add 1 one more ready to write semaphore because we could start acquiring the next image while all images
     // are currently in flight.
     m_pReadyToWriteSemaphores.resize(m_pImages.size() + 1U);
-    ranges::for_each(m_pReadyToWriteSemaphores, createVkSemaphore);
+    std::ranges::for_each(m_pReadyToWriteSemaphores, createVkSemaphore);
     m_readyToWriteSemaphoreIndex = {};
 
     m_pReadyToPresentSemaphores.resize(m_pImages.size());
-    ranges::for_each(m_pReadyToPresentSemaphores, createVkSemaphore);
+    std::ranges::for_each(m_pReadyToPresentSemaphores, createVkSemaphore);
     m_pCommandFutures.resize(m_pImages.size());
     m_commandIndex = {};
 

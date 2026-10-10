@@ -9,26 +9,25 @@
 #include <iostream>
 
 using namespace im3e;
-using namespace std;
-using namespace std::filesystem;
+using namespace std::string_view_literals;
 
 namespace {
 
 constexpr auto RootName = "Root"sv;
 
-auto addErrorToTrackers(StreamLoggerContext& rContext, string_view message)
+auto addErrorToTrackers(StreamLoggerContext& rContext, std::string_view message)
 {
-    lock_guard<mutex> lg(rContext.trackersMutex);
-    ranges::for_each(rContext.pTrackers, [&](auto& pTracker) { pTracker->addError(message); });
+    std::lock_guard<std::mutex> lg(rContext.trackersMutex);
+    std::ranges::for_each(rContext.pTrackers, [&](auto& pTracker) { pTracker->addError(message); });
 }
 
 }  // namespace
 
-StreamLogger::StreamLogger(string_view name, shared_ptr<ostream> pStream)
+StreamLogger::StreamLogger(std::string_view name, std::shared_ptr<std::ostream> pStream)
   : m_name(name)
-  , m_pContext(make_shared<StreamLoggerContext>())
+  , m_pContext(std::make_shared<StreamLoggerContext>())
 {
-    m_pContext->pStream = throwIfArgNull(move(pStream), "Cannot create logger without stream");
+    m_pContext->pStream = throwIfArgNull(std::move(pStream), "Cannot create logger without stream");
 }
 
 void StreamLogger::setLevelFilter(LogLevel level)
@@ -36,68 +35,68 @@ void StreamLogger::setLevelFilter(LogLevel level)
     m_pContext->levelFilter.store(level);
 }
 
-void StreamLogger::error(string_view message) const
+void StreamLogger::error(std::string_view message) const
 {
     _log('E', LogLevel::Error, message);
 
     addErrorToTrackers(*m_pContext, message);
 }
-void StreamLogger::warning(string_view message) const
+void StreamLogger::warning(std::string_view message) const
 {
     _log('W', LogLevel::Warning, message);
 }
-void StreamLogger::info(string_view message) const
+void StreamLogger::info(std::string_view message) const
 {
     _log('I', LogLevel::Info, message);
 }
-void StreamLogger::debug(string_view message) const
+void StreamLogger::debug(std::string_view message) const
 {
     _log('D', LogLevel::Debug, message);
 }
-void StreamLogger::verbose(string_view message) const
+void StreamLogger::verbose(std::string_view message) const
 {
     _log('V', LogLevel::Verbose, message);
 }
 
-auto StreamLogger::createChild(string_view name) const -> unique_ptr<ILogger>
+auto StreamLogger::createChild(std::string_view name) const -> std::unique_ptr<ILogger>
 {
-    return unique_ptr<ILogger>(new StreamLogger(name, m_pContext));
+    return std::unique_ptr<ILogger>(new StreamLogger(name, m_pContext));
 }
 
 auto StreamLogger::createGlobalTracker() -> UniquePtrWithDeleter<ILoggerTracker>
 {
-    lock_guard<mutex> lg(m_pContext->trackersMutex);
-    m_pContext->pTrackers.emplace_back(make_unique<LoggerTracker>());
+    std::lock_guard<std::mutex> lg(m_pContext->trackersMutex);
+    m_pContext->pTrackers.emplace_back(std::make_unique<LoggerTracker>());
 
     return UniquePtrWithDeleter<ILoggerTracker>(m_pContext->pTrackers.back().get(), [pContext = m_pContext](auto* pT) {
-        lock_guard<mutex> lg(pContext->trackersMutex);
-        const auto [itStart, itEnd] = ranges::remove_if(pContext->pTrackers,
-                                                        [&](auto& pTracker) { return pTracker.get() == pT; });
+        std::lock_guard<std::mutex> lg(pContext->trackersMutex);
+        const auto [itStart, itEnd] = std::ranges::remove_if(pContext->pTrackers,
+                                                             [&](auto& pTracker) { return pTracker.get() == pT; });
         pContext->pTrackers.erase(itStart, itEnd);
     });
 }
 
-StreamLogger::StreamLogger(string_view name, shared_ptr<StreamLoggerContext> pContext)
+StreamLogger::StreamLogger(std::string_view name, std::shared_ptr<StreamLoggerContext> pContext)
   : m_name(name)
-  , m_pContext(move(pContext))
+  , m_pContext(std::move(pContext))
 {
 }
 
-void StreamLogger::_log(char type, LogLevel level, string_view message) const
+void StreamLogger::_log(char type, LogLevel level, std::string_view message) const
 {
     if (level <= m_pContext->levelFilter.load())
     {
-        lock_guard<mutex> lg(m_pContext->streamMutex);
-        *(m_pContext->pStream) << fmt::format("[{}][{}] {}", type, m_name, message) << endl;
+        std::lock_guard<std::mutex> lg(m_pContext->streamMutex);
+        *(m_pContext->pStream) << fmt::format("[{}][{}] {}", type, m_name, message) << std::endl;
     }
 }
 
-unique_ptr<ILogger> im3e::createTerminalLogger()
+std::unique_ptr<ILogger> im3e::createTerminalLogger()
 {
-    return make_unique<StreamLogger>(RootName, shared_ptr<ostream>(&cout, [](auto*) {}));
+    return std::make_unique<StreamLogger>(RootName, std::shared_ptr<std::ostream>(&std::cout, [](auto*) {}));
 }
 
-unique_ptr<ILogger> im3e::createFileLogger(const path& rFilePath)
+std::unique_ptr<ILogger> im3e::createFileLogger(const std::filesystem::path& rFilePath)
 {
-    return make_unique<StreamLogger>(RootName, make_shared<ofstream>(rFilePath, ios::trunc));
+    return std::make_unique<StreamLogger>(RootName, std::make_shared<std::ofstream>(rFilePath, std::ios::trunc));
 }

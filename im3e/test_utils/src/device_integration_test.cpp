@@ -6,8 +6,6 @@
 #include <fmt/format.h>
 
 using namespace im3e;
-using namespace std;
-using namespace std::filesystem;
 
 namespace {
 
@@ -17,7 +15,7 @@ constexpr bool VulkanValidationEnabled = true;
 auto getTestName()
 {
     auto* testInfo = testing::UnitTest::GetInstance()->current_test_info();
-    const string name(testInfo->name());
+    const std::string name(testInfo->name());
     return name.substr(name.find_last_of("/") + 1U);
 }
 
@@ -67,8 +65,8 @@ void DeviceIntegrationTest::SetUpTestSuite()
     if (!s_pLogger)
     {
         auto* pTestSuite = testing::UnitTest::GetInstance()->current_test_suite();
-        s_suiteName = string(pTestSuite->name());
-        if (auto itFind = s_suiteName.find_first_of("/"); itFind != string::npos)
+        s_suiteName = std::string(pTestSuite->name());
+        if (auto itFind = s_suiteName.find_first_of("/"); itFind != std::string::npos)
         {
             s_suiteName.erase(s_suiteName.find_first_of("/"));
         }
@@ -86,7 +84,7 @@ void DeviceIntegrationTest::TearDownTestSuite()
 
     // If s_pDevice has more than one use_count at this point, it means a resource was not properly released and the
     // device will not be properly destroyed.
-    throwIfFalse<logic_error>(
+    throwIfFalse<std::logic_error>(
         s_pDevice.use_count() <= 1U,
         fmt::format("The integration test device's use_count is higher than 1 ({}) on test suite tear down",
                     s_pDevice.use_count()));
@@ -95,7 +93,9 @@ void DeviceIntegrationTest::TearDownTestSuite()
     s_pLogger.reset();
 }
 
-auto DeviceIntegrationTest::generateFilePath(string_view name, string_view extension) const -> filesystem::path
+auto DeviceIntegrationTest::generateFilePath(std::string_view name, std::string_view extension) const
+    -> std::filesystem::path
 {
-    return filesystem::current_path() / filesystem::path{fmt::format("{}_{}.{}", getSuiteName(), name, extension)};
+    return std::filesystem::current_path() /
+           std::filesystem::path{fmt::format("{}_{}.{}", getSuiteName(), name, extension)};
 }

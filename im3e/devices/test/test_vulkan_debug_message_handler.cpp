@@ -5,7 +5,6 @@
 #include <im3e/utils/mock/mock_logger.h>
 
 using namespace im3e;
-using namespace std;
 
 struct VulkanDebugMessageHandlerTest : public Test
 {
@@ -39,14 +38,14 @@ struct VulkanDebugMessageHandlerTest : public Test
     const VkInstance m_vkInstance = reinterpret_cast<VkInstance>(0xb324a7ef43);
     const VkDebugUtilsMessengerEXT m_vkMessenger = reinterpret_cast<VkDebugUtilsMessengerEXT>(0xabef45f);
 
-    function<VkBool32(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT,
-                      const VkDebugUtilsMessengerCallbackDataEXT*, void*)>
+    std::function<VkBool32(VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT,
+                           const VkDebugUtilsMessengerCallbackDataEXT*, void*)>
         m_debugCallback;
 };
 
 TEST_F(VulkanDebugMessageHandlerTest, constructorThrowsWithoutInstance)
 {
-    EXPECT_THROW(VulkanDebugMessageHandler handler(m_mockLogger, m_rFcts, VK_NULL_HANDLE), invalid_argument);
+    EXPECT_THROW(VulkanDebugMessageHandler handler(m_mockLogger, m_rFcts, VK_NULL_HANDLE), std::invalid_argument);
 }
 
 TEST_F(VulkanDebugMessageHandlerTest, constructor)

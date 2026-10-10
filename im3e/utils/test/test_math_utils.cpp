@@ -9,7 +9,6 @@
 #include <iostream>
 
 using namespace im3e;
-using namespace std;
 
 TEST(MathUtilsTest, alignUpSucceeds)
 {

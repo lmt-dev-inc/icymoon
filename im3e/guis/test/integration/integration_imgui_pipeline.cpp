@@ -7,8 +7,9 @@
 
 #include <fmt/format.h>
 
+#include <array>
+
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -44,7 +45,7 @@ public:
 
     void draw(const ICommandBuffer&) override { ImGui::Text("%s", m_content.c_str()); }
 
-    auto getName() const -> string override { return m_content; }
+    auto getName() const -> std::string override { return m_content; }
 
 private:
     std::string m_content;
@@ -55,18 +56,18 @@ class TestImguiPanelWithDemo : public IGuiPanel
 public:
     void draw(const ICommandBuffer&) override { ImGui::ShowDemoWindow(); }
 
-    auto getName() const -> string override { return "ImGui Demo"; }
+    auto getName() const -> std::string override { return "ImGui Demo"; }
 };
 
 struct ImguiPipelineIntegration : public PipelineIntegrationTest
 {
     auto createImguiPipeline()
     {
-        return make_unique<ImguiPipeline>(getDevice(), nullptr, m_pWorkspace,
-                                          fmt::format("{}.{}.ini", getSuiteName(), getName()));
+        return std::make_unique<ImguiPipeline>(getDevice(), nullptr, m_pWorkspace,
+                                               fmt::format("{}.{}.ini", getSuiteName(), getName()));
     }
 
-    shared_ptr<ImguiWorkspace> m_pWorkspace = make_shared<ImguiWorkspace>("Test Workspace");
+    std::shared_ptr<ImguiWorkspace> m_pWorkspace = std::make_shared<ImguiWorkspace>("Test Workspace");
 };
 
 }  // namespace
@@ -92,11 +93,11 @@ TEST_F(ImguiPipelineIntegration, emptyWorkspace)
 
 TEST_F(ImguiPipelineIntegration, withTestPanels)
 {
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Left, make_shared<TestImguiPanel>("Left Panel"));
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Top, make_shared<TestImguiPanel>("Top Panel"));
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Bottom, make_shared<TestImguiPanel>("Bottom Panel"));
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Right, make_shared<TestImguiPanel>("Right Panel"));
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Center, make_shared<TestImguiPanel>("Center Panel"));
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Left, std::make_shared<TestImguiPanel>("Left Panel"));
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Top, std::make_shared<TestImguiPanel>("Top Panel"));
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Bottom, std::make_shared<TestImguiPanel>("Bottom Panel"));
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Right, std::make_shared<TestImguiPanel>("Right Panel"));
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Center, std::make_shared<TestImguiPanel>("Center Panel"));
 
     initialize(
         PipelineIntegrationTest::Config{
@@ -121,7 +122,7 @@ TEST_F(ImguiPipelineIntegration, withTestPanels)
 
 TEST_F(ImguiPipelineIntegration, withImguiDemo)
 {
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Center, make_shared<TestImguiPanelWithDemo>());
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Center, std::make_shared<TestImguiPanelWithDemo>());
 
     initialize(
         PipelineIntegrationTest::Config{

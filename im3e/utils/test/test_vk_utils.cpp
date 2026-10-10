@@ -5,7 +5,6 @@
 #include <fmt/format.h>
 
 using namespace im3e;
-using namespace std;
 
 TEST(VkUtilsTest, VkExtent2DEqOperator)
 {
@@ -45,7 +44,7 @@ TEST(VkUtilsTest, makeVkUniquePtr)
 
 TEST(VkUtilsTest, throwIfVkFailedThrowsOnFailure)
 {
-    EXPECT_THROW(throwIfVkFailed(VK_ERROR_UNKNOWN, "Expected Failure"), runtime_error);
+    EXPECT_THROW(throwIfVkFailed(VK_ERROR_UNKNOWN, "Expected Failure"), std::runtime_error);
 }
 
 TEST(VkUtilsTest, throwIfVkFailedDoesNotThrowOnSuccess)
@@ -58,7 +57,7 @@ TEST(VkUtilsTest, getVkList)
     const VkDevice vkDevice = reinterpret_cast<VkDevice>(0xc0ffee);
     const char* pName = "Hello";
     const uint32_t expectedCount = 4U;
-    const vector<float> expectedValues{0.0F, 1.0F, 2.0F, 3.0F};
+    const std::vector<float> expectedValues{0.0F, 1.0F, 2.0F, 3.0F};
 
     MockFunction<VkResult(VkDevice, const char* pName, uint32_t* pCount, float* pValues)> mockVkFct;
     {
@@ -71,7 +70,7 @@ TEST(VkUtilsTest, getVkList)
         EXPECT_CALL(mockVkFct, Call(vkDevice, StrEq(pName), NotNull(), NotNull()))
             .WillOnce(Invoke([&](Unused, Unused, uint32_t* pCount, float* pValues) {
                 EXPECT_THAT(*pCount, Eq(expectedCount));
-                ranges::copy(expectedValues, pValues);
+                std::ranges::copy(expectedValues, pValues);
                 return VK_SUCCESS;
             }));
     }
@@ -93,7 +92,7 @@ TEST(VkUtilsTest, getFormatProperties)
 {
     auto testFormatProperties = [](VkFormat vkFormat, const FormatProperties& rExpected) {
         const auto properties = getFormatProperties(vkFormat);
-        const string errorMessage = fmt::format("VkFormat = {}", static_cast<uint32_t>(vkFormat));
+        const std::string errorMessage = fmt::format("VkFormat = {}", static_cast<uint32_t>(vkFormat));
         EXPECT_THAT(properties.sizeInBytes, Eq(rExpected.sizeInBytes)) << errorMessage;
         EXPECT_THAT(properties.componentSizeInBytes, Eq(rExpected.componentSizeInBytes)) << errorMessage;
         EXPECT_THAT(properties.componentCount, Eq(rExpected.componentCount)) << errorMessage;
@@ -130,7 +129,7 @@ TEST(VkUtilsTest, getFormatProperties)
 
 TEST(VkUtilsTest, getFormatPropertiesThrowsWhenNotSupported)
 {
-    EXPECT_THROW(getFormatProperties(VK_FORMAT_UNDEFINED), invalid_argument);
+    EXPECT_THROW(getFormatProperties(VK_FORMAT_UNDEFINED), std::invalid_argument);
 }
 
 TEST(VkUtilsTest, toVkExtent3D)

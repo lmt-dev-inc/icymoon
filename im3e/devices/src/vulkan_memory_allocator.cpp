@@ -3,7 +3,6 @@
 #include "vulkan_instance.h"
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -30,7 +29,7 @@ class VulkanMemoryAllocator : public IVulkanMemoryAllocator
 public:
     VulkanMemoryAllocator(const IDevice& rDevice, VmaVulkanFunctions vmaFcts)
       : m_rDevice(rDevice)
-      , m_vmaFcts(move(vmaFcts))
+      , m_vmaFcts(std::move(vmaFcts))
       , m_pVmaAllocator(createVmaAllocator(m_rDevice.getVkInstance(), m_rDevice.getVkPhysicalDevice(),
                                            m_rDevice.getVkDevice(), vmaFcts))
     {
@@ -71,7 +70,7 @@ private:
 }  // namespace
 
 auto im3e::createVulkanMemoryAllocator(const IDevice& rDevice, VmaVulkanFunctions vmaFcts)
-    -> unique_ptr<IVulkanMemoryAllocator>
+    -> std::unique_ptr<IVulkanMemoryAllocator>
 {
-    return make_unique<VulkanMemoryAllocator>(rDevice, move(vmaFcts));
+    return std::make_unique<VulkanMemoryAllocator>(rDevice, std::move(vmaFcts));
 }

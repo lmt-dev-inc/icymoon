@@ -17,7 +17,6 @@
 #include <stdexcept>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 

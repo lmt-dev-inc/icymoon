@@ -6,7 +6,6 @@
 #include <fmt/format.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -35,7 +34,7 @@ auto createWindow(const ILogger& rLogger, const GlfwWindow::Config& rConfig, Glf
     constexpr int Height = 800;
 
     auto* pGlfwWindow = glfwCreateWindow(Width, Height, rConfig.name.data(), nullptr, nullptr);
-    throwIfNull<runtime_error>(pGlfwWindow, "Could not create GLFW window");
+    throwIfNull<std::runtime_error>(pGlfwWindow, "Could not create GLFW window");
 
     glfwSetWindowUserPointer(pGlfwWindow, pCallbacks);
     glfwSetFramebufferSizeCallback(pGlfwWindow, framebufferResizeCallback);
@@ -70,22 +69,22 @@ auto createVkSurface(const IDevice& rDevice, GLFWwindow* pWindow)
 
 }  // namespace
 
-GlfwWindow::GlfwWindow(shared_ptr<IDevice> pDevice, Config config, shared_ptr<ImguiWorkspace> pWorkspace)
-  : m_pDevice(throwIfArgNull(move(pDevice), "Glfw window requires a device"))
-  , m_config(move(config))
-  , m_pWorkspace(throwIfArgNull(move(pWorkspace), "Glfw window requires a workspace"))
+GlfwWindow::GlfwWindow(std::shared_ptr<IDevice> pDevice, Config config, std::shared_ptr<ImguiWorkspace> pWorkspace)
+  : m_pDevice(throwIfArgNull(std::move(pDevice), "Glfw window requires a device"))
+  , m_config(std::move(config))
+  , m_pWorkspace(throwIfArgNull(std::move(pWorkspace), "Glfw window requires a workspace"))
   , m_pLogger(m_pDevice->createLogger(m_config.name))
   , m_pCallbacks([&] {
-      auto pCallbacks = make_unique<GlfwWindowCallbacks>();
+      auto pCallbacks = std::make_unique<GlfwWindowCallbacks>();
       pCallbacks->onWindowResized = [this](auto w, auto h) { this->_onWindowResized(w, h); };
       pCallbacks->onWindowIconify = [this](bool i) { this->_onWindowIconify(i); };
       return pCallbacks;
   }())
   , m_pWindow(createWindow(*m_pLogger, m_config, m_pCallbacks.get()))
   , m_pVkSurface(createVkSurface(*m_pDevice, m_pWindow.get()))
-  , m_pPresenter(make_unique<Presenter>(
+  , m_pPresenter(std::make_unique<Presenter>(
         m_pDevice, m_pVkSurface.get(),
-        make_unique<ImguiPipeline>(m_pDevice, m_pWindow.get(), m_pWorkspace, m_config.iniFilename)))
+        std::make_unique<ImguiPipeline>(m_pDevice, m_pWindow.get(), m_pWorkspace, m_config.iniFilename)))
 {
 }
 

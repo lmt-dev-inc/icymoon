@@ -5,7 +5,6 @@
 #include <im3e/test_utils/test_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 struct VulkanCommandQueueTest : public Test
 {
@@ -92,7 +91,7 @@ struct VulkanCommandQueueTest : public Test
     };
     void expectWaitForFence(VkFence vkFence, WaitForFenceType waitType, VkResult vkResult = VK_SUCCESS)
     {
-        const auto waitTime = (waitType == WaitForFenceType::InfiniteWait) ? numeric_limits<uint64_t>::max() : 0U;
+        const auto waitTime = (waitType == WaitForFenceType::InfiniteWait) ? std::numeric_limits<uint64_t>::max() : 0U;
         EXPECT_CALL(m_rMockFcts, vkWaitForFences(m_mockVkDevice, 1U, Pointee(vkFence), VK_TRUE, waitTime))
             .WillOnce(Return(vkResult));
     }

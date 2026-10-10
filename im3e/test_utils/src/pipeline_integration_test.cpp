@@ -5,8 +5,6 @@
 #include <filesystem>
 
 using namespace im3e;
-using namespace std;
-using namespace std::filesystem;
 
 void PipelineIntegrationTest::TearDown()
 {
@@ -24,15 +22,16 @@ void PipelineIntegrationTest::TearDown()
     DeviceIntegrationTest::TearDown();
 }
 
-auto PipelineIntegrationTest::mapOutputImage() const -> unique_ptr<const IHostVisibleImage::IMapping>
+auto PipelineIntegrationTest::mapOutputImage() const -> std::unique_ptr<const IHostVisibleImage::IMapping>
 {
     return m_pHostVisibleOutputImage->mapReadOnly();
 }
 
 void PipelineIntegrationTest::expectRgbaPixel(const IHostVisibleImage::IMapping& rMapping,
-                                              const array<uint32_t, 2U>& rPos, const array<uint8_t, 4U>& rExpected)
+                                              const std::array<uint32_t, 2U>& rPos,
+                                              const std::array<uint8_t, 4U>& rExpected)
 {
-    const auto& rRgbaPixel = *reinterpret_cast<const array<uint8_t, 4U>*>(rMapping.getPixel(rPos[0], rPos[1]));
+    const auto& rRgbaPixel = *reinterpret_cast<const std::array<uint8_t, 4U>*>(rMapping.getPixel(rPos[0], rPos[1]));
     EXPECT_THAT(rRgbaPixel, ContainerEq(rExpected)) << fmt::format("Pixel at [{}; {}]", rPos[0], rPos[1]);
 }
 
@@ -43,7 +42,7 @@ void PipelineIntegrationTest::expectRgbaPixelRegion(const IHostVisibleImage::IMa
 {
     for (uint32_t y = rMinPos[1]; y < rMaxPos[1]; y++)
     {
-        auto* pIt = reinterpret_cast<const array<uint8_t, 4U>*>(rMapping.getPixel(rMinPos[0], y));
+        auto* pIt = reinterpret_cast<const std::array<uint8_t, 4U>*>(rMapping.getPixel(rMinPos[0], y));
         for (uint32_t x = rMinPos[0]; x < rMaxPos[0]; x++)
         {
             EXPECT_THAT(*pIt, ContainerEq(rExpected)) << fmt::format("Pixel at [{}; {}]", x, y);
@@ -52,22 +51,22 @@ void PipelineIntegrationTest::expectRgbaPixelRegion(const IHostVisibleImage::IMa
     }
 }
 
-void PipelineIntegrationTest::initialize(Config config, unique_ptr<IFramePipeline> pFramePipeline)
+void PipelineIntegrationTest::initialize(Config config, std::unique_ptr<IFramePipeline> pFramePipeline)
 {
     throwIfArgNull(pFramePipeline.get(), "Cannot initialize pipeline integration test without a pipeline");
 
-    shared_ptr<IFramePipeline> pSharedPipeline(move(pFramePipeline));
+    std::shared_ptr<IFramePipeline> pSharedPipeline(std::move(pFramePipeline));
     pSharedPipeline->resize(config.vkOutputExtent, config.frameInFlightCount);
-    initialize(move(config),
+    initialize(std::move(config),
                [pSharedPipeline, vkViewportSize = config.vkOutputExtent](auto& rCommandBuffer, auto pImage) {
-                   pSharedPipeline->prepareExecution(rCommandBuffer, vkViewportSize, move(pImage));
+                   pSharedPipeline->prepareExecution(rCommandBuffer, vkViewportSize, std::move(pImage));
                });
 }
 
 void PipelineIntegrationTest::initialize(Config config, PipelineFct pipelineFct)
 {
-    m_config = move(config);
-    m_pipelineFct = throwIfArgNull(move(pipelineFct),
+    m_config = std::move(config);
+    m_pipelineFct = throwIfArgNull(std::move(pipelineFct),
                                    "Cannot initialize pipeline integration test without a pipeline function");
 
     auto pImageFactory = getDevice()->getImageFactory();

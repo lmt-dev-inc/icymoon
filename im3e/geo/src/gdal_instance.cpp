@@ -5,7 +5,6 @@
 #include <mutex>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -22,24 +21,24 @@ public:
     ~GdalInstance() override { m_pLogger->debug("Successfully deinitialized"); }
 
 private:
-    unique_ptr<ILogger> m_pLogger;
+    std::unique_ptr<ILogger> m_pLogger;
 };
 
-mutex g_mutex;
-weak_ptr<GdalInstance> g_pInstance;
+std::mutex g_mutex;
+std::weak_ptr<GdalInstance> g_pInstance;
 
 }  // namespace
 
-auto im3e::getGdalInstance(const ILogger& rLogger) -> shared_ptr<IGdalInstance>
+auto im3e::getGdalInstance(const ILogger& rLogger) -> std::shared_ptr<IGdalInstance>
 {
-    lock_guard lock(g_mutex);
+    std::lock_guard lock(g_mutex);
 
     if (auto pInstance = g_pInstance.lock())
     {
         return pInstance;
     }
 
-    auto pInstance = make_shared<GdalInstance>(rLogger);
+    auto pInstance = std::make_shared<GdalInstance>(rLogger);
     g_pInstance = pInstance;
     return pInstance;
 }

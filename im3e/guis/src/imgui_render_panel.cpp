@@ -5,8 +5,9 @@
 #include <imgui.h>
 #include <imgui_impl_vulkan.h>
 
+#include <array>
+
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -63,7 +64,7 @@ void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
             rIo.MouseDelta.y * 2.0F / static_cast<float>(imViewportSize.y),
         };
 
-        const array<bool, 3U> mouseButtonsDown{rIo.MouseDown[0], rIo.MouseDown[1], rIo.MouseDown[2]};
+        const std::array<bool, 3U> mouseButtonsDown{rIo.MouseDown[0], rIo.MouseDown[1], rIo.MouseDown[2]};
 
         rEventListener.onMouseMove(normalizedMouseOffset, mouseButtonsDown);
     }
@@ -71,13 +72,13 @@ void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
 
 }  // namespace
 
-ImguiRenderPanel::ImguiRenderPanel(string_view name, unique_ptr<IFramePipeline> pFramePipeline,
-                                   shared_ptr<IGuiEventListener> pEventListener)
+ImguiRenderPanel::ImguiRenderPanel(std::string_view name, std::unique_ptr<IFramePipeline> pFramePipeline,
+                                   std::shared_ptr<IGuiEventListener> pEventListener)
   : m_name(name)
-  , m_pFramePipeline(throwIfArgNull(move(pFramePipeline), "ImGui render panel requires a frame pipeline"))
+  , m_pFramePipeline(throwIfArgNull(std::move(pFramePipeline), "ImGui render panel requires a frame pipeline"))
   , m_pDevice(m_pFramePipeline->getDevice())
   , m_pRenderOutputSampler(createRenderOutputSampler(*m_pDevice))
-  , m_pEventListener(move(pEventListener))
+  , m_pEventListener(std::move(pEventListener))
 {
 }
 
@@ -140,8 +141,8 @@ void ImguiRenderPanel::onWindowResized(const VkExtent2D& rVkWindowSize, VkFormat
                                                       m_pRenderOutputView->getVkImageView(), RenderOutputFinalLayout);
 }
 
-auto im3e::createImguiRenderPanel(string_view name, unique_ptr<IFramePipeline> pFramePipeline,
-                                  shared_ptr<IGuiEventListener> pEventListener) -> shared_ptr<IGuiPanel>
+auto im3e::createImguiRenderPanel(std::string_view name, std::unique_ptr<IFramePipeline> pFramePipeline,
+                                  std::shared_ptr<IGuiEventListener> pEventListener) -> std::shared_ptr<IGuiPanel>
 {
-    return make_shared<ImguiRenderPanel>(name, move(pFramePipeline), move(pEventListener));
+    return std::make_shared<ImguiRenderPanel>(name, std::move(pFramePipeline), std::move(pEventListener));
 }

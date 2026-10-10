@@ -4,7 +4,6 @@
 #include <im3e/utils/core/throw_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -18,7 +17,8 @@ struct VulkanLoaderTest : public Test
 {
     VulkanLoaderTest()
     {
-        throwIfFalse<logic_error>(g_pTestFixture == nullptr, "Cannot have more than one VulkanLoaderTest at a time");
+        throwIfFalse<std::logic_error>(g_pTestFixture == nullptr,
+                                       "Cannot have more than one VulkanLoaderTest at a time");
         g_pTestFixture = this;
     }
     ~VulkanLoaderTest() override { g_pTestFixture = nullptr; }
@@ -30,26 +30,26 @@ struct VulkanLoaderTest : public Test
 
     auto createLoader()
     {
-        return make_unique<VulkanLoader>(
+        return std::make_unique<VulkanLoader>(
             VulkanLoaderConfig{
                 .isDebugEnabled = true,
             },
             createMockLibrary(), &mockVkGetInstanceProcAddr, &mockVkGetDeviceProcAddr);
     }
 
-    void expectGlobalFctLoaded(string_view name)
+    void expectGlobalFctLoaded(std::string_view name)
     {
         EXPECT_CALL(m_mockVkGetInstanceProcAddr, Call(IsNull(), StrEq(name)))
             .WillOnce(Return(reinterpret_cast<PFN_vkVoidFunction>(0x1234)));
     }
 
-    void expectInstFctLoaded(VkInstance vkInstance, string_view name)
+    void expectInstFctLoaded(VkInstance vkInstance, std::string_view name)
     {
         EXPECT_CALL(m_mockVkGetInstanceProcAddr, Call(vkInstance, StrEq(name)))
             .WillOnce(Return(reinterpret_cast<PFN_vkVoidFunction>(0x4567)));
     }
 
-    void expectDeviceFctLoaded(VkDevice vkDevice, string_view name)
+    void expectDeviceFctLoaded(VkDevice vkDevice, std::string_view name)
     {
         EXPECT_CALL(m_mockVkGetDeviceProcAddr, Call(vkDevice, StrEq(name)))
             .WillOnce(Return(reinterpret_cast<PFN_vkVoidFunction>(0xabcde)));
@@ -61,13 +61,13 @@ struct VulkanLoaderTest : public Test
 
 PFN_vkVoidFunction mockVkGetInstanceProcAddr(VkInstance vkInstance, const char* name)
 {
-    throwIfNull<logic_error>(g_pTestFixture, "Cannot test VulkanLoader without test fixture");
+    throwIfNull<std::logic_error>(g_pTestFixture, "Cannot test VulkanLoader without test fixture");
     return g_pTestFixture->m_mockVkGetInstanceProcAddr.Call(vkInstance, name);
 }
 
 PFN_vkVoidFunction mockVkGetDeviceProcAddr(VkDevice vkDevice, const char* name)
 {
-    throwIfNull<logic_error>(g_pTestFixture, "Cannot test VulkanLoader without test fixture");
+    throwIfNull<std::logic_error>(g_pTestFixture, "Cannot test VulkanLoader without test fixture");
     return g_pTestFixture->m_mockVkGetDeviceProcAddr.Call(vkDevice, name);
 }
 
@@ -91,19 +91,19 @@ TEST_F(VulkanLoaderTest, constructorThrowsWithoutLibrary)
 {
     EXPECT_THROW(
         VulkanLoader loader(VulkanLoaderConfig{}, nullptr, &mockVkGetInstanceProcAddr, &mockVkGetDeviceProcAddr),
-        invalid_argument);
+        std::invalid_argument);
 }
 
 TEST_F(VulkanLoaderTest, constructorThrowsWithoutVkGetInstanceProcAddr)
 {
     EXPECT_THROW(VulkanLoader loader(VulkanLoaderConfig{}, createMockLibrary(), nullptr, &mockVkGetDeviceProcAddr),
-                 invalid_argument);
+                 std::invalid_argument);
 }
 
 TEST_F(VulkanLoaderTest, constructorThrowsWithoutVkGetDeviceProcAddr)
 {
     EXPECT_THROW(VulkanLoader loader(VulkanLoaderConfig{}, createMockLibrary(), &mockVkGetInstanceProcAddr, nullptr),
-                 invalid_argument);
+                 std::invalid_argument);
 }
 
 TEST_F(VulkanLoaderTest, loadGlobalFcts)
@@ -169,7 +169,7 @@ TEST_F(VulkanLoaderTest, loadInstanceFcts)
 TEST_F(VulkanLoaderTest, loadInstanceFctsThrowsWithoutInstance)
 {
     auto pLoader = createLoader();
-    EXPECT_THROW(pLoader->loadInstanceFcts(nullptr), invalid_argument);
+    EXPECT_THROW(pLoader->loadInstanceFcts(nullptr), std::invalid_argument);
 }
 
 TEST_F(VulkanLoaderTest, loadDeviceFcts)
@@ -278,7 +278,7 @@ TEST_F(VulkanLoaderTest, loadDeviceFcts)
 TEST_F(VulkanLoaderTest, loadDeviceFctsThrowsWithoutDevice)
 {
     auto pLoader = createLoader();
-    EXPECT_THROW(pLoader->loadDeviceFcts(nullptr), invalid_argument);
+    EXPECT_THROW(pLoader->loadDeviceFcts(nullptr), std::invalid_argument);
 }
 
 TEST_F(VulkanLoaderTest, loadVmaFcts)
@@ -343,7 +343,7 @@ TEST_F(VulkanLoaderTest, loadVmaFctsThrowsWithoutInstance)
     const auto mockVkDevice = reinterpret_cast<VkDevice>(0xabc);
 
     auto pLoader = createLoader();
-    EXPECT_THROW(pLoader->loadVmaFcts(nullptr, mockVkDevice), invalid_argument);
+    EXPECT_THROW(pLoader->loadVmaFcts(nullptr, mockVkDevice), std::invalid_argument);
 }
 
 TEST_F(VulkanLoaderTest, loadVmaFctsThrowsWithoutDevice)
@@ -351,5 +351,5 @@ TEST_F(VulkanLoaderTest, loadVmaFctsThrowsWithoutDevice)
     const auto mockVkInstance = reinterpret_cast<VkInstance>(0xa1b2c3);
 
     auto pLoader = createLoader();
-    EXPECT_THROW(pLoader->loadVmaFcts(mockVkInstance, nullptr), invalid_argument);
+    EXPECT_THROW(pLoader->loadVmaFcts(mockVkInstance, nullptr), std::invalid_argument);
 }

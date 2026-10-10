@@ -4,7 +4,6 @@
 #include <im3e/utils/core/throw_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -12,7 +11,7 @@ MockVulkanFunctions* g_pMock{};
 
 void assertMockExists()
 {
-    throwIfNull<logic_error>(g_pMock, "An instance of MockVulkanFunctions is required");
+    throwIfNull<std::logic_error>(g_pMock, "An instance of MockVulkanFunctions is required");
 }
 
 }  // namespace
@@ -248,7 +247,7 @@ MockVulkanFunctions::MockVulkanFunctions()
             [](VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                VkSubpassContents contents) {
                 assertMockExists();
-                g_pMock->getMockDeviceFcts().vkCmdBeginRenderPass(commandBuffer, pRenderPassBegin, move(contents));
+                g_pMock->getMockDeviceFcts().vkCmdBeginRenderPass(commandBuffer, pRenderPassBegin, std::move(contents));
             },
         .vkCmdEndRenderPass =
             [](VkCommandBuffer commandBuffer) {
@@ -504,7 +503,7 @@ MockVulkanFunctions::MockVulkanFunctions()
 {
     if (g_pMock)
     {
-        throw logic_error("Cannot have more than one instance of MockVulkanFunctions");
+        throw std::logic_error("Cannot have more than one instance of MockVulkanFunctions");
     }
     g_pMock = this;
 }

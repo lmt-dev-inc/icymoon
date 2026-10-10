@@ -10,7 +10,6 @@
 #include <limits>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -19,7 +18,7 @@ void printMetadata(const ILogger& rLogger, T& rMetadataHolder)
 {
     auto pMetadataDomainList = rMetadataHolder.GetMetadataDomainList();
     auto metadataDomainCount = CSLCount(pMetadataDomainList);
-    const vector<string> metadataDomains(pMetadataDomainList, pMetadataDomainList + metadataDomainCount);
+    const std::vector<std::string> metadataDomains(pMetadataDomainList, pMetadataDomainList + metadataDomainCount);
     CSLDestroy(pMetadataDomainList);
 
     if (metadataDomains.empty())
@@ -37,7 +36,7 @@ void printMetadata(const ILogger& rLogger, T& rMetadataHolder)
 
         auto pMetadata = rMetadataHolder.GetMetadata(rMetadataDomain.c_str());
         const auto metadataCount = CSLCount(pMetadata);
-        vector<string> metadata(pMetadata, pMetadata + metadataCount);
+        std::vector<std::string> metadata(pMetadata, pMetadata + metadataCount);
         for (const auto& rMetadataKeyValue : metadata)
         {
             rLogger.verbose(fmt::format("\t\t\t--> {}", rMetadataKeyValue));
@@ -55,14 +54,14 @@ auto createGdalDataset(const ILogger& rLogger, const HeightMapFileConfig& rConfi
     rLogger.debug(fmt::format("Reading file with {} access", rConfig.readOnly ? "read-only" : "read/write"));
 
     GDALDatasetUniquePtr pDataset(GDALDataset::FromHandle(GDALOpen(rConfig.path.c_str(), fileAccess)));
-    throwIfNull<runtime_error>(pDataset, fmt::format("Failed to load height map file \"{}\"", rConfig.path));
+    throwIfNull<std::runtime_error>(pDataset, fmt::format("Failed to load height map file \"{}\"", rConfig.path));
 
     rLogger.debug(fmt::format(R"(Successfully loaded "{}" with driver "{}")", rConfig.path, pDataset->GetDriverName()));
 
     rLogger.verbose(fmt::format("Information for file:"));
     rLogger.verbose(fmt::format("\t- Size: {}x{}", pDataset->GetRasterXSize(), pDataset->GetRasterYSize()));
     rLogger.verbose(fmt::format("\t- Raster count: {}", pDataset->GetRasterCount()));
-    throwIfFalse<runtime_error>(pDataset->GetRasterCount() == 1U, "Unexpected number of raster bands, expected 1");
+    throwIfFalse<std::runtime_error>(pDataset->GetRasterCount() == 1U, "Unexpected number of raster bands, expected 1");
 
     rLogger.verbose(fmt::format("\t- Layer count: {}", pDataset->GetLayerCount()));
     rLogger.verbose(fmt::format("\t- Projection: {}", pDataset->GetProjectionRef()));
@@ -98,7 +97,7 @@ auto readLodCount(GDALRasterBand& rRasterBand)
     return rRasterBand.GetOverviewCount() + 1U;
 }
 
-void printRasterBandInfo(const ILogger& rLogger, GDALRasterBand& rRasterBand, string_view name)
+void printRasterBandInfo(const ILogger& rLogger, GDALRasterBand& rRasterBand, std::string_view name)
 {
     rLogger.verbose(fmt::format("Information for {}:", name));
     rLogger.verbose(fmt::format("\t- Data type: {}", convertGdalDataTypeToString(rRasterBand.GetRasterDataType())));
@@ -154,7 +153,7 @@ auto loadRasterBand(const ILogger& rLogger, GDALDataset& rDataSet)
     {
         auto pOverview = pRasterBand->GetOverview(i);
 
-        const string overviewName = fmt::format("overview[{}]", i);
+        const std::string overviewName = fmt::format("overview[{}]", i);
         printRasterBandInfo(rLogger, *pOverview, overviewName);
         if (auto pMask = pOverview->GetMaskBand())
         {
@@ -247,7 +246,7 @@ private:
 
 GdalGeoTiffHeightMap::GdalGeoTiffHeightMap(const ILogger& rLogger, HeightMapFileConfig config)
   : m_pLogger(rLogger.createChild(config.path.filename().string()))
-  , m_config(move(config))
+  , m_config(std::move(config))
   , m_pGdalInstance(getGdalInstance(rLogger))
   , m_pDataset(createGdalDataset(*m_pLogger, m_config))
   , m_pRasterBand(loadRasterBand(*m_pLogger, *m_pDataset))
@@ -308,30 +307,32 @@ void GdalGeoTiffHeightMap::rebuildPyramid()
 
 auto GdalGeoTiffHeightMap::getTileSampler(const TileID& rTileID) -> std::unique_ptr<IHeightMapTileSampler>
 {
-    throwIfFalse<invalid_argument>(rTileID.z < m_lodCount,
-                                   fmt::format("Invalid input LOD: {} > max {}", rTileID.z, m_lodCount));
+    throwIfFalse<std::invalid_argument>(rTileID.z < m_lodCount,
+                                        fmt::format("Invalid input LOD: {} > max {}", rTileID.z, m_lodCount));
     auto& rBand = getRasterBandWithLod(*m_pRasterBand, rTileID.z);
-    const auto scale = pow(2.0F, rTileID.z);
+    const auto scale = std::pow(2.0F, rTileID.z);
     return std::make_unique<GdalGeoTiffHeightMapTileSampler>(rBand, rTileID, scale);
 }
 
 auto GdalGeoTiffHeightMap::getTileSampler(const glm::u32vec2& rTilePos, uint32_t lod)
     -> std::unique_ptr<IHeightMapTileSampler>
 {
-    throwIfFalse<invalid_argument>(lod < m_lodCount, fmt::format("Invalid input LOD: {} > max {}", lod, m_lodCount));
+    throwIfFalse<std::invalid_argument>(lod < m_lodCount,
+                                        fmt::format("Invalid input LOD: {} > max {}", lod, m_lodCount));
     auto& rBand = getRasterBandWithLod(*m_pRasterBand, lod);
-    const auto scale = pow(2.0F, lod);
+    const auto scale = std::pow(2.0F, lod);
     return std::make_unique<GdalGeoTiffHeightMapTileSampler>(rBand, TileID{rTilePos.x, rTilePos.y, lod}, scale);
 }
 
 auto GdalGeoTiffHeightMap::getTileCount(uint32_t lod) const -> glm::u32vec2
 {
-    throwIfFalse<invalid_argument>(lod < m_lodCount, fmt::format("Invalid input LOD: {} > max {}", lod, m_lodCount));
+    throwIfFalse<std::invalid_argument>(lod < m_lodCount,
+                                        fmt::format("Invalid input LOD: {} > max {}", lod, m_lodCount));
     auto& rBand = getRasterBandWithLod(*m_pRasterBand, lod);
     return calculateTileCount(rBand, m_tileSize);
 }
 
-auto im3e::loadHeightMapFromFile(const ILogger& rLogger, HeightMapFileConfig config) -> unique_ptr<IHeightMap>
+auto im3e::loadHeightMapFromFile(const ILogger& rLogger, HeightMapFileConfig config) -> std::unique_ptr<IHeightMap>
 {
-    return make_unique<GdalGeoTiffHeightMap>(rLogger, move(config));
+    return std::make_unique<GdalGeoTiffHeightMap>(rLogger, std::move(config));
 }

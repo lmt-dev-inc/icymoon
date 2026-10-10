@@ -8,34 +8,33 @@
 #include <glm/gtc/type_ptr.hpp>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
 template <class T>
 auto typeIndex()
 {
-    return type_index(typeid(T));
+    return std::type_index(typeid(T));
 }
 
 class ImguiBasePropertyControl : public IImguiPropertyControl
 {
 public:
-    ImguiBasePropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : m_pProperty(move(pProperty))
+    ImguiBasePropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : m_pProperty(std::move(pProperty))
     {
     }
 
-    auto getName() const -> string override { return string{m_pProperty->getName()}; }
+    auto getName() const -> std::string override { return std::string{m_pProperty->getName()}; }
 
 protected:
-    shared_ptr<IPropertyValue> m_pProperty;
+    std::shared_ptr<IPropertyValue> m_pProperty;
 };
 
 struct ImguiVoidPropertyControl : public ImguiBasePropertyControl
 {
-    ImguiVoidPropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(move(pProperty))
+    ImguiVoidPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : ImguiBasePropertyControl(std::move(pProperty))
     {
     }
 
@@ -44,8 +43,8 @@ struct ImguiVoidPropertyControl : public ImguiBasePropertyControl
 
 struct ImguiUnknownPropertyControl : public ImguiBasePropertyControl
 {
-    ImguiUnknownPropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(move(pProperty))
+    ImguiUnknownPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : ImguiBasePropertyControl(std::move(pProperty))
     {
     }
 
@@ -58,9 +57,9 @@ struct ImguiUnknownPropertyControl : public ImguiBasePropertyControl
 class ImguiStringPropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiStringPropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(move(pProperty))
-      , m_value(any_cast<string>(m_pProperty->getAnyValue()))
+    ImguiStringPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : ImguiBasePropertyControl(std::move(pProperty))
+      , m_value(any_cast<std::string>(m_pProperty->getAnyValue()))
     {
     }
 
@@ -70,18 +69,18 @@ public:
         {
             m_pProperty->setAnyValue(m_value);
         }
-        m_value = any_cast<string>(m_pProperty->getAnyValue());
+        m_value = any_cast<std::string>(m_pProperty->getAnyValue());
     }
 
 private:
-    string m_value;
+    std::string m_value;
 };
 
 class ImguiBoolPropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiBoolPropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(move(pProperty))
+    ImguiBoolPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : ImguiBasePropertyControl(std::move(pProperty))
       , m_value(any_cast<bool>(m_pProperty->getAnyValue()))
     {
     }
@@ -102,8 +101,8 @@ private:
 class ImguiInt32PropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiInt32PropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(move(pProperty))
+    ImguiInt32PropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : ImguiBasePropertyControl(std::move(pProperty))
       , m_value(any_cast<int32_t>(m_pProperty->getAnyValue()))
     {
         if (auto anyMinValueOpt = m_pProperty->getAnyMinValue(); anyMinValueOpt.has_value())
@@ -145,8 +144,8 @@ private:
 class ImguiUint32PropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiUint32PropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(move(pProperty))
+    ImguiUint32PropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : ImguiBasePropertyControl(std::move(pProperty))
       , m_value(any_cast<uint32_t>(m_pProperty->getAnyValue()))
     {
         if (auto anyMinValueOpt = m_pProperty->getAnyMinValue(); anyMinValueOpt.has_value())
@@ -173,7 +172,7 @@ public:
         {
             if (ImGui::InputInt(inputId.c_str(), &m_value))
             {
-                m_value = max(m_value, 0);
+                m_value = std::max(m_value, 0);
                 m_pProperty->setAnyValue(static_cast<uint32_t>(m_value));
             }
         }
@@ -189,8 +188,8 @@ private:
 class ImguiFloatPropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiFloatPropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(move(pProperty))
+    ImguiFloatPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : ImguiBasePropertyControl(std::move(pProperty))
       , m_value(any_cast<float>(m_pProperty->getAnyValue()))
     {
         if (auto anyMinValueOpt = m_pProperty->getAnyMinValue(); anyMinValueOpt.has_value())
@@ -232,8 +231,8 @@ private:
 class ImguiVec3PropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiVec3PropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(move(pProperty))
+    ImguiVec3PropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : ImguiBasePropertyControl(std::move(pProperty))
       , m_value(any_cast<glm::vec3>(m_pProperty->getAnyValue()))
     {
     }
@@ -254,8 +253,8 @@ private:
 class ImguiVec4PropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiVec4PropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(move(pProperty))
+    ImguiVec4PropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : ImguiBasePropertyControl(std::move(pProperty))
       , m_value(any_cast<glm::vec4>(m_pProperty->getAnyValue()))
     {
     }
@@ -276,15 +275,15 @@ private:
 class ImguiQuatPropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiQuatPropertyControl(shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(move(pProperty))
+    ImguiQuatPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
+      : ImguiBasePropertyControl(std::move(pProperty))
       , m_value(any_cast<glm::quat>(m_pProperty->getAnyValue()))
     {
     }
 
     void draw() override
     {
-        vector<float> value{m_value.w, m_value.x, m_value.y, m_value.z};
+        std::vector<float> value{m_value.w, m_value.x, m_value.y, m_value.z};
 
         if (ImGui::InputFloat4(fmt::format("##{}", m_pProperty->getName()).c_str(), value.data()))
         {
@@ -293,27 +292,27 @@ public:
         m_value = any_cast<glm::quat>(m_pProperty->getAnyValue());
     }
 
-    auto getName() const -> string override { return fmt::format("{} [w, x, y, z]", m_pProperty->getName()); }
+    auto getName() const -> std::string override { return fmt::format("{} [w, x, y, z]", m_pProperty->getName()); }
 
 private:
     glm::quat m_value;
 };
 
-using ControlFactoryFct = function<unique_ptr<IImguiPropertyControl>(shared_ptr<IPropertyValue>)>;
+using ControlFactoryFct = std::function<std::unique_ptr<IImguiPropertyControl>(std::shared_ptr<IPropertyValue>)>;
 
 template <typename T, typename ControlType>
-auto createControlFactory() -> pair<type_index, ControlFactoryFct>
+auto createControlFactory() -> std::pair<std::type_index, ControlFactoryFct>
 {
-    return {typeIndex<T>(), [](auto pProperty) { return make_unique<ControlType>(move(pProperty)); }};
+    return {typeIndex<T>(), [](auto pProperty) { return std::make_unique<ControlType>(std::move(pProperty)); }};
 }
 
 }  // namespace
 
-auto im3e::createImguiPropertyControl(shared_ptr<IProperty> pProperty) -> unique_ptr<IImguiPropertyControl>
+auto im3e::createImguiPropertyControl(std::shared_ptr<IProperty> pProperty) -> std::unique_ptr<IImguiPropertyControl>
 {
-    static const unordered_map<type_index, ControlFactoryFct> typeToValueControlFactory{
+    static const std::unordered_map<std::type_index, ControlFactoryFct> typeToValueControlFactory{
         createControlFactory<void, ImguiVoidPropertyControl>(),
-        createControlFactory<string, ImguiStringPropertyControl>(),
+        createControlFactory<std::string, ImguiStringPropertyControl>(),
         createControlFactory<bool, ImguiBoolPropertyControl>(),
         createControlFactory<int32_t, ImguiInt32PropertyControl>(),
         createControlFactory<uint32_t, ImguiUint32PropertyControl>(),
@@ -323,15 +322,15 @@ auto im3e::createImguiPropertyControl(shared_ptr<IProperty> pProperty) -> unique
         createControlFactory<glm::quat, ImguiQuatPropertyControl>(),
     };
 
-    if (auto pValueProperty = dynamic_pointer_cast<IPropertyValue>(pProperty))
+    if (auto pValueProperty = std::dynamic_pointer_cast<IPropertyValue>(pProperty))
     {
         auto itFind = typeToValueControlFactory.find(pValueProperty->getType());
         if (itFind != typeToValueControlFactory.end())
         {
-            return itFind->second(move(pValueProperty));
+            return itFind->second(std::move(pValueProperty));
         }
-        return make_unique<ImguiUnknownPropertyControl>(move(pValueProperty));
+        return std::make_unique<ImguiUnknownPropertyControl>(std::move(pValueProperty));
     }
 
-    throw runtime_error("createImguiPropertyControl only supports IPropertyValue at the moment");
+    throw std::runtime_error("createImguiPropertyControl only supports IPropertyValue at the moment");
 }

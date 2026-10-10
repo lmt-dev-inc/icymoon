@@ -12,7 +12,6 @@
 #include <vector>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -20,16 +19,17 @@ constexpr float MaxQueuePriority = 1.0F;
 
 auto makeQueueCreateInfos(const VulkanPhysicalDevice& rPhysicalDevice)
 {
-    set<uint32_t> queueFamilyIndices;
-    auto insertToQueueFamilyIndices = [&](const vector<uint32_t>& rIndices) {
-        ranges::transform(rIndices, inserter(queueFamilyIndices, queueFamilyIndices.end()), [](auto i) { return i; });
+    std::set<uint32_t> queueFamilyIndices;
+    auto insertToQueueFamilyIndices = [&](const std::vector<uint32_t>& rIndices) {
+        std::ranges::transform(rIndices, std::inserter(queueFamilyIndices, queueFamilyIndices.end()),
+                               [](auto i) { return i; });
     };
     insertToQueueFamilyIndices(rPhysicalDevice.queueFamilies.computeFamilyIndices);
     insertToQueueFamilyIndices(rPhysicalDevice.queueFamilies.graphicsFamilyIndices);
     insertToQueueFamilyIndices(rPhysicalDevice.queueFamilies.transferFamilyIndices);
     insertToQueueFamilyIndices(rPhysicalDevice.queueFamilies.presentationFamilyIndices);
 
-    vector<VkDeviceQueueCreateInfo> vkQueueCreateInfos;
+    std::vector<VkDeviceQueueCreateInfo> vkQueueCreateInfos;
     vkQueueCreateInfos.reserve(queueFamilyIndices.size());
     for (const auto& queueFamilyIndex : queueFamilyIndices)
     {
@@ -158,7 +158,7 @@ auto createDeviceAndLoadFcts(const VulkanInstance& rInstance, const VulkanPhysic
     return VkUniquePtr<VkDevice>(vkDevice, [&rFcts](VkDevice vkDevice) { rFcts.vkDestroyDevice(vkDevice, nullptr); });
 }
 
-auto findQueue(const VulkanDeviceFcts& rFcts, VkDevice vkDevice, const vector<uint32_t>& rFamilyIndices)
+auto findQueue(const VulkanDeviceFcts& rFcts, VkDevice vkDevice, const std::vector<uint32_t>& rFamilyIndices)
     -> VulkanCommandQueueInfo
 {
     for (auto familyIndex : rFamilyIndices)
@@ -184,7 +184,7 @@ auto findCommandQueueInfo(const VulkanDeviceFcts& rFcts, VkDevice vkDevice,
     {
         return queueInfo;
     }
-    throw runtime_error("Could not find Vulkan command queue with either presentation or graphics capabilities");
+    throw std::runtime_error("Could not find Vulkan command queue with either presentation or graphics capabilities");
 }
 
 }  // namespace
@@ -192,7 +192,7 @@ auto findCommandQueueInfo(const VulkanDeviceFcts& rFcts, VkDevice vkDevice,
 VulkanDevice::VulkanDevice(const ILogger& rLogger, DeviceConfig config)
   : m_pLogger(rLogger.createChild("VulkanDevice"))
   , m_pStatsProvider(createStatsProvider())
-  , m_config(move(config))
+  , m_config(std::move(config))
 
   , m_instance(*m_pLogger, m_config.isDebugEnabled, m_config.requiredInstanceExtensions,
                createVulkanLoader(VulkanLoaderConfig{
@@ -242,8 +242,9 @@ void VulkanDevice::waitForVkFence(VkFence vkFence) const
     {
         return;
     }
-    throwIfVkFailed(m_fcts.vkWaitForFences(m_pVkDevice.get(), 1U, &vkFence, VK_TRUE, numeric_limits<uint64_t>::max()),
-                    "Failed to wait for fence from Vulkan Device");
+    throwIfVkFailed(
+        m_fcts.vkWaitForFences(m_pVkDevice.get(), 1U, &vkFence, VK_TRUE, std::numeric_limits<uint64_t>::max()),
+        "Failed to wait for fence from Vulkan Device");
 }
 
 auto VulkanDevice::createLogger(std::string_view name) const -> std::unique_ptr<ILogger>
@@ -251,7 +252,7 @@ auto VulkanDevice::createLogger(std::string_view name) const -> std::unique_ptr<
     return m_pLogger->createChild(name);
 }
 
-auto VulkanDevice::getImageFactory() const -> shared_ptr<const IImageFactory>
+auto VulkanDevice::getImageFactory() const -> std::shared_ptr<const IImageFactory>
 {
     if (!m_pImageFactory)
     {
@@ -261,7 +262,7 @@ auto VulkanDevice::getImageFactory() const -> shared_ptr<const IImageFactory>
     return m_pImageFactory;
 }
 
-auto im3e::createDevice(const ILogger& rLogger, DeviceConfig config) -> shared_ptr<IDevice>
+auto im3e::createDevice(const ILogger& rLogger, DeviceConfig config) -> std::shared_ptr<IDevice>
 {
-    return make_shared<VulkanDevice>(rLogger, move(config));
+    return std::make_shared<VulkanDevice>(rLogger, std::move(config));
 }

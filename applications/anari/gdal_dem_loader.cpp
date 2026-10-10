@@ -5,7 +5,7 @@
 #include <fmt/format.h>
 
 using namespace im3e;
-using namespace std;
+using namespace std::string_view_literals;
 
 namespace {
 
@@ -37,7 +37,7 @@ auto printDemMetadata(const ILogger& rLogger, GDALDataset& rDataset)
 {
     auto pMetadataDomainList = rDataset.GetMetadataDomainList();
     auto metadataDomainCount = CSLCount(pMetadataDomainList);
-    const vector<string> metadataDomains(pMetadataDomainList, pMetadataDomainList + metadataDomainCount);
+    const std::vector<std::string> metadataDomains(pMetadataDomainList, pMetadataDomainList + metadataDomainCount);
     CSLDestroy(pMetadataDomainList);
 
     uint32_t index{};
@@ -48,7 +48,7 @@ auto printDemMetadata(const ILogger& rLogger, GDALDataset& rDataset)
 
         auto pMetadata = rDataset.GetMetadata(rMetadataDomain.c_str());
         const auto metadataCount = CSLCount(pMetadata);
-        vector<string> metadata(pMetadata, pMetadata + metadataCount);
+        std::vector<std::string> metadata(pMetadata, pMetadata + metadataCount);
         for (const auto& rMetadataKeyValue : metadata)
         {
             rLogger.info(fmt::format("--> {}", rMetadataKeyValue));
@@ -87,14 +87,14 @@ auto getBlockSizeFromGdalRaster(GDALRasterBand& rRasterBand)
 
 }  // namespace
 
-GdalDemLoader::GdalDemLoader(const ILogger& rLogger, const filesystem::path& rDemFilePath)
+GdalDemLoader::GdalDemLoader(const ILogger& rLogger, const std::filesystem::path& rDemFilePath)
   : m_pLogger(rLogger.createChild(fmt::format("GDAL DEM Loader: {}", rDemFilePath.filename().c_str())))
 {
     GDALAllRegister();
     CPLSetConfigOption("GTIFF_SRS_SOURCE", "GEOKEYS");
 
     m_pDataset.reset(GDALDataset::FromHandle(GDALOpen(rDemFilePath.c_str(), GA_ReadOnly)));
-    throwIfNull<runtime_error>(m_pDataset, "Could not load GDAL dataset");
+    throwIfNull<std::runtime_error>(m_pDataset, "Could not load GDAL dataset");
     m_pLogger->info(fmt::format(R"(Successfully loaded "{}" with driver "{}")", rDemFilePath.string(),
                                 m_pDataset->GetDriverName()));
     m_pLogger->info(fmt::format("Raster size is {}x{}", m_pDataset->GetRasterXSize(), m_pDataset->GetRasterYSize()));
@@ -133,8 +133,8 @@ inline auto makeGdalFloatBlock(GDALRasterBand& rBand, uint32_t blockPosX, uint32
     int blockSizeX, blockSizeY;
     rBand.GetBlockSize(&blockSizeX, &blockSizeY);
 
-    return make_unique<DemBlockSampler<float>>(
-        unique_ptr<const float, function<void(const float*)>>(pData, [pBlock](auto*) { pBlock->DropLock(); }),
+    return std::make_unique<DemBlockSampler<float>>(
+        std::unique_ptr<const float, std::function<void(const float*)>>(pData, [pBlock](auto*) { pBlock->DropLock(); }),
         glm::u32vec2{blockPosX, blockPosY}, glm::u32vec2{blockSizeX, blockSizeY},
         glm::u32vec2{actualBlockSizeX, actualBlockSizeY}, minV, scale);
 }

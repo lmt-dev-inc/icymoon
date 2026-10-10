@@ -3,7 +3,6 @@
 #include <im3e/test_utils/test_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 TEST(LoggerTracker, constructor)
 {
@@ -15,12 +14,12 @@ TEST(LoggerTracker, addError)
 {
     LoggerTracker tracker;
 
-    const vector<string> expectedErrors{
+    const std::vector<std::string> expectedErrors{
         "error message",
         "another error",
         "error2",
     };
-    ranges::for_each(expectedErrors, [&](const auto& rMsg) { tracker.addError(rMsg); });
+    std::ranges::for_each(expectedErrors, [&](const auto& rMsg) { tracker.addError(rMsg); });
 
     const auto actualErrors = tracker.getErrors();
     EXPECT_THAT(actualErrors, ContainerEq(expectedErrors));

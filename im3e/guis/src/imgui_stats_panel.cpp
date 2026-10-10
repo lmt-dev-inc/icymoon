@@ -11,17 +11,19 @@
 #include <limits>
 
 using namespace im3e;
-using namespace std;
-using namespace std::chrono;
+using namespace std::chrono_literals;
+using std::chrono::duration_cast;
+using std::chrono::microseconds;
+using std::chrono::milliseconds;
 
 namespace {
 
 }
 
-ImguiStatsPanel::ImguiStatsPanel(string_view name, shared_ptr<IStatsProvider> pStatsProvider)
+ImguiStatsPanel::ImguiStatsPanel(std::string_view name, std::shared_ptr<IStatsProvider> pStatsProvider)
   : m_name(name)
   , m_pStatsProvider(throwIfArgNull(std::move(pStatsProvider), "ImGui stats panel requires a stats provider"))
-  , m_pStatsReceiver(make_shared<StatsReceiver>(*this))
+  , m_pStatsReceiver(std::make_shared<StatsReceiver>(*this))
 {
     m_pStatsProvider->addReceiver(m_pStatsReceiver);
 }
@@ -45,7 +47,7 @@ void ImguiStatsPanel::draw(const ICommandBuffer&)
         ImGui::TableSetupColumn("Frequency");
         ImGui::TableHeadersRow();
 
-        lock_guard lk(m_mutex);
+        std::lock_guard lk(m_mutex);
 
         for (auto& [rSpanPath, rSpanStats] : m_spanStats)
         {
@@ -54,7 +56,7 @@ void ImguiStatsPanel::draw(const ICommandBuffer&)
             ImGui::Text("%s", rSpanPath.c_str());
 
             microseconds curDuration{};
-            microseconds minDuration{numeric_limits<microseconds::rep>::max()};
+            microseconds minDuration{std::numeric_limits<microseconds::rep>::max()};
             microseconds totalDuration{};
             microseconds maxDuration{};
             float frequency{};
@@ -62,7 +64,7 @@ void ImguiStatsPanel::draw(const ICommandBuffer&)
             constexpr auto TimeWindow = 1s;
             auto& rDurations = rSpanStats.durations;
 
-            auto lowerBound = steady_clock::now() - TimeWindow;
+            auto lowerBound = std::chrono::steady_clock::now() - TimeWindow;
             auto itLowerBound = rDurations.lower_bound(lowerBound);
             if (itLowerBound != rDurations.begin())
             {
@@ -76,9 +78,9 @@ void ImguiStatsPanel::draw(const ICommandBuffer&)
 
                 for (auto& [rTimestamp, rDuration] : rDurations)
                 {
-                    minDuration = min(minDuration, rDuration);
+                    minDuration = std::min(minDuration, rDuration);
                     totalDuration += rDuration;
-                    maxDuration = max(maxDuration, rDuration);
+                    maxDuration = std::max(maxDuration, rDuration);
                 }
 
                 const auto curTimeWindow = duration_cast<milliseconds>(rDurations.rbegin()->first -
@@ -107,12 +109,14 @@ ImguiStatsPanel::StatsReceiver::StatsReceiver(ImguiStatsPanel& rPanel)
 
 void ImguiStatsPanel::StatsReceiver::onSpanAdded(Span span)
 {
-    lock_guard lk(m_rPanel.m_mutex);
+    std::lock_guard lk(m_rPanel.m_mutex);
     auto& rSpanStats = m_rPanel.m_spanStats[span.path];
-    rSpanStats.durations.emplace(steady_clock::now(), duration_cast<microseconds>(span.endTime - span.startTime));
+    rSpanStats.durations.emplace(std::chrono::steady_clock::now(),
+                                 duration_cast<microseconds>(span.endTime - span.startTime));
 }
 
-auto im3e::createImguiStatsPanel(string_view name, shared_ptr<IStatsProvider> pStatsProvider) -> shared_ptr<IGuiPanel>
+auto im3e::createImguiStatsPanel(std::string_view name, std::shared_ptr<IStatsProvider> pStatsProvider)
+    -> std::shared_ptr<IGuiPanel>
 {
-    return make_shared<ImguiStatsPanel>(name, move(pStatsProvider));
+    return std::make_shared<ImguiStatsPanel>(name, std::move(pStatsProvider));
 }

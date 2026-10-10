@@ -10,7 +10,6 @@
 #include <im3e/test_utils/test_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 struct GlfwWindowIntegrationTest : public IntegrationTest
 {
@@ -19,13 +18,13 @@ struct GlfwWindowIntegrationTest : public IntegrationTest
     {
     }
 
-    auto createWindow(shared_ptr<ImguiWorkspace> pWorkspace = make_shared<ImguiWorkspace>("workspace"))
+    auto createWindow(std::shared_ptr<ImguiWorkspace> pWorkspace = std::make_shared<ImguiWorkspace>("workspace"))
     {
-        return make_shared<GlfwWindow>(m_app.getDevice(),
-                                       GlfwWindow::Config{
-                                           .maximized = false,
-                                       },
-                                       pWorkspace);
+        return std::make_shared<GlfwWindow>(m_app.getDevice(),
+                                            GlfwWindow::Config{
+                                                .maximized = false,
+                                            },
+                                            pWorkspace);
     }
 
     auto refreshWindow(GlfwWindow& rWindow, uint32_t refreshCount = 1U)
@@ -58,8 +57,8 @@ TEST_F(GlfwWindowIntegrationTest, resize)
 
 TEST_F(GlfwWindowIntegrationTest, resizeWithRenderPanel)
 {
-    auto pRenderPanel = createImguiRenderPanel("render", make_unique<ClearColorTestPipeline>(m_app.getDevice()));
-    auto pWorkspace = make_shared<ImguiWorkspace>("workspace");
+    auto pRenderPanel = createImguiRenderPanel("render", std::make_unique<ClearColorTestPipeline>(m_app.getDevice()));
+    auto pWorkspace = std::make_shared<ImguiWorkspace>("workspace");
     pWorkspace->addPanel(IGuiWorkspace::Location::Center, pRenderPanel);
     auto pWindow = createWindow(pWorkspace);
     auto pGlfwWindow = pWindow->getHandle();
@@ -71,7 +70,7 @@ TEST_F(GlfwWindowIntegrationTest, resizeWithRenderPanel)
 
 TEST_F(GlfwWindowIntegrationTest, setImguiDemoVisible)
 {
-    auto pWorkspace = make_shared<ImguiWorkspace>("workspace");
+    auto pWorkspace = std::make_shared<ImguiWorkspace>("workspace");
     auto pWindow = createWindow(pWorkspace);
 
     for (auto i = 0U; i < 10U; i++)

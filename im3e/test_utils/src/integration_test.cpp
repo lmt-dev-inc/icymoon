@@ -6,8 +6,6 @@
 #include <fmt/format.h>
 
 using namespace im3e;
-using namespace std;
-using namespace std::filesystem;
 
 namespace {
 
@@ -17,7 +15,7 @@ constexpr bool VulkanValidationEnabled = true;
 auto getTestName()
 {
     auto* testInfo = testing::UnitTest::GetInstance()->current_test_info();
-    const string name(testInfo->name());
+    const std::string name(testInfo->name());
     return name.substr(name.find_last_of("/") + 1U);
 }
 
@@ -54,8 +52,8 @@ void IntegrationTest::SetUpTestSuite()
     if (!s_pLogger)
     {
         auto* pTestSuite = testing::UnitTest::GetInstance()->current_test_suite();
-        s_suiteName = string(pTestSuite->name());
-        if (auto itFind = s_suiteName.find_first_of("/"); itFind != string::npos)
+        s_suiteName = std::string(pTestSuite->name());
+        if (auto itFind = s_suiteName.find_first_of("/"); itFind != std::string::npos)
         {
             s_suiteName.erase(s_suiteName.find_first_of("/"));
         }
@@ -71,7 +69,8 @@ void IntegrationTest::TearDownTestSuite()
     s_pLogger.reset();
 }
 
-auto IntegrationTest::generateFilePath(string_view name, string_view extension) const -> filesystem::path
+auto IntegrationTest::generateFilePath(std::string_view name, std::string_view extension) const -> std::filesystem::path
 {
-    return filesystem::current_path() / filesystem::path{fmt::format("{}_{}.{}", getSuiteName(), name, extension)};
+    return std::filesystem::current_path() /
+           std::filesystem::path{fmt::format("{}_{}.{}", getSuiteName(), name, extension)};
 }

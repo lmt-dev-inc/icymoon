@@ -7,7 +7,6 @@
 #include <im3e/utils/mock/mock_logger.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -83,7 +82,7 @@ TEST_F(VulkanInstanceTest, constructorWithDebugEnabledButNotSupportedThrows)
         }))
         .WillOnce(Invoke([&](Unused, Unused, Unused) { return VK_SUCCESS; }));
     EXPECT_THROW(VulkanInstance instance(m_mockLogger, DebugIsEnabled, {}, m_mockVkLoader.createMockProxy()),
-                 runtime_error);
+                 std::runtime_error);
 }
 
 TEST_F(VulkanInstanceTest, loadDeviceFcts)

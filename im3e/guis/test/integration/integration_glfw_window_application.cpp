@@ -3,7 +3,6 @@
 #include <im3e/test_utils/integration_test.h>
 
 using namespace im3e;
-using namespace std;
 
 struct GlfwWindowApplicationIntegrationTest : public IntegrationTest
 {

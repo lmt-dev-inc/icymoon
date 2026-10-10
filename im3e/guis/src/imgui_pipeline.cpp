@@ -8,7 +8,6 @@
 #include <imgui_impl_vulkan.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -37,9 +36,9 @@ auto convertSrgbToLinear(ImVec4* pColor, size_t colourCount)
     for (size_t i = 0U; i < colourCount; i++)
     {
         auto& rColor = *(pColor + i);
-        rColor.x = pow(rColor.x, 2.2F);
-        rColor.y = pow(rColor.y, 2.2F);
-        rColor.z = pow(rColor.z, 2.2F);
+        rColor.x = std::pow(rColor.x, 2.2F);
+        rColor.y = std::pow(rColor.y, 2.2F);
+        rColor.z = std::pow(rColor.z, 2.2F);
     }
 }
 
@@ -88,15 +87,15 @@ inline void blitToOutputImage(const VulkanDeviceFcts& rFcts, VkCommandBuffer vkC
 
 }  // namespace
 
-ImguiPipeline::ImguiPipeline(shared_ptr<const IDevice> pDevice, GLFWwindow* pGlfwWindow,
-                             shared_ptr<ImguiWorkspace> pWorkspace, optional<string> iniFilename)
-  : m_pDevice(throwIfArgNull(move(pDevice), "ImGui Pipeline requires a device"))
+ImguiPipeline::ImguiPipeline(std::shared_ptr<const IDevice> pDevice, GLFWwindow* pGlfwWindow,
+                             std::shared_ptr<ImguiWorkspace> pWorkspace, std::optional<std::string> iniFilename)
+  : m_pDevice(throwIfArgNull(std::move(pDevice), "ImGui Pipeline requires a device"))
   , m_pLogger(m_pDevice->createLogger("ImGui Pipeline"))
   , m_pGlfwWindow(pGlfwWindow)
-  , m_pWorkspace(throwIfArgNull(move(pWorkspace), "ImGui Pipeline requires a workspace"))
+  , m_pWorkspace(throwIfArgNull(std::move(pWorkspace), "ImGui Pipeline requires a workspace"))
   , m_iniFilename(iniFilename)
 
-  , m_pContext(make_unique<ImguiContext>())
+  , m_pContext(std::make_unique<ImguiContext>())
 {
     auto pContextGuard = m_pContext->makeCurrent();
 
@@ -120,7 +119,7 @@ ImguiPipeline::~ImguiPipeline()
 }
 
 void ImguiPipeline::prepareExecution(const ICommandBuffer& rCommandBuffer, const VkExtent2D& rVkViewportSize,
-                                     shared_ptr<IImage> pOutputImage)
+                                     std::shared_ptr<IImage> pOutputImage)
 {
     auto pContextGuard = m_pContext->makeCurrent();
 
@@ -172,7 +171,7 @@ void ImguiPipeline::resize(const VkExtent2D& rVkExtent, uint32_t frameInFlightCo
     });
 
     m_pBackend.reset();  // reset first, to avoid having more than one backend at a time
-    m_pBackend = make_unique<ImguiVulkanBackend>(m_pDevice, m_pFrame, frameInFlightCount, m_pGlfwWindow);
+    m_pBackend = std::make_unique<ImguiVulkanBackend>(m_pDevice, m_pFrame, frameInFlightCount, m_pGlfwWindow);
 
     m_pWorkspace->onWindowResized(rVkExtent, OutputFormat, frameInFlightCount);
 }

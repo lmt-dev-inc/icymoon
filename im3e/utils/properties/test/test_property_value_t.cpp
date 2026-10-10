@@ -3,7 +3,6 @@
 #include <im3e/test_utils/test_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -12,7 +11,7 @@ struct OnChangeReceiver
     OnChangeReceiver(IProperty& rProperty) { rProperty.registerOnChange(pOnChange); }
 
     uint32_t callCount{};
-    shared_ptr<function<void()>> pOnChange = make_shared<function<void()>>([this] { callCount++; });
+    std::shared_ptr<std::function<void()>> pOnChange = std::make_shared<std::function<void()>>([this] { callCount++; });
 };
 
 }  // namespace

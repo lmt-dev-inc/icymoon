@@ -3,7 +3,6 @@
 #include <im3e/test_utils/test_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 TEST(TerminalLoggerTest, canCreateTerminalLogger)
 {
