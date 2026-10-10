@@ -6,6 +6,7 @@
 #include <im3e/utils/imgui_utils.h>
 
 #include <fmt/format.h>
+#include <fmt/std.h>
 #include <imgui.h>
 
 #include <limits>
@@ -53,7 +54,8 @@ void ImguiStatsPanel::draw(const ICommandBuffer&)
         {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            ImGui::Text("%s", rSpanPath.c_str());
+            // Generic format: "/" separators on every OS
+            ImGui::TextUnformatted(fmt::format("{:g}", rSpanPath).c_str());
 
             microseconds curDuration{};
             microseconds minDuration{std::numeric_limits<microseconds::rep>::max()};

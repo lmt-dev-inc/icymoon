@@ -1,6 +1,7 @@
 #include "pipeline_integration_test.h"
 
 #include <fmt/format.h>
+#include <fmt/std.h>
 
 #include <filesystem>
 
@@ -16,7 +17,7 @@ void PipelineIntegrationTest::TearDown()
             auto pImageMapping = m_pHostVisibleOutputImage->mapReadOnly();
             pImageMapping->save(outputFilePath);
         }
-        ADD_FAILURE() << fmt::format(R"(Saved pipeline output to : "{}")", outputFilePath.string());
+        ADD_FAILURE() << fmt::format(R"(Saved pipeline output to : "{}")", outputFilePath);
     }
 
     DeviceIntegrationTest::TearDown();

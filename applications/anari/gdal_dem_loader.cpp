@@ -3,6 +3,7 @@
 #include <im3e/utils/core/throw_utils.h>
 
 #include <fmt/format.h>
+#include <fmt/std.h>
 
 using namespace im3e;
 using namespace std::string_view_literals;
@@ -88,15 +89,15 @@ auto getBlockSizeFromGdalRaster(GDALRasterBand& rRasterBand)
 }  // namespace
 
 GdalDemLoader::GdalDemLoader(const ILogger& rLogger, const std::filesystem::path& rDemFilePath)
-  : m_pLogger(rLogger.createChild(fmt::format("GDAL DEM Loader: {}", rDemFilePath.filename().c_str())))
+  : m_pLogger(rLogger.createChild(fmt::format("GDAL DEM Loader: {}", rDemFilePath.filename())))
 {
     GDALAllRegister();
     CPLSetConfigOption("GTIFF_SRS_SOURCE", "GEOKEYS");
 
     m_pDataset.reset(GDALDataset::FromHandle(GDALOpen(rDemFilePath.c_str(), GA_ReadOnly)));
     throwIfNull<std::runtime_error>(m_pDataset, "Could not load GDAL dataset");
-    m_pLogger->info(fmt::format(R"(Successfully loaded "{}" with driver "{}")", rDemFilePath.string(),
-                                m_pDataset->GetDriverName()));
+    m_pLogger->info(
+        fmt::format(R"(Successfully loaded "{}" with driver "{}")", rDemFilePath, m_pDataset->GetDriverName()));
     m_pLogger->info(fmt::format("Raster size is {}x{}", m_pDataset->GetRasterXSize(), m_pDataset->GetRasterYSize()));
     m_pLogger->info(fmt::format("Raster count is {}", m_pDataset->GetRasterCount()));
     m_pLogger->info(fmt::format("Layer count is {}", m_pDataset->GetLayerCount()));
