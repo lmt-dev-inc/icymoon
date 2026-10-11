@@ -2,6 +2,8 @@
 
 Rules for C++ code in IcyMoon (`im3e/`, `applications/`). Third-party code under `external/` is excluded.
 
+The project follows the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines). This document records the project's own choices and additions on top of them; where the two differ, this document takes precedence. Rules refer to guidelines by number where relevant, e.g. [ES.20](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#res-always).
+
 Each rule says whether it is checked automatically today. Rules without automation are enforced in code review; [Enforcement](#enforcement) explores how to automate them later.
 
 - [Formatting](#formatting)
@@ -9,6 +11,7 @@ Each rule says whether it is checked automatically today. Rules without automati
 - [Namespaces](#namespaces)
 - [Naming](#naming)
 - [Functions](#functions)
+- [Initialization](#initialization)
 - [Files and includes](#files-and-includes)
 - [Error handling](#error-handling)
 - [Text encoding and paths](#text-encoding-and-paths)
@@ -27,6 +30,7 @@ Each rule says whether it is checked automatically today. Rules without automati
 
 - Warnings are errors: `/W4 /WX` with msvc and clang-cl, `-Wall -Wextra -pedantic -Werror` with gcc (root `CMakeLists.txt`).
 - Fix the code rather than disabling a warning. When a warning must be disabled, do it in `CMakeLists.txt` with a comment explaining why (see `-Wno-deprecated` for OpenUSD).
+- Disabled on purpose: `-Wmissing-field-initializers` with gcc, and `-Wmissing-designated-field-initializers` with clang, so that designated initializers can omit fields (see [Initialization](#initialization)). The clang option requires clang 19 or later.
 
 *Automated:* yes, by the compilers.
 
@@ -88,6 +92,22 @@ The leading `_` marks methods that only the class itself can call. It applies to
 - Public APIs are documented with `///` comments (`/// @brief ...`).
 
 *Automated:* no.
+
+## Initialization
+
+- Initialize every object ([ES.20](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#res-always)). Use braces: `VkFence vkFence{};`.
+- Designated initializers may omit fields. Omitted fields take their default member initializer, or are value-initialized (zero for numbers, pointers and enums, default constructor for classes). This keeps initializations of large C structs, like Vulkan's, to the fields that matter:
+
+  ```cpp
+  VkCommandPoolCreateInfo vkCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+      .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+      .queueFamilyIndex = queueFamilyIndex,
+  };  // pNext is nullptr
+  ```
+- Give the members of our own structs a default member initializer when zero isn't the right default, so that the default is stated once, at the definition ([C.48](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rc-in-class-initializer)): `uint32_t frameInFlightCount{1U};`.
+
+*Automated:* partially. The compilers warn about uninitialized variables they can detect.
 
 ## Files and includes
 

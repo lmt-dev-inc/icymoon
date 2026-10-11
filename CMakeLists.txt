@@ -55,9 +55,15 @@ else()
 
             # OpenUSD causes warnings because of its use of <ext/hash_set>
             # See this issue for more details: https://github.com/PixarAnimationStudios/OpenUSD/issues/1057
-            -Wno-deprecated 
+            -Wno-deprecated
         )
     endif()
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang") # clang and clang-cl
+    # Designated initializers may omit fields, which are then value-initialized (see docs/code_standards.md).
+    # gcc never warns about them either. This warning was added in clang 19: older versions would reject the option.
+    add_compile_options(-Wno-missing-designated-field-initializers)
 endif()
 
 add_subdirectory(cmake)
