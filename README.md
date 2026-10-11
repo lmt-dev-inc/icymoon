@@ -12,6 +12,7 @@
   - [Running tests](#running-tests)
   - [Test Coverage with GCC](#test-coverage-with-gcc)
 - [Development with VS Code](#development-with-vs-code)
+- [Code Standards](#code-standards)
 
 
 ## How to Build
@@ -53,6 +54,7 @@ On Windows, use `python` instead of `python3` and the `win-clang-debug` configur
 - Activate the virtual environment with `.venv\Scripts\Activate.ps1` in PowerShell, `.venv\Scripts\activate.bat` in cmd, or `source .venv/Scripts/activate` in Git Bash.
 - No Visual Studio developer prompt is needed: `dev.py install` writes the Visual Studio environment into the CMake presets, so `cmake --preset` and VS Code's CMake Tools work from any terminal. Run `dev.py install` again after updating the Build Tools, as the presets contain the paths of the installed toolset.
 - To run `clang-cl` or other Visual Studio tools by hand, use the "Developer PowerShell for VS 2022" from the Start menu.
+- Paths are UTF-16 on Windows (`std::filesystem::path::c_str()` returns `const wchar_t*`). Convert them with `path::toUtf8()` / `path::fromUtf8()` from `im3e/utils/core/path_utils.h` when passing them to or getting them from libraries that use UTF-8 strings (GDAL, ImGui...). Don't use `std::filesystem::path::string()` for that: on Windows it converts to the process code page, which isn't UTF-8 and can't represent every character.
 
 ### dev.py Commands
 
@@ -185,3 +187,7 @@ The repository includes a shared VS Code setup under `.vscode/`:
 - `settings.json` makes CMake Tools use the Conan-generated presets, which also tell it which CMake binary to use. VS Code picks up `.venv` automatically and activates it in new terminals. Run `python3 dev.py setup` and `python3 dev.py install` before opening the folder.
 - It also sets shared editor conventions: format on save and a ruler at 120 columns, and highlights the extensionless Conan profiles under `profiles/` as INI files.
 - `launch.json` provides a gdb "Launch" configuration for the target selected in CMake Tools (Linux only for now).
+
+## Code Standards
+
+The rules for C++ code in the codebase (namespaces, naming, includes, text encoding...) are in [docs/code_standards.md](docs/code_standards.md).

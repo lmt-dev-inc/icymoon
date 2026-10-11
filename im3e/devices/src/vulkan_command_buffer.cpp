@@ -167,12 +167,12 @@ VulkanCommandBuffer::~VulkanCommandBuffer()
 
 auto VulkanCommandBuffer::startScopedBarrier(std::string_view name) const -> std::unique_ptr<ICommandBarrierRecorder>
 {
-    return make_unique<VulkanCommandBarrierRecorder>(name, this->shared_from_this(), m_rDevice.getFcts());
+    return std::make_unique<VulkanCommandBarrierRecorder>(name, shared_from_this(), m_rDevice.getFcts());
 }
 
 auto VulkanCommandBuffer::createFuture() -> std::shared_ptr<ICommandBufferFuture>
 {
-    auto pFuture = make_shared<VulkanCommandBufferFuture>(this->shared_from_this());
+    auto pFuture = std::make_shared<VulkanCommandBufferFuture>(shared_from_this());
     m_pFutures.emplace_back(pFuture);
     return pFuture;
 }
@@ -241,7 +241,7 @@ void VulkanCommandBuffer::submitToQueue(CommandExecutionType executionType)
 
     if (executionType == CommandExecutionType::Sync)
     {
-        this->waitForCompletion();
+        waitForCompletion();
     }
 }
 
@@ -260,7 +260,7 @@ void VulkanCommandBuffer::waitForCompletion()
     m_inFlight = false;
     std::ranges::for_each(m_pFutures, [](auto& pFuture) { pFuture->markAsComplete(); });
 
-    this->reset();
+    reset();
 }
 
 auto VulkanCommandBuffer::isExecutionComplete() const -> bool

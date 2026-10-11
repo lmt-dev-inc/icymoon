@@ -216,7 +216,7 @@ public:
     }
 
     auto at(uint32_t x, uint32_t y) const -> float override { return *(m_pData + y * m_size.x + x); }
-    auto at(const glm::u32vec2& rPos) const -> float override { return this->at(rPos.x, rPos.y); }
+    auto at(const glm::u32vec2& rPos) const -> float override { return at(rPos.x, rPos.y); }
 
     auto isValid(uint32_t x, uint32_t y) const -> bool override
     {

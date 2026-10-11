@@ -76,8 +76,8 @@ GlfwWindow::GlfwWindow(std::shared_ptr<IDevice> pDevice, Config config, std::sha
   , m_pLogger(m_pDevice->createLogger(m_config.name))
   , m_pCallbacks([&] {
       auto pCallbacks = std::make_unique<GlfwWindowCallbacks>();
-      pCallbacks->onWindowResized = [this](auto w, auto h) { this->_onWindowResized(w, h); };
-      pCallbacks->onWindowIconify = [this](bool i) { this->_onWindowIconify(i); };
+      pCallbacks->onWindowResized = [this](auto w, auto h) { _onWindowResized(w, h); };
+      pCallbacks->onWindowIconify = [this](bool i) { _onWindowIconify(i); };
       return pCallbacks;
   }())
   , m_pWindow(createWindow(*m_pLogger, m_config, m_pCallbacks.get()))

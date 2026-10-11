@@ -26,8 +26,8 @@ public:
     auto getViewFrustum() const -> const ViewFrustum& { return m_viewFrustum; }
 
 private:
-    void update();
-    auto createViewFrustum() const -> ViewFrustum;
+    void _update();
+    auto _createViewFrustum() const -> ViewFrustum;
 
     std::shared_ptr<AnariDevice> m_pAnDevice;
     std::unique_ptr<ILogger> m_pLogger;

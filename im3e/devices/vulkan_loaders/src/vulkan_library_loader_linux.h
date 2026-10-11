@@ -24,18 +24,18 @@ struct VulkanLibraryLoader
         {
             if (void* pLib = dlopen(rVulkanLibraryName.data(), RTLD_NOW))
             {
-                this->pLibrary = UniquePtrWithDeleter<void>(pLib, [](void* pLib) { dlclose(pLib); });
+                pLibrary = UniquePtrWithDeleter<void>(pLib, [](void* pLib) { dlclose(pLib); });
                 break;
             }
         }
-        throwIfNull<std::runtime_error>(this->pLibrary.get(), "Could not load Vulkan shared library file");
+        throwIfNull<std::runtime_error>(pLibrary.get(), "Could not load Vulkan shared library file");
 
-        this->vkGetInstanceProcAddr = throwIfNull<std::runtime_error>(
-            reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(this->pLibrary.get(), "vkGetInstanceProcAddr")),
+        vkGetInstanceProcAddr = throwIfNull<std::runtime_error>(
+            reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(pLibrary.get(), "vkGetInstanceProcAddr")),
             "Failed to load vkGetInstanceProcAddr");
 
-        this->vkGetDeviceProcAddr = throwIfNull<std::runtime_error>(
-            reinterpret_cast<PFN_vkGetDeviceProcAddr>(dlsym(this->pLibrary.get(), "vkGetDeviceProcAddr")),
+        vkGetDeviceProcAddr = throwIfNull<std::runtime_error>(
+            reinterpret_cast<PFN_vkGetDeviceProcAddr>(dlsym(pLibrary.get(), "vkGetDeviceProcAddr")),
             "Failed to load vkGetDeviceProcAddr");
     }
 

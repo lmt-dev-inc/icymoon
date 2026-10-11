@@ -72,7 +72,7 @@ public:
         auto& rActiveSpans = m_threadToActiveSpans[std::this_thread::get_id()];
         auto spanPath = (rActiveSpans.empty() ? m_rootPath : rActiveSpans.top()) / name;
         rActiveSpans.emplace(spanPath);
-        return std::make_unique<ScopedSpan>(this->shared_from_this(), std::move(spanPath));
+        return std::make_unique<ScopedSpan>(shared_from_this(), std::move(spanPath));
     }
 
 private:

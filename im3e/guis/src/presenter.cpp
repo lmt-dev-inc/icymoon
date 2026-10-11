@@ -157,7 +157,7 @@ Presenter::Presenter(std::shared_ptr<IDevice> pDevice, VkSurfaceKHR vkSurface,
   , m_pFramePipeline(throwIfArgNull(std::move(pFramePipeline), "Presenter requires a frame pipeline"))
   , m_pLogger(m_pDevice->createLogger("Presenter"))
 {
-    this->reset();
+    reset();
 }
 
 Presenter::~Presenter()

@@ -43,7 +43,7 @@ public:
     auto startScopedCommand(std::string_view name, CommandExecutionType executionType)
         -> UniquePtrWithDeleter<ICommandBuffer> override
     {
-        this->_releaseCompletedCommands();
+        _releaseCompletedCommands();
 
         // If no buffer is available, create a new one:
         VulkanCommandBuffer* pCommandBuffer{};
@@ -61,7 +61,7 @@ public:
 
         pCommandBuffer->beginRecording(name);
         return UniquePtrWithDeleter<ICommandBuffer>(
-            pCommandBuffer, [pThis = this->shared_from_this(), executionType, pVulkanCommand = pCommandBuffer](auto*) {
+            pCommandBuffer, [pThis = shared_from_this(), executionType, pVulkanCommand = pCommandBuffer](auto*) {
                 pVulkanCommand->endRecording();
                 pVulkanCommand->submitToQueue(executionType);
                 if (executionType == CommandExecutionType::Sync)
@@ -78,7 +78,7 @@ public:
     void waitIdle() override
     {
         m_rDevice.getFcts().vkQueueWaitIdle(m_queueInfo.vkQueue);
-        this->_releaseCompletedCommands();
+        _releaseCompletedCommands();
     }
 
     auto getQueueFamilyIndex() const -> uint32_t override { return m_queueInfo.queueFamilyIndex; }

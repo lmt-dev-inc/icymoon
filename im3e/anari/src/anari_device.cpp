@@ -124,7 +124,7 @@ auto AnariDevice::createGroup(const std::vector<ANARISurface>& rAnSurfaces) -> U
     auto anGroup = anariNewGroup(m_pAnDevice.get());
     if (!rAnSurfaces.empty())
     {
-        auto pAnSurfaceArray = this->createArray1d(rAnSurfaces, ANARI_SURFACE);
+        auto pAnSurfaceArray = createArray1d(rAnSurfaces, ANARI_SURFACE);
         auto anSurfaceArray = pAnSurfaceArray.get();
         anariSetParameter(m_pAnDevice.get(), anGroup, "surface", ANARI_ARRAY1D, &anSurfaceArray);
     }

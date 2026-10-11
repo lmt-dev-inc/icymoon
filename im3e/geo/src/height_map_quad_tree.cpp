@@ -76,7 +76,7 @@ void findVisibleInQuadTree(const HeightMapQuadTreeNode& rNode, const ViewFrustum
 auto HeightMapQuadTreeNode::findVisible(const ViewFrustum& rViewFrustum, uint32_t lod) const -> std::vector<TileID>
 {
     throwIfFalse<std::invalid_argument>(
-        lod <= this->tileID.z, fmt::format("Invalid lod {} passed to quad tree of max level {}", lod, this->tileID.z));
+        lod <= tileID.z, fmt::format("Invalid lod {} passed to quad tree of max level {}", lod, tileID.z));
 
     std::vector<TileID> visibleTileIDs;
     findVisibleInQuadTree(*this, rViewFrustum, lod, visibleTileIDs);

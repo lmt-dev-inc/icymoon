@@ -256,7 +256,7 @@ auto VulkanDevice::getImageFactory() const -> std::shared_ptr<const IImageFactor
 {
     if (!m_pImageFactory)
     {
-        auto pThis = this->shared_from_this();
+        auto pThis = shared_from_this();
         m_pImageFactory = createVulkanImageFactory(pThis, m_pMemoryAllocator);
     }
     return m_pImageFactory;
