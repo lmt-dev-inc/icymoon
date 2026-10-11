@@ -2,6 +2,7 @@
 
 #include "gdal_utils.h"
 
+#include <im3e/utils/core/path_utils.h>
 #include <im3e/utils/core/throw_utils.h>
 
 #include <fmt/format.h>
@@ -53,7 +54,7 @@ auto createGdalDataset(const ILogger& rLogger, const HeightMapFileConfig& rConfi
     const auto fileAccess = rConfig.readOnly ? GA_ReadOnly : GA_Update;
     rLogger.debug(fmt::format("Reading file with {} access", rConfig.readOnly ? "read-only" : "read/write"));
 
-    GDALDatasetUniquePtr pDataset(GDALDataset::FromHandle(GDALOpen(rConfig.path.c_str(), fileAccess)));
+    GDALDatasetUniquePtr pDataset(GDALDataset::FromHandle(GDALOpen(path::toUtf8(rConfig.path).c_str(), fileAccess)));
     throwIfNull<std::runtime_error>(pDataset, fmt::format("Failed to load height map file \"{}\"", rConfig.path));
 
     rLogger.debug(fmt::format(R"(Successfully loaded "{}" with driver "{}")", rConfig.path, pDataset->GetDriverName()));
@@ -245,7 +246,7 @@ private:
 }  // namespace
 
 GdalGeoTiffHeightMap::GdalGeoTiffHeightMap(const ILogger& rLogger, HeightMapFileConfig config)
-  : m_pLogger(rLogger.createChild(config.path.filename().string()))
+  : m_pLogger(rLogger.createChild(path::toUtf8(config.path.filename())))
   , m_config(std::move(config))
   , m_pGdalInstance(getGdalInstance(rLogger))
   , m_pDataset(createGdalDataset(*m_pLogger, m_config))

@@ -1,6 +1,7 @@
 #include "imgui_pipeline.h"
 
 #include <im3e/resources/resources.h>
+#include <im3e/utils/core/path_utils.h>
 #include <im3e/utils/core/throw_utils.h>
 
 #include <fmt/format.h>
@@ -24,7 +25,7 @@ auto getUiScale(const ILogger& rLogger, GLFWwindow* pGlfwWindow)
 
 void loadFont(ImGuiIO& rIo, float uiScale)
 {
-    const auto fontPathStr = getGuiFontPath().string();
+    const auto fontPathStr = path::toUtf8(getGuiFontPath());
     auto pFont = rIo.Fonts->AddFontFromFileTTF(fontPathStr.c_str(), uiScale * 16.0F);
     pFont->Scale = 1.0F / uiScale;
 

@@ -1,5 +1,6 @@
 #include "gdal_dem_loader.h"
 
+#include <im3e/utils/core/path_utils.h>
 #include <im3e/utils/core/throw_utils.h>
 
 #include <fmt/format.h>
@@ -94,7 +95,7 @@ GdalDemLoader::GdalDemLoader(const ILogger& rLogger, const std::filesystem::path
     GDALAllRegister();
     CPLSetConfigOption("GTIFF_SRS_SOURCE", "GEOKEYS");
 
-    m_pDataset.reset(GDALDataset::FromHandle(GDALOpen(rDemFilePath.c_str(), GA_ReadOnly)));
+    m_pDataset.reset(GDALDataset::FromHandle(GDALOpen(path::toUtf8(rDemFilePath).c_str(), GA_ReadOnly)));
     throwIfNull<std::runtime_error>(m_pDataset, "Could not load GDAL dataset");
     m_pLogger->info(
         fmt::format(R"(Successfully loaded "{}" with driver "{}")", rDemFilePath, m_pDataset->GetDriverName()));
