@@ -5,12 +5,13 @@
 
 #include <fmt/format.h>
 
+#include <filesystem>
+
 using namespace im3e;
 
 namespace {
 
 constexpr auto TestsLogLevel = LogLevel::Debug;
-constexpr bool VulkanValidationEnabled = true;
 
 auto getTestName()
 {
@@ -22,7 +23,7 @@ auto getTestName()
 }  // namespace
 
 DeviceIntegrationTest::DeviceIntegrationTest()
-  : m_name([this] {
+  : m_name([] {
       const auto name = getTestName();
 
       s_pLogger->info(fmt::format("{:*^100}", name));
@@ -43,7 +44,7 @@ void DeviceIntegrationTest::SetUp()
     EXPECT_THAT(s_pLoggerTracker->getErrors(), IsEmpty()) << "Start of error log tracking";
     s_pLoggerTracker->clearErrors();
 
-    m_pErrorTrackerScope = UniquePtrWithDeleter<void>(reinterpret_cast<void*>(0x1234), [this](auto*) {
+    m_pErrorTrackerScope = UniquePtrWithDeleter<void>(reinterpret_cast<void*>(0x1234), [](auto*) {
         EXPECT_THAT(s_pLoggerTracker->getErrors(), IsEmpty()) << "End of error log tracking";
         s_pLoggerTracker->clearErrors();
     });
@@ -71,7 +72,7 @@ void DeviceIntegrationTest::SetUpTestSuite()
             s_suiteName.erase(s_suiteName.find_first_of("/"));
         }
 
-        s_pLogger = createFileLogger(path{fmt::format("{}.log", s_suiteName)});
+        s_pLogger = createFileLogger(std::filesystem::path{fmt::format("{}.log", s_suiteName)});
         s_pLogger->setLevelFilter(TestsLogLevel);
         s_pLoggerTracker = s_pLogger->createGlobalTracker();
     }
@@ -85,7 +86,7 @@ void DeviceIntegrationTest::TearDownTestSuite()
     // If s_pDevice has more than one use_count at this point, it means a resource was not properly released and the
     // device will not be properly destroyed.
     throwIfFalse<std::logic_error>(
-        s_pDevice.use_count() <= 1U,
+        s_pDevice.use_count() <= 1,
         fmt::format("The integration test device's use_count is higher than 1 ({}) on test suite tear down",
                     s_pDevice.use_count()));
 

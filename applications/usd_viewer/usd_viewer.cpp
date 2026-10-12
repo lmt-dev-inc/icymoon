@@ -11,7 +11,7 @@ int main([[maybe_unused]] int argc, char* argv[])
 
     auto pLogger = createTerminalLogger();
     auto pApp = createGlfwWindowApplication(*pLogger, WindowApplicationConfig{
-                                                          .name = appPath.filename(),
+                                                          .name = appPath.filename().string(),
                                                           .isDebugEnabled = true,
                                                       });
 

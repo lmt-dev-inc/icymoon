@@ -38,7 +38,7 @@ TEST_F(VulkanCommandBuffersIntegration, clearColorImage)
     {
         auto pCommandBuffer = m_pCommandQueue->startScopedCommand("clearColorImage", CommandExecutionType::Sync);
 
-        const VkClearColorValue vkClearColor{1.0F, 1.0F, 1.0F, 1.0F};
+        const VkClearColorValue vkClearColor{.float32 = {1.0F, 1.0F, 1.0F, 1.0F}};
         const VkImageSubresourceRange vkRange{
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
             .levelCount = 1U,

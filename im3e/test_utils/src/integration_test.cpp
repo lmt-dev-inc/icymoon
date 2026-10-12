@@ -10,7 +10,6 @@ using namespace im3e;
 namespace {
 
 constexpr auto TestsLogLevel = LogLevel::Debug;
-constexpr bool VulkanValidationEnabled = true;
 
 auto getTestName()
 {
@@ -22,7 +21,7 @@ auto getTestName()
 }  // namespace
 
 IntegrationTest::IntegrationTest()
-  : m_name([this] {
+  : m_name([] {
       const auto name = getTestName();
       s_pLogger->info(fmt::format("{:*^100}", name));
       return name;
@@ -35,7 +34,7 @@ void IntegrationTest::SetUp()
     EXPECT_THAT(s_pLoggerTracker->getErrors(), IsEmpty()) << "Start of error log tracking";
     s_pLoggerTracker->clearErrors();
 
-    m_pErrorTrackerScope = UniquePtrWithDeleter<void>(reinterpret_cast<void*>(0x1234), [this](auto*) {
+    m_pErrorTrackerScope = UniquePtrWithDeleter<void>(reinterpret_cast<void*>(0x1234), [](auto*) {
         EXPECT_THAT(s_pLoggerTracker->getErrors(), IsEmpty()) << "End of error log tracking";
         s_pLoggerTracker->clearErrors();
     });
@@ -58,7 +57,7 @@ void IntegrationTest::SetUpTestSuite()
             s_suiteName.erase(s_suiteName.find_first_of("/"));
         }
 
-        s_pLogger = createFileLogger(path{fmt::format("{}.log", s_suiteName)});
+        s_pLogger = createFileLogger(std::filesystem::path{fmt::format("{}.log", s_suiteName)});
         s_pLogger->setLevelFilter(TestsLogLevel);
         s_pLoggerTracker = s_pLogger->createGlobalTracker();
     }

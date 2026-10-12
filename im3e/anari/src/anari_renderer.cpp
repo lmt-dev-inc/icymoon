@@ -2,6 +2,7 @@
 
 #include <fmt/format.h>
 
+#include <array>
 #include <stdexcept>
 
 using namespace im3e;

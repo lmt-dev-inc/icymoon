@@ -26,7 +26,7 @@ public:
 
     void addPanel(Location location, std::shared_ptr<IGuiPanel> pPanel, float fraction = 0.25F) override;
 
-    void onWindowResized(const VkExtent2D& rVkWindowSize, VkFormat vkFormat, uint32_t frameInFlightCount);
+    void onWindowResized(const VkExtent2D& rVkWindowSize, VkFormat vkFormat, uint32_t frameInFlightCount) override;
 
     void setImguiDemoVisible(bool visible) { m_imguiDemoVisible = visible; }
 

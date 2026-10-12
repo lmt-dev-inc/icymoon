@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <map>
+#include <mutex>
 
 namespace im3e {
 

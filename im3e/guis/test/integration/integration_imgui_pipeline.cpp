@@ -13,28 +13,6 @@ using namespace im3e;
 
 namespace {
 
-inline void blitImage(const VulkanDeviceFcts& rFcts, VkCommandBuffer vkCommandBuffer, const VkExtent2D& rVkExtent,
-                      VkImage vkSrcImage, VkImage vkDstImage)
-{
-    const VkImageSubresourceLayers vkSubresourceLayers{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .layerCount = 1U};
-    const VkOffset3D vkStartOffset{};
-    const VkOffset3D vkEndOffset{
-        .x = vkStartOffset.x + static_cast<int32_t>(rVkExtent.width),
-        .y = vkStartOffset.y + static_cast<int32_t>(rVkExtent.height),
-        .z = 1,
-    };
-
-    VkImageBlit vkImageBlit{
-        .srcSubresource = vkSubresourceLayers,
-        .srcOffsets{vkStartOffset, vkEndOffset},
-        .dstSubresource = vkSubresourceLayers,
-        .dstOffsets{vkStartOffset, vkEndOffset},
-    };
-
-    rFcts.vkCmdBlitImage(vkCommandBuffer, vkSrcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkDstImage,
-                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U, &vkImageBlit, VK_FILTER_NEAREST);
-}
-
 class TestImguiPanel : public IGuiPanel
 {
 public:

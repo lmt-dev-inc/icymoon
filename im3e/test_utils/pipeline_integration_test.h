@@ -8,6 +8,7 @@
 #include <im3e/utils/core/types.h>
 #include <im3e/utils/loggers.h>
 
+#include <array>
 #include <functional>
 #include <memory>
 #include <string>

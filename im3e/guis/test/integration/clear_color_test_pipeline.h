@@ -9,7 +9,7 @@ namespace im3e {
 class ClearColorTestPipeline : public IFramePipeline
 {
 public:
-    static constexpr VkClearColorValue DefaultClearColor{0.0177445058F, 0.0656561702F, 0.198943928F, 1.0F};
+    static constexpr VkClearColorValue DefaultClearColor{.float32 = {0.0177445058F, 0.0656561702F, 0.198943928F, 1.0F}};
 
     ClearColorTestPipeline(std::shared_ptr<const IDevice> pDevice,
                            const VkClearColorValue& rVkClearColor = DefaultClearColor)
