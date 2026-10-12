@@ -2,6 +2,8 @@
 
 #if defined(__linux__)
 #include "vulkan_library_loader_linux.h"
+#elif defined(_WIN32)
+#include "vulkan_library_loader_windows.h"
 #else
 static_assert(false, "Vulkan Loader does not support this platform at the moment");
 #endif

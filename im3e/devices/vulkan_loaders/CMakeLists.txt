@@ -2,7 +2,8 @@ add_library(im3e_vulkan_loaders OBJECT
     vulkan_loaders.h
     src/vulkan_loader.cpp
     src/vulkan_loader.h
-    "$<$<PLATFORM_ID:Linux>:src/vulkan_library_loader_linux.h>"
+    $<$<PLATFORM_ID:Linux>:src/vulkan_library_loader_linux.h>
+    $<$<PLATFORM_ID:Windows>:src/vulkan_library_loader_windows.h>
 )
 
 target_include_directories(im3e_vulkan_loaders

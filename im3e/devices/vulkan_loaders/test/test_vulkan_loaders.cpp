@@ -7,7 +7,7 @@ using namespace im3e;
 
 namespace {
 
-class VulkanLoaderTest;
+struct VulkanLoaderTest;
 VulkanLoaderTest* g_pTestFixture = nullptr;
 
 PFN_vkVoidFunction mockVkGetInstanceProcAddr(VkInstance vkInstance, const char* name);

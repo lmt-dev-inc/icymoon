@@ -29,7 +29,6 @@ class VulkanMemoryAllocator : public IVulkanMemoryAllocator
 public:
     VulkanMemoryAllocator(const IDevice& rDevice, VmaVulkanFunctions vmaFcts)
       : m_rDevice(rDevice)
-      , m_vmaFcts(std::move(vmaFcts))
       , m_pVmaAllocator(createVmaAllocator(m_rDevice.getVkInstance(), m_rDevice.getVkPhysicalDevice(),
                                            m_rDevice.getVkDevice(), vmaFcts))
     {
@@ -63,7 +62,6 @@ public:
 
 private:
     const IDevice& m_rDevice;
-    VmaVulkanFunctions m_vmaFcts;
     VkUniquePtr<VmaAllocator> m_pVmaAllocator;
 };
 
