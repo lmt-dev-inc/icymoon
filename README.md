@@ -11,6 +11,7 @@
   - [Compiling](#compiling)
   - [Running tests](#running-tests)
   - [Test Coverage with GCC](#test-coverage-with-gcc)
+  - [Test Coverage with Clang](#test-coverage-with-clang)
 - [Development with VS Code](#development-with-vs-code)
 - [Code Standards](#code-standards)
 
@@ -178,6 +179,19 @@ There are several CMake targets that generate different test coverage reports:
 - `im3e_test_coverage`: combines the coverage of all tests
 - `im3e_unit_test_coverage`: generate a report for unit tests only (excluding integration tests)
 
+### Test Coverage with Clang
+
+The `win-clang-coverage` configuration uses clang's source-based coverage. Instrumented executables write their coverage data to `coverage/profiles/` in the build directory, and two CMake targets process it:
+- `im3e_coverage_clean`: deletes the coverage data of previous runs
+- `im3e_coverage_report`: merges the coverage data of the tests run since then into `coverage/lcov.info`
+
+```bash
+cmake --build --preset win-clang-coverage --target im3e_coverage_clean
+ctest --preset win-clang-coverage -L "unit_test"
+cmake --build --preset win-clang-coverage --target im3e_coverage_report
+```
+
+In VS Code, "Run Tests with Coverage" in the Testing view does these three steps and shows the coverage in the editor.
 
 ## Development with VS Code
 
@@ -185,6 +199,7 @@ The repository includes a shared VS Code setup under `.vscode/`:
 
 - `extensions.json` recommends CMake Tools, C/C++ and Python.
 - `settings.json` makes CMake Tools use the Conan-generated presets, which also tell it which CMake binary to use. VS Code picks up `.venv` automatically and activates it in new terminals. Run `python3 dev.py setup` and `python3 dev.py install` before opening the folder.
+- The Testing view groups tests by GTest suite and runs them in parallel. With a clang coverage preset, "Run Tests with Coverage" shows the coverage of the tests in the editor (see [Test Coverage with Clang](#test-coverage-with-clang)).
 - It also sets shared editor conventions: format on save and a ruler at 120 columns, and highlights the extensionless Conan profiles under `profiles/` as INI files.
 - `launch.json` provides a gdb "Launch" configuration for the target selected in CMake Tools (Linux only for now).
 
