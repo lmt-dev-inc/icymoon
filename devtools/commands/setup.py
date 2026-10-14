@@ -20,6 +20,9 @@ VS_INSTALL_COMPONENTS = [
     "Microsoft.VisualStudio.Component.VC.Llvm.Clang",
     "Microsoft.VisualStudio.Component.VC.Llvm.ClangToolset",
 ]
+# Visual Studio 2022 17.10+, whose toolset (v144) matches msvc 194 in profiles/compilers/msvc.
+# Newer versions are excluded: Conan's VCVars looks for the Visual Studio of the profile's msvc version.
+VS_VERSION_RANGE = "[17.10,18.0)"
 
 
 def register(subparsers):
@@ -150,14 +153,16 @@ def _find_vs_installer_file(name: str) -> Path | None:
 
 
 def __run_vswhere(components: list[str]) -> str | None:
-    """Installation path of the latest Visual Studio product that has all the given components."""
+    """Installation path of the latest Visual Studio product in VS_VERSION_RANGE that has all the
+    given components."""
     # vswhere may also be installed separately, e.g. by Chocolatey
     vswhere = _find_vs_installer_file("vswhere.exe") or shutil.which("vswhere")
     if not vswhere:
         return None
     requires = ["-requires", *components] if components else []
     result = subprocess.run(
-        [vswhere, "-latest", "-products", "*", *requires, "-property", "installationPath"],
+        [vswhere, "-latest", "-products", "*", "-version", VS_VERSION_RANGE, *requires,
+         "-property", "installationPath"],
         stdout=subprocess.PIPE, text=True, check=True,
     )
     return result.stdout.strip() or None

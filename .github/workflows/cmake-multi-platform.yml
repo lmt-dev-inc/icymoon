@@ -30,8 +30,9 @@ jobs:
             config: lnx-gcc-release
             python: python3
             venv_bin: .venv/bin
-          # Pinned rather than windows-latest: the Windows profiles need Visual Studio 2022 (msvc 194)
-          - os: windows-2025
+          # The Windows profiles need Visual Studio 2022 (msvc 194). windows-2025 moved to Visual
+          # Studio 2026 (windows-2025-vs2026 image), where `dev.py setup` would have to install it.
+          - os: windows-2022
             config: win-clang-release
             python: python
             venv_bin: .venv/Scripts
