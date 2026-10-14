@@ -27,6 +27,12 @@ function(im3e_set_coverage_flags)
             "-fprofile-instr-generate=${IM3E_COVERAGE_PROFILES_DIR}/%4m.profraw"
             -fcoverage-mapping
         )
+        # The executables must also be linked with the profile runtime. clang-cl doesn't need it: CMake links with
+        # the linker directly rather than through clang-cl, and the instrumented objects already request the runtime
+        # with /DEFAULTLIB.
+        if(NOT MSVC)
+            add_link_options(-fprofile-instr-generate)
+        endif()
     endif()
 endfunction()
 

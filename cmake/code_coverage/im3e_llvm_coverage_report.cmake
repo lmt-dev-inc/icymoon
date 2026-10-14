@@ -30,9 +30,20 @@ foreach(EXCLUDED_DIR IN LISTS EXCLUDED_DIRS)
 endforeach()
 list(JOIN IGNORED_FILES_REGEX "|" IGNORED_FILES_REGEX)
 
+# Paths in the coverage data keep the case of the drive letter used when CMake was configured (VS Code uses a
+# lowercase one). llvm-cov compares paths case-sensitively, and ignores a source filter that matches no file, which
+# would report every file. The sources directory is passed with both cases.
+set(SOURCE_FILTERS "${SOURCES_DIR}")
+if(SOURCES_DIR MATCHES "^([A-Za-z]):(.*)$")
+    set(PATH_AFTER_DRIVE "${CMAKE_MATCH_2}")
+    string(TOUPPER "${CMAKE_MATCH_1}" UPPER_DRIVE)
+    string(TOLOWER "${CMAKE_MATCH_1}" LOWER_DRIVE)
+    set(SOURCE_FILTERS "${UPPER_DRIVE}:${PATH_AFTER_DRIVE}" "${LOWER_DRIVE}:${PATH_AFTER_DRIVE}")
+endif()
+
 execute_process(
     COMMAND "${LLVM_COV}" export -format=lcov "-instr-profile=${PROFDATA_FILE}" ${OBJECT_ARGS}
-        "-ignore-filename-regex=${IGNORED_FILES_REGEX}" "${SOURCES_DIR}"
+        "-ignore-filename-regex=${IGNORED_FILES_REGEX}" ${SOURCE_FILTERS}
     OUTPUT_FILE "${LCOV_FILE}"
     COMMAND_ERROR_IS_FATAL ANY
 )

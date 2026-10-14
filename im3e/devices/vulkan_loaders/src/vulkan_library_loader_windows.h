@@ -31,6 +31,11 @@ struct VulkanLibraryLoader
             "Failed to load vkGetDeviceProcAddr");
     }
 
+    UniquePtrWithDeleter<void> pLibrary;
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
+    PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr;
+
+private:
     auto _loadFct(HMODULE hModule, LPCSTR fctName) -> void*
     {
         // GetProcAddress returns FARPROC which is already a function pointer. This causes a warning a clang when
@@ -38,10 +43,6 @@ struct VulkanLibraryLoader
         // to void* first:
         return reinterpret_cast<void*>(GetProcAddress(hModule, fctName));
     }
-
-    UniquePtrWithDeleter<void> pLibrary;
-    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
-    PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr;
 };
 
 }  // namespace im3e::vulkan_loader

@@ -1,4 +1,5 @@
 #include <im3e/guis/guis.h>
+#include <im3e/utils/core/path_utils.h>
 #include <im3e/utils/loggers.h>
 
 #include <filesystem>
@@ -11,7 +12,7 @@ int main([[maybe_unused]] int argc, char* argv[])
 
     auto pLogger = createTerminalLogger();
     auto pApp = createGlfwWindowApplication(*pLogger, WindowApplicationConfig{
-                                                          .name = appPath.filename().string(),
+                                                          .name = path::toUtf8(appPath.filename()),
                                                           .isDebugEnabled = true,
                                                       });
 
