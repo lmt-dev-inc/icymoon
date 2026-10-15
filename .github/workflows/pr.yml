@@ -1,0 +1,13 @@
+# Trigger file: checks a pull request before it is merged into main.
+# See docs/github_actions.md.
+name: PR
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build.yml
+    with:
+      configs: '["lnx-gcc-release", "win-clang-release"]'

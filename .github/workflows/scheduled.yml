@@ -1,0 +1,15 @@
+# Trigger file: checks main twice a week, to catch breakage from outside the repository (runner
+# images, package mirrors) even without commits. Also runs manually on any branch.
+# See docs/github_actions.md.
+name: Scheduled
+
+on:
+  schedule:
+    - cron: '0 6 * * 1,4' # Monday and Thursday, 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build.yml
+    with:
+      configs: '["lnx-gcc-release", "win-clang-release"]'

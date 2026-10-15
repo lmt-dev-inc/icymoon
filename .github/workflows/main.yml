@@ -1,0 +1,13 @@
+# Trigger file: checks main after each push (merged pull requests included).
+# See docs/github_actions.md.
+name: Main
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build.yml
+    with:
+      configs: '["lnx-gcc-release", "win-clang-release"]'
