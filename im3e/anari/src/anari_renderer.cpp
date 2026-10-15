@@ -2,6 +2,7 @@
 
 #include <fmt/format.h>
 
+#include <array>
 #include <stdexcept>
 
 using namespace im3e;
@@ -69,8 +70,8 @@ struct PropertyFactory
             .name = pAnParam->name,
             .description = description,
             .onChange =
-                [anDevice = this->anDevice, anRenderer = this->anRenderer,
-                 onParameterChanged = this->onParameterChanged, pAnParam](T newValue) {
+                [anDevice = anDevice, anRenderer = anRenderer, onParameterChanged = onParameterChanged,
+                 pAnParam](T newValue) {
                     anariSetParameter(anDevice, anRenderer, pAnParam->name, pAnParam->type, &newValue);
                     onParameterChanged();
                 },

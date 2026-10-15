@@ -3,7 +3,6 @@
 #include <im3e/test_utils/test_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -15,9 +14,9 @@ constexpr PropertyValueTConfig<bool> BoolPropertyConfig{.name = "Bool Property"}
 TEST(PropertyGroupTest, constructor)
 {
     constexpr auto TestGroupName = "Test Group";
-    const vector<shared_ptr<IProperty>> properties{
-        make_shared<PropertyValueT<IntPropertyConfig>>(),
-        make_shared<PropertyValueT<BoolPropertyConfig>>(),
+    const std::vector<std::shared_ptr<IProperty>> properties{
+        std::make_shared<PropertyValueT<IntPropertyConfig>>(),
+        std::make_shared<PropertyValueT<BoolPropertyConfig>>(),
         createPropertyGroup("Other Group", {}),
     };
     auto pProperty = createPropertyGroup(TestGroupName, properties);

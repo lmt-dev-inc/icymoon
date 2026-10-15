@@ -1,24 +1,27 @@
 """`dev.py install`: Run `conan install` for one or more build configurations."""
+import argparse
 import sys
 
 from devtools import lockfile
 from devtools.common import LOCKFILE, ROOT, VENV_CONAN, export_local_recipes, require_venv_active, run
-from devtools.configs import CONFIGS, DEFAULT_GROUP, GROUPS, Config
+from devtools.configs import CONFIGS, CURRENT_OS, DEFAULT_GROUP, GROUPS, Config, describe, supported_configs
 
 
 def register(subparsers):
     parser = subparsers.add_parser(
-        "install", help="install dependencies and generate CMake presets"
+        "install",
+        help="install dependencies and generate CMake presets",
+        epilog=describe(),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "names",
         nargs="*",
         metavar="config",
-        help=f"configurations or groups to install (default: {DEFAULT_GROUP}). "
-        f"Configurations: {', '.join(CONFIGS)}. Groups: {', '.join(GROUPS)}",
+        help=f"configurations or groups to install (default: {DEFAULT_GROUP})",
     )
     parser.add_argument(
-        "--all", action="store_true", help="install every configuration"
+        "--all", action="store_true", help="install every configuration for this OS"
     )
     parser.set_defaults(func=execute)
 
@@ -27,7 +30,10 @@ def execute(args):
     require_venv_active()
     if args.all and args.names:
         sys.exit("--all installs every configuration: don't combine it with configuration names")
-    names = list(CONFIGS) if args.all else _resolve(args.names or [DEFAULT_GROUP])
+    names = supported_configs() if args.all else _resolve(args.names or [DEFAULT_GROUP])
+    unsupported = [name for name in names if not CONFIGS[name].is_supported]
+    if unsupported:
+        sys.exit(f"Can't install on {CURRENT_OS}: {', '.join(unsupported)}\n\n{describe()}")
 
     # conan.lock pins the revision of local recipes, so edits to them would be ignored
     # (or fail to resolve on a fresh machine) until the lockfile is updated
@@ -60,11 +66,7 @@ def _resolve(names: list[str]) -> list[str]:
         elif name in CONFIGS:
             candidates = [name]
         else:
-            sys.exit(
-                f"Unknown configuration or group: '{name}'\n"
-                f"Configurations: {', '.join(CONFIGS)}\n"
-                f"Groups: {', '.join(GROUPS)}"
-            )
+            sys.exit(f"Unknown configuration or group: '{name}'\n\n{describe()}")
         for candidate in candidates:
             if candidate not in resolved:
                 resolved.append(candidate)

@@ -52,6 +52,7 @@ class AnariSdkRecipe(ConanFile):
         # Add anari_static target for conan to export
         self.cpp_info.components["anari_static"].set_property("cmake_target_name", "anari::anari_static")
         self.cpp_info.components["anari_static"].libs = ["anari_static"]
+        self.cpp_info.components["anari_static"].defines = ["ANARI_STATIC_DEFINE"]
 
     def test(self):
         if can_run(self):

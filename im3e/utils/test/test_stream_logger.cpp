@@ -5,7 +5,6 @@
 #include <sstream>
 
 using namespace im3e;
-using namespace std;
 
 struct StreamLoggerTest : public Test
 {
@@ -18,14 +17,14 @@ struct StreamLoggerTest : public Test
         m_logger.verbose("verbose message");
     }
 
-    shared_ptr<stringstream> m_pStrStream = make_shared<stringstream>();
+    std::shared_ptr<std::stringstream> m_pStrStream = std::make_shared<std::stringstream>();
     StreamLogger m_logger{"TestLogger", m_pStrStream};
 };
 
 TEST_F(StreamLoggerTest, constructorThrowsWithoutStream)
 {
-    shared_ptr<ostream> pStream{};
-    EXPECT_THROW(StreamLogger logger("logger", pStream), invalid_argument);
+    std::shared_ptr<std::ostream> pStream{};
+    EXPECT_THROW(StreamLogger logger("logger", pStream), std::invalid_argument);
 }
 
 TEST_F(StreamLoggerTest, defaultLevelIsDebug)

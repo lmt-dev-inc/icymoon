@@ -1,5 +1,0 @@
-include(bases/native)
-include(bases/gcc)
-
-[settings]
-build_type=Release

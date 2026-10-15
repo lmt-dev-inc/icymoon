@@ -1,7 +1,6 @@
 #include "mock_vulkan_loader.h"
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -35,15 +34,15 @@ private:
 
 MockVulkanLoader::MockVulkanLoader()
 {
-    ON_CALL(*this, loadGlobalFcts()).WillByDefault(Invoke([this] { return this->getGlobalFcts(); }));
-    ON_CALL(*this, loadInstanceFcts(_)).WillByDefault(InvokeWithoutArgs([this] { return this->getInstanceFcts(); }));
-    ON_CALL(*this, loadDeviceFcts(_)).WillByDefault(InvokeWithoutArgs([this] { return this->getDeviceFcts(); }));
-    ON_CALL(*this, loadVmaFcts(_, _)).WillByDefault(InvokeWithoutArgs([this] { return this->getVmaFcts(); }));
+    ON_CALL(*this, loadGlobalFcts()).WillByDefault(Invoke([this] { return getGlobalFcts(); }));
+    ON_CALL(*this, loadInstanceFcts(_)).WillByDefault(InvokeWithoutArgs([this] { return getInstanceFcts(); }));
+    ON_CALL(*this, loadDeviceFcts(_)).WillByDefault(InvokeWithoutArgs([this] { return getDeviceFcts(); }));
+    ON_CALL(*this, loadVmaFcts(_, _)).WillByDefault(InvokeWithoutArgs([this] { return getVmaFcts(); }));
 }
 
 MockVulkanLoader::~MockVulkanLoader() = default;
 
-auto MockVulkanLoader::createMockProxy() -> unique_ptr<IVulkanLoader>
+auto MockVulkanLoader::createMockProxy() -> std::unique_ptr<IVulkanLoader>
 {
-    return make_unique<MockProxyVulkanLoader>(*this);
+    return std::make_unique<MockProxyVulkanLoader>(*this);
 }

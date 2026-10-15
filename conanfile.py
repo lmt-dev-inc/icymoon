@@ -1,6 +1,10 @@
 from conan import ConanFile
+from conan.errors import ConanException
 from conan.tools.cmake import CMakeToolchain, CMakeDeps, CMake, cmake_layout
+from conan.tools.env import Environment, VirtualBuildEnv
+from conan.tools.microsoft import VCVars
 import os
+import subprocess
 
 
 class IcyMoonEngineRecipe(ConanFile):
@@ -68,10 +72,67 @@ class IcyMoonEngineRecipe(ConanFile):
         proj_res_path = os.path.join(self.dependencies["proj"].package_folder, "res")
         toolchain.cache_variables["PROJ_RES_PATH"] = proj_res_path
 
+        if self.settings.os == "Windows":
+            toolchain.presets_build_environment = self._build_environment_with_vcvars()
+
         toolchain.generate()
 
         cmake = CMakeDeps(self)
         cmake.generate()
+
+    def _build_environment_with_vcvars(self) -> Environment:
+        """Build environment of the CMake presets, including the Visual Studio environment.
+
+        clang-cl and msvc need the environment set by Visual Studio's vcvarsall.bat (PATH, INCLUDE,
+        LIB...). Conan only applies it to its own commands, through conanvcvars.bat. Adding it to the
+        presets lets `cmake --preset` and VS Code work from any terminal, without activating it first.
+        """
+        env = VirtualBuildEnv(self).environment()
+
+        # Generates conanvcvars.bat, which calls vcvarsall.bat for the VS version and toolset of the profile
+        VCVars(self).generate()
+        vcvars = os.path.join(self.generators_folder, "conanvcvars.bat")
+
+        # When conan runs from a terminal where the Visual Studio environment is already active (developer
+        # prompt), vcvarsall.bat would change nothing compared to this environment. Its activation is undone
+        # first, so that the comparison below is made against the environment as it was before it.
+        clean_env = ""
+        if "VSCMD_VER" in os.environ:
+            vsdevcmd = os.path.join(os.environ["VSINSTALLDIR"], "Common7", "Tools", "VsDevCmd.bat")
+            clean_env = f'call "{vsdevcmd}" /clean_env >nul && '
+        before = {name.upper(): value for name, value in self._run_and_get_environment(f"{clean_env}set").items()}
+        after = self._run_and_get_environment(f'{clean_env}call "{vcvars}" >nul && set')
+
+        # Keep the variables that vcvarsall.bat added or changed, except the ones only meaningful to
+        # an interactive prompt (__VSCMD_PREINIT_PATH is a copy of the PATH at install time)
+        ignored = {"PROMPT", "VSCMD_START_DIR", "__VSCMD_PREINIT_PATH"}
+        for name, value in after.items():
+            if name.upper() in ignored or before.get(name.upper()) == value:
+                continue
+            if name.upper() == "PATH":
+                old_entries = set(before.get("PATH", "").split(os.pathsep))
+                env.prepend_path("PATH", [entry for entry in value.split(os.pathsep)
+                                          if entry and entry not in old_entries])
+            else:
+                env.define(name, value)
+        return env
+
+    @staticmethod
+    def _run_and_get_environment(command: str) -> dict[str, str]:
+        """Runs a cmd command ending with `set`, and returns the environment variables it printed."""
+        # /u makes cmd write the output of `set` in UTF-16. Otherwise it uses the console code page, which can't
+        # represent every character and differs from the code page Python would decode with.
+        result = subprocess.run(f'cmd /u /c "{command}"', capture_output=True)
+        stdout = result.stdout.decode("utf-16-le", errors="replace")
+        if result.returncode != 0:
+            stderr = result.stderr.decode(errors="replace")
+            raise ConanException(f"Failed to run {command}:\n{stdout}{stderr}")
+        environment = {}
+        for line in stdout.splitlines():
+            name, sep, value = line.partition("=")
+            if sep:
+                environment[name] = value
+        return environment
 
     def build(self):
         cmake = CMake(self)

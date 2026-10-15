@@ -1,0 +1,4 @@
+include(base/common)
+include(os/linux)
+include(compilers/gcc)
+include(variants/debug)

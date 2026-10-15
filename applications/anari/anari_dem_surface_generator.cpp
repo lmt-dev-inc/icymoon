@@ -5,14 +5,13 @@
 #include <im3e/utils/core/throw_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
 [[maybe_unused]] auto calculateVertexCount(const glm::u32vec2& rBlockSize)
 {
-    throwIfFalse<invalid_argument>(rBlockSize.x != 0U && rBlockSize.y != 0U,
-                                   "Cannot generate a DEM vertex buffer with a block size of (0, 0)");
+    throwIfFalse<std::invalid_argument>(rBlockSize.x != 0U && rBlockSize.y != 0U,
+                                        "Cannot generate a DEM vertex buffer with a block size of (0, 0)");
 
     // Add one column of vertices on the left/top and 2 columns on the right/bottom to allow for normal calculation in
     // shaders. An extra column is needed on the right/bottom because triangles make use of one extra column to fill
@@ -107,19 +106,20 @@ struct SamplerHelper
     const glm::u32vec2 topRightBlockPos1;
 };
 
-[[maybe_unused]] void generateVertexBuffer(const DemBlockSamplers<float>& rSamplers, vector<glm::vec3>& rVertexBuffer)
+[[maybe_unused]] void generateVertexBuffer(const DemBlockSamplers<float>& rSamplers,
+                                           std::vector<glm::vec3>& rVertexBuffer)
 {
     const auto& rActualBlockSize = rSamplers.pBlock->getActualBlockSize();
-    throwIfFalse<invalid_argument>(rActualBlockSize.x > 0U && rActualBlockSize.y > 0U,
-                                   "Cannot generate mesh with height map of size 0x0 or lower");
+    throwIfFalse<std::invalid_argument>(rActualBlockSize.x > 0U && rActualBlockSize.y > 0U,
+                                        "Cannot generate mesh with height map of size 0x0 or lower");
 
     const SamplerHelper helper(rSamplers);
 
     auto* pVertexData = rVertexBuffer.data();
     const auto& rBlockSize = rSamplers.pBlock->getBlockSize();
     const glm::vec2 flSize(rBlockSize);
-    constexpr glm::vec3 NaNVec{numeric_limits<float>::quiet_NaN(), numeric_limits<float>::quiet_NaN(),
-                               numeric_limits<float>::quiet_NaN()};
+    constexpr glm::vec3 NaNVec{std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::quiet_NaN(),
+                               std::numeric_limits<float>::quiet_NaN()};
 
     // Top Row:
     {
@@ -237,7 +237,7 @@ struct SamplerHelper
     }
 }
 
-[[maybe_unused]] auto generateIndexBuffer(const glm::u32vec2& rBlockSize) -> vector<glm::u32vec3>
+[[maybe_unused]] auto generateIndexBuffer(const glm::u32vec2& rBlockSize) -> std::vector<glm::u32vec3>
 {
     // Here, vertex indices are calculated with (x, y) being the vertex coordinates within the block, excluding edges
     // we add to the vertex buffer. As a result, the indices must be calculated knowing there are 2 extra vertices per
@@ -245,7 +245,7 @@ struct SamplerHelper
     const auto vertexBufferWidth = rBlockSize.x + 3U;
 
     const auto triangleCount = rBlockSize.x * rBlockSize.y * 2U;
-    vector<glm::u32vec3> indexBuffer(triangleCount);
+    std::vector<glm::u32vec3> indexBuffer(triangleCount);
     auto* pIndexData = reinterpret_cast<uint32_t*>(indexBuffer.data());
 
     for (uint32_t y = 0U; y < rBlockSize.y; y++)
@@ -266,18 +266,19 @@ struct SamplerHelper
 
 auto createGeometry(const ILogger& rLogger, ANARIDevice anDevice)
 {
-    auto pDemLoader = make_unique<GdalDemLoader>(rLogger,
-                                                 "/mnt/data/dev/assets/lidar_bc/bc_092g064_xli1m_utm10_2020.tif");
+    auto pDemLoader = std::make_unique<GdalDemLoader>(rLogger,
+                                                      "/mnt/data/dev/assets/lidar_bc/bc_092g064_xli1m_utm10_2020.tif");
 
     auto anGeometry = anariNewGeometry(anDevice, "triangle");
-    auto pGeometry = shared_ptr<anari::api::Geometry>(anGeometry, [anDevice, pLogger = &rLogger](auto* anGeometry) {
-        anariRelease(anDevice, anGeometry);
-        pLogger->debug("Released geometry");
-    });
+    auto pGeometry = std::shared_ptr<anari::api::Geometry>(anGeometry,
+                                                           [anDevice, pLogger = &rLogger](auto* anGeometry) {
+                                                               anariRelease(anDevice, anGeometry);
+                                                               pLogger->debug("Released geometry");
+                                                           });
 
     // Vertex positions:
     {
-        vector<glm::vec3> vertexBuffer(calculateVertexCount(pDemLoader->getBlockSize()));
+        std::vector<glm::vec3> vertexBuffer(calculateVertexCount(pDemLoader->getBlockSize()));
         generateVertexBuffer(pDemLoader->createBlockSamplers(glm::u32vec2{0U, 0U}), vertexBuffer);
 
         auto anArray = anariNewArray1D(anDevice, vertexBuffer.data(), nullptr, nullptr, ANARI_FLOAT32_VEC3,
@@ -322,7 +323,8 @@ auto createGeometry(const ILogger& rLogger, ANARIDevice anDevice)
 
 }  // namespace
 
-auto AnariDemSurfaceGenerator::generate(const ILogger& rLogger, ANARIDevice anDevice) -> shared_ptr<anari::api::Surface>
+auto AnariDemSurfaceGenerator::generate(const ILogger& rLogger, ANARIDevice anDevice)
+    -> std::shared_ptr<anari::api::Surface>
 {
     auto pGeometry = createGeometry(rLogger, anDevice);
     auto anGeometry = pGeometry.get();
@@ -340,7 +342,7 @@ auto AnariDemSurfaceGenerator::generate(const ILogger& rLogger, ANARIDevice anDe
 
     rLogger.debug("Created ANARI DEM surface");
 
-    return shared_ptr<anari::api::Surface>(anSurface, [anDevice, pLogger = &rLogger](auto* anSurface) {
+    return std::shared_ptr<anari::api::Surface>(anSurface, [anDevice, pLogger = &rLogger](auto* anSurface) {
         anariRelease(anDevice, anSurface);
         pLogger->debug("Released ANARI DEM Surface");
     });

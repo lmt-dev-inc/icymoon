@@ -5,7 +5,6 @@
 #include <im3e/test_utils/test_utils.h>
 
 using namespace im3e;
-using namespace std;
 
 struct VulkanCommandBufferTest : public Test
 {
@@ -19,7 +18,7 @@ struct VulkanCommandBufferTest : public Test
         ON_CALL(m_mockDevice, createVkFence(_)).WillByDefault(InvokeWithoutArgs([this] {
             return VkUniquePtr<VkFence>(m_mockVkFence, [](auto*) {});
         }));
-        return make_shared<VulkanCommandBuffer>(m_mockQueue, m_mockDevice, m_mockVkPool, "test_buffer");
+        return std::make_shared<VulkanCommandBuffer>(m_mockQueue, m_mockDevice, m_mockVkPool, "test_buffer");
     }
 
     NiceMock<MockDevice> m_mockDevice;
@@ -164,7 +163,7 @@ TEST_F(VulkanCommandBufferTest, submitToQueueSync)
                 return VK_SUCCESS;
             }));
         EXPECT_CALL(m_rMockFcts, vkWaitForFences(m_mockVkDevice, 1U, Pointee(m_mockVkFence), VK_TRUE,
-                                                 numeric_limits<uint64_t>::max()));
+                                                 std::numeric_limits<uint64_t>::max()));
     }
     pCommandBuffer->submitToQueue(CommandExecutionType::Sync);
 }
@@ -176,8 +175,8 @@ TEST_F(VulkanCommandBufferTest, futureWaitsForCompletion)
 
     auto pFuture = pCommandBuffer->createFuture();
 
-    EXPECT_CALL(m_rMockFcts,
-                vkWaitForFences(m_mockVkDevice, 1U, Pointee(m_mockVkFence), VK_TRUE, numeric_limits<uint64_t>::max()));
+    EXPECT_CALL(m_rMockFcts, vkWaitForFences(m_mockVkDevice, 1U, Pointee(m_mockVkFence), VK_TRUE,
+                                             std::numeric_limits<uint64_t>::max()));
     pFuture->waitForCompletion();
 
     // vkWaitForFences will be called when the command buffer is destroyed.

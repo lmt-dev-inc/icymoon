@@ -7,32 +7,11 @@
 
 #include <fmt/format.h>
 
+#include <array>
+
 using namespace im3e;
-using namespace std;
 
 namespace {
-
-inline void blitImage(const VulkanDeviceFcts& rFcts, VkCommandBuffer vkCommandBuffer, const VkExtent2D& rVkExtent,
-                      VkImage vkSrcImage, VkImage vkDstImage)
-{
-    const VkImageSubresourceLayers vkSubresourceLayers{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .layerCount = 1U};
-    const VkOffset3D vkStartOffset{};
-    const VkOffset3D vkEndOffset{
-        .x = vkStartOffset.x + static_cast<int32_t>(rVkExtent.width),
-        .y = vkStartOffset.y + static_cast<int32_t>(rVkExtent.height),
-        .z = 1,
-    };
-
-    VkImageBlit vkImageBlit{
-        .srcSubresource = vkSubresourceLayers,
-        .srcOffsets{vkStartOffset, vkEndOffset},
-        .dstSubresource = vkSubresourceLayers,
-        .dstOffsets{vkStartOffset, vkEndOffset},
-    };
-
-    rFcts.vkCmdBlitImage(vkCommandBuffer, vkSrcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vkDstImage,
-                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U, &vkImageBlit, VK_FILTER_NEAREST);
-}
 
 class TestImguiPanel : public IGuiPanel
 {
@@ -44,7 +23,7 @@ public:
 
     void draw(const ICommandBuffer&) override { ImGui::Text("%s", m_content.c_str()); }
 
-    auto getName() const -> string override { return m_content; }
+    auto getName() const -> std::string override { return m_content; }
 
 private:
     std::string m_content;
@@ -55,18 +34,18 @@ class TestImguiPanelWithDemo : public IGuiPanel
 public:
     void draw(const ICommandBuffer&) override { ImGui::ShowDemoWindow(); }
 
-    auto getName() const -> string override { return "ImGui Demo"; }
+    auto getName() const -> std::string override { return "ImGui Demo"; }
 };
 
 struct ImguiPipelineIntegration : public PipelineIntegrationTest
 {
     auto createImguiPipeline()
     {
-        return make_unique<ImguiPipeline>(getDevice(), nullptr, m_pWorkspace,
-                                          fmt::format("{}.{}.ini", getSuiteName(), getName()));
+        return std::make_unique<ImguiPipeline>(getDevice(), nullptr, m_pWorkspace,
+                                               fmt::format("{}.{}.ini", getSuiteName(), getName()));
     }
 
-    shared_ptr<ImguiWorkspace> m_pWorkspace = make_shared<ImguiWorkspace>("Test Workspace");
+    std::shared_ptr<ImguiWorkspace> m_pWorkspace = std::make_shared<ImguiWorkspace>("Test Workspace");
 };
 
 }  // namespace
@@ -92,11 +71,11 @@ TEST_F(ImguiPipelineIntegration, emptyWorkspace)
 
 TEST_F(ImguiPipelineIntegration, withTestPanels)
 {
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Left, make_shared<TestImguiPanel>("Left Panel"));
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Top, make_shared<TestImguiPanel>("Top Panel"));
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Bottom, make_shared<TestImguiPanel>("Bottom Panel"));
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Right, make_shared<TestImguiPanel>("Right Panel"));
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Center, make_shared<TestImguiPanel>("Center Panel"));
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Left, std::make_shared<TestImguiPanel>("Left Panel"));
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Top, std::make_shared<TestImguiPanel>("Top Panel"));
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Bottom, std::make_shared<TestImguiPanel>("Bottom Panel"));
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Right, std::make_shared<TestImguiPanel>("Right Panel"));
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Center, std::make_shared<TestImguiPanel>("Center Panel"));
 
     initialize(
         PipelineIntegrationTest::Config{
@@ -121,7 +100,7 @@ TEST_F(ImguiPipelineIntegration, withTestPanels)
 
 TEST_F(ImguiPipelineIntegration, withImguiDemo)
 {
-    m_pWorkspace->addPanel(IGuiWorkspace::Location::Center, make_shared<TestImguiPanelWithDemo>());
+    m_pWorkspace->addPanel(IGuiWorkspace::Location::Center, std::make_shared<TestImguiPanelWithDemo>());
 
     initialize(
         PipelineIntegrationTest::Config{

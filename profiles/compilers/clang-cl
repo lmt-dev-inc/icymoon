@@ -1,0 +1,16 @@
+# Extends msvc: our code is built with clang-cl, while dependencies keep the msvc settings.
+# clang-cl is ABI compatible with msvc, so the prebuilt msvc binaries of ConanCenter are used.
+include(msvc)
+
+{% set clang_version = "19" %}
+
+[settings]
+&:compiler=clang
+&:compiler.version={{ clang_version }}
+&:compiler.cppstd=20
+&:compiler.runtime=dynamic
+# Toolset of Visual Studio 2022 17.10+ (MSVC 14.4x), matching msvc 194
+&:compiler.runtime_version=v144
+
+[conf]
+&:tools.build:compiler_executables={'c': 'clang-cl', 'cpp': 'clang-cl'}

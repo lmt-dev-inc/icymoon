@@ -5,6 +5,7 @@
 #include <anari/anari.h>
 
 #include <memory>
+#include <mutex>
 #include <unordered_set>
 
 namespace im3e {

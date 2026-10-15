@@ -6,6 +6,7 @@
 #include <im3e/utils/properties/api/property.h>
 
 #include <optional>
+#include <string>
 #include <type_traits>
 
 namespace im3e {
@@ -173,7 +174,7 @@ public:
 
     auto getName() const -> std::string override { return m_config.name; }
     auto getDescription() const -> std::string override { return m_config.description; }
-    auto getType() const -> std::type_index { return typeid(Type); }
+    auto getType() const -> std::type_index override { return typeid(Type); }
     auto getAnyValue() const -> std::any override { return m_value; }
     auto getAnyMinValue() const -> std::optional<std::any> override
     {

@@ -1,0 +1,8 @@
+# Only our code is built in Debug. Dependencies stay in Release: ConanCenter only provides
+# Release binaries, so they are downloaded instead of built from source.
+[settings]
+build_type=Release
+&:build_type=Debug
+
+[conf]
+tools.cmake.cmake_layout:build_folder_vars += ['settings.build_type']

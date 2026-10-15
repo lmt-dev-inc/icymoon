@@ -1,0 +1,49 @@
+# Job file: configures, builds and runs the unit tests of each given configuration.
+# Called by the trigger files, see docs/github_actions.md.
+name: build
+
+on:
+  workflow_call:
+    inputs:
+      configs:
+        description: JSON list of dev.py configurations, e.g. '["lnx-gcc-release", "win-clang-release"]'
+        type: string
+        required: true
+
+jobs:
+  build:
+    name: ${{ matrix.config }}
+    # Configurations are named <os>-<compiler>-<variant>: the prefix picks the runner.
+    # The Windows profiles need Visual Studio 2022 (msvc 194). windows-2025 moved to Visual
+    # Studio 2026 (windows-2025-vs2026 image), where `dev.py setup` would have to install it.
+    runs-on: ${{ startsWith(matrix.config, 'win-') && 'windows-2022' || 'ubuntu-26.04' }}
+
+    defaults:
+      run:
+        # Same scripts on every OS (Git Bash on Windows)
+        shell: bash
+
+    strategy:
+      # Deliver feedback for every configuration, even when one fails
+      fail-fast: false
+      matrix:
+        config: ${{ fromJSON(inputs.configs) }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          config: ${{ matrix.config }}
+
+      - name: Configure CMake
+        run: cmake --preset ${{ matrix.config }}
+
+      - name: Build
+        run: cmake --build --preset ${{ matrix.config }} --parallel
+
+      - name: Unit Tests
+        run: ctest --preset ${{ matrix.config }} -L "unit_test" -j 10

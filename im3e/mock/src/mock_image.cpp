@@ -1,7 +1,6 @@
 #include "mock_image.h"
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -25,9 +24,9 @@ private:
 MockImageView::MockImageView() = default;
 MockImageView::~MockImageView() = default;
 
-auto MockImageView::createMockProxy() -> unique_ptr<IImageView>
+auto MockImageView::createMockProxy() -> std::unique_ptr<IImageView>
 {
-    return make_unique<MockProxyImageView>(*this);
+    return std::make_unique<MockProxyImageView>(*this);
 }
 
 namespace {
@@ -58,9 +57,9 @@ private:
 MockImageMetadata::MockImageMetadata() = default;
 MockImageMetadata::~MockImageMetadata() = default;
 
-auto MockImageMetadata::createMockProxy() -> unique_ptr<IImageMetadata>
+auto MockImageMetadata::createMockProxy() -> std::unique_ptr<IImageMetadata>
 {
-    return make_unique<MockProxyImageMetadata>(*this);
+    return std::make_unique<MockProxyImageMetadata>(*this);
 }
 
 namespace {
@@ -73,7 +72,7 @@ public:
     {
     }
 
-    auto createView() const -> unique_ptr<IImageView> override { return m_rMock.createView(); }
+    auto createView() const -> std::unique_ptr<IImageView> override { return m_rMock.createView(); }
 
     auto getVkImage() const -> VkImage override { return m_rMock.getVkImage(); }
     auto getVkExtent() const -> VkExtent2D override { return m_rMock.getVkExtent(); }
@@ -82,8 +81,8 @@ public:
     {
         return m_rMock.getVkSubresourceLayers();
     }
-    auto getMetadata() -> shared_ptr<IImageMetadata> override { return m_rMock.getMetadata(); }
-    auto getMetadata() const -> shared_ptr<const IImageMetadata> override { return m_rMock.getMetadata(); }
+    auto getMetadata() -> std::shared_ptr<IImageMetadata> override { return m_rMock.getMetadata(); }
+    auto getMetadata() const -> std::shared_ptr<const IImageMetadata> override { return m_rMock.getMetadata(); }
 
 private:
     MockImage& m_rMock;
@@ -105,9 +104,9 @@ MockImage::MockImage()
 
 MockImage::~MockImage() = default;
 
-auto MockImage::createMockProxy() -> unique_ptr<IImage>
+auto MockImage::createMockProxy() -> std::unique_ptr<IImage>
 {
-    return make_unique<MockProxyImage>(*this);
+    return std::make_unique<MockProxyImage>(*this);
 }
 
 namespace {
@@ -120,19 +119,19 @@ public:
     {
     }
 
-    auto createImage(ImageConfig config) const -> unique_ptr<IImage> override
+    auto createImage(ImageConfig config) const -> std::unique_ptr<IImage> override
     {
-        return m_rMock.createImage(move(config));
+        return m_rMock.createImage(std::move(config));
     }
 
-    auto createHostVisibleImage(ImageConfig config) const -> unique_ptr<IHostVisibleImage> override
+    auto createHostVisibleImage(ImageConfig config) const -> std::unique_ptr<IHostVisibleImage> override
     {
-        return m_rMock.createHostVisibleImage(move(config));
+        return m_rMock.createHostVisibleImage(std::move(config));
     }
 
-    auto createProxyImage(VkImage vkImage, ImageConfig config) const -> unique_ptr<IImage> override
+    auto createProxyImage(VkImage vkImage, ImageConfig config) const -> std::unique_ptr<IImage> override
     {
-        return m_rMock.createProxyImage(vkImage, move(config));
+        return m_rMock.createProxyImage(vkImage, std::move(config));
     }
 
 private:
@@ -144,7 +143,7 @@ private:
 MockImageFactory::MockImageFactory() = default;
 MockImageFactory::~MockImageFactory() = default;
 
-auto MockImageFactory::createMockProxy() -> unique_ptr<IImageFactory>
+auto MockImageFactory::createMockProxy() -> std::unique_ptr<IImageFactory>
 {
-    return make_unique<MockProxyImageFactory>(*this);
+    return std::make_unique<MockProxyImageFactory>(*this);
 }

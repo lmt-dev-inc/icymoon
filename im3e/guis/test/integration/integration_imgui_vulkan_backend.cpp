@@ -8,8 +8,9 @@
 #include <fmt/format.h>
 #include <imgui_impl_vulkan.h>
 
+#include <array>
+
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -47,7 +48,7 @@ TEST_F(ImguiVulkanBackendIntegration, renderImgui)
     constexpr VkExtent2D TestOutputExtent{800U, 600U};
     constexpr auto TestOutputFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
-    shared_ptr<IImage> pGuiImage = getDevice()->getImageFactory()->createImage(ImageConfig{
+    std::shared_ptr<IImage> pGuiImage = getDevice()->getImageFactory()->createImage(ImageConfig{
         .name = "ImguiBackendImage",
         .vkExtent = TestOutputExtent,
         .vkFormat = TestOutputFormat,
@@ -56,7 +57,7 @@ TEST_F(ImguiVulkanBackendIntegration, renderImgui)
 
     // A ImGui context must be active while using the backend:
     auto pContextGuard = m_imguiContext.makeCurrent();
-    auto pBackend = make_shared<ImguiVulkanBackend>(getDevice(), pGuiImage, 1U, nullptr);
+    auto pBackend = std::make_shared<ImguiVulkanBackend>(getDevice(), pGuiImage, 1U, nullptr);
 
     initialize(
         PipelineIntegrationTest::Config{
@@ -64,7 +65,7 @@ TEST_F(ImguiVulkanBackendIntegration, renderImgui)
             .vkOutputFormat = VK_FORMAT_R8G8B8A8_UNORM,
             .frameInFlightCount = 2U,
         },
-        [&](ICommandBuffer& rCommandBuffer, shared_ptr<IImage> pOutputImage) {
+        [&](ICommandBuffer& rCommandBuffer, std::shared_ptr<IImage> pOutputImage) {
             ImGui_ImplVulkan_NewFrame();
 
             // When doing offscreen rendering, a display size must be manually specified:
@@ -100,8 +101,8 @@ TEST_F(ImguiVulkanBackendIntegration, renderImgui)
     runTest(2U);
 
     auto pImageMapping = mapOutputImage();
-    auto expectRgbaPixel = [&](uint32_t x, uint32_t y, array<uint8_t, 4U> expected) {
-        const auto& rRgbaPixel = *reinterpret_cast<const array<uint8_t, 4U>*>(pImageMapping->getPixel(x, y));
+    auto expectRgbaPixel = [&](uint32_t x, uint32_t y, std::array<uint8_t, 4U> expected) {
+        const auto& rRgbaPixel = *reinterpret_cast<const std::array<uint8_t, 4U>*>(pImageMapping->getPixel(x, y));
         EXPECT_THAT(rRgbaPixel, ContainerEq(expected)) << fmt::format("Pixel at [{}; {}]", x, y);
     };
     expectRgbaPixel(0U, 0U, {76U, 92U, 125U, 255U});

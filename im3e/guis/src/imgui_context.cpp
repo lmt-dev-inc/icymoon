@@ -1,7 +1,6 @@
 #include "imgui_context.h"
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -10,10 +9,10 @@ namespace {
 class CurrentContextGuard : public ImguiContext::IGuard
 {
 public:
-    CurrentContextGuard(shared_ptr<ImGuiContext> pContext /*, shared_ptr<ImPlotContext> pPlotContext*/)
+    CurrentContextGuard(std::shared_ptr<ImGuiContext> pContext /*, shared_ptr<ImPlotContext> pPlotContext*/)
       : m_pPrevContext(ImGui::GetCurrentContext())
       //, m_pPrevPlotContext(ImPlot::GetCurrentContext())
-      , m_pContext(move(pContext))
+      , m_pContext(std::move(pContext))
     //, m_pPlotContext(move(pPlotContext))
     {
         ImGui::SetCurrentContext(m_pContext.get());
@@ -29,7 +28,7 @@ public:
 private:
     ImGuiContext* m_pPrevContext{};
     // ImPlotContext* m_pPrevPlotContext{};
-    shared_ptr<ImGuiContext> m_pContext;
+    std::shared_ptr<ImGuiContext> m_pContext;
     // shared_ptr<ImPlotContext> m_pPlotContext;
 };
 
@@ -39,13 +38,13 @@ ImguiContext::ImguiContext()
   : m_pContext([&] {
       IMGUI_CHECKVERSION();
       auto pContext = ImGui::CreateContext();
-      return shared_ptr<ImGuiContext>(pContext, [](auto* pC) { ImGui::DestroyContext(pC); });
+      return std::shared_ptr<ImGuiContext>(pContext, [](auto* pC) { ImGui::DestroyContext(pC); });
   }())
 //, m_pPlotContext(ImPlot::CreateContext(), [](auto* pC) { ImPlot::DestroyContext(pC); })
 {
 }
 
-auto ImguiContext::makeCurrent() -> unique_ptr<IGuard>
+auto ImguiContext::makeCurrent() -> std::unique_ptr<IGuard>
 {
-    return make_unique<CurrentContextGuard>(m_pContext /*, m_pPlotContext*/);
+    return std::make_unique<CurrentContextGuard>(m_pContext /*, m_pPlotContext*/);
 }

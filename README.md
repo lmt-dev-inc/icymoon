@@ -3,6 +3,7 @@
 - [How to Build](#how-to-build)
   - [Prerequisites](#prerequisites)
   - [Quick Start](#quick-start)
+  - [Building on Windows](#building-on-windows)
   - [dev.py Commands](#devpy-commands)
   - [Optional Dependencies](#optional-dependencies)
     - [VisRTX](#visrtx)
@@ -10,7 +11,9 @@
   - [Compiling](#compiling)
   - [Running tests](#running-tests)
   - [Test Coverage with GCC](#test-coverage-with-gcc)
+  - [Test Coverage with Clang](#test-coverage-with-clang)
 - [Development with VS Code](#development-with-vs-code)
+- [Code Standards](#code-standards)
 
 
 ## How to Build
@@ -22,7 +25,8 @@ The project is built with Conan and CMake. Both are installed in a local Python 
 The following must be installed manually:
 
 - Python 3.10+ with the `venv` module (on Debian/Ubuntu: `sudo apt install python3-venv`)
-- GCC 11 (`gcc-11` and `g++-11`)
+- On Linux: GCC 11 (`gcc-11` and `g++-11`)
+- On Windows: Visual Studio 2022 Build Tools with the C++ and Clang components. `dev.py setup` installs them with `winget` if they are missing (no Visual Studio IDE needed). Our code is compiled with clang-cl, while dependencies use the prebuilt MSVC binaries of ConanCenter: both are ABI compatible.
 - [Vulkan SDK](https://vulkan.lunarg.com/) (tested with 1.3.290.0)
 
 Other dependencies, including the [ANARI SDK](https://github.com/KhronosGroup/ANARI-SDK) (0.14.1), are downloaded or built by Conan.
@@ -34,12 +38,24 @@ From the root folder:
 ```bash
 python3 dev.py setup              # create .venv and install conan and cmake
 source .venv/bin/activate
-python3 dev.py install gcc-debug  # install dependencies and generate CMake presets
-cmake --preset gcc-debug
-cmake --build --preset gcc-debug
+python3 dev.py install lnx-gcc-debug  # install dependencies and generate CMake presets
+cmake --preset lnx-gcc-debug
+cmake --build --preset lnx-gcc-debug
 ```
 
+On Windows, use `python` instead of `python3` and the `win-clang-debug` configuration instead. See [Building on Windows](#building-on-windows) for how to activate the virtual environment.
+
 > On Linux, Conan may install missing system packages with `apt-get` and ask for your sudo password.
+
+### Building on Windows
+
+> Windows support is a work in progress: dependencies install and CMake configures, but the code doesn't compile yet.
+
+- `dev.py setup` installs the Visual Studio 2022 Build Tools if they are missing. The installer asks for administrator rights (UAC prompt).
+- Activate the virtual environment with `.venv\Scripts\Activate.ps1` in PowerShell, `.venv\Scripts\activate.bat` in cmd, or `source .venv/Scripts/activate` in Git Bash.
+- No Visual Studio developer prompt is needed: `dev.py install` writes the Visual Studio environment into the CMake presets, so `cmake --preset` and VS Code's CMake Tools work from any terminal. Run `dev.py install` again after updating the Build Tools, as the presets contain the paths of the installed toolset.
+- To run `clang-cl` or other Visual Studio tools by hand, use the "Developer PowerShell for VS 2022" from the Start menu.
+- Paths are UTF-16 on Windows (`std::filesystem::path::c_str()` returns `const wchar_t*`). Convert them with `path::toUtf8()` / `path::fromUtf8()` from `im3e/utils/core/path_utils.h` when passing them to or getting them from libraries that use UTF-8 strings (GDAL, ImGui...). Don't use `std::filesystem::path::string()` for that: on Windows it converts to the process code page, which isn't UTF-8 and can't represent every character.
 
 ### dev.py Commands
 
@@ -48,14 +64,21 @@ Run `python3 dev.py -h` or `python3 dev.py <command> -h` for full help.
 | Command                                | Description                                                                                                                                                                              |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `setup [--recreate]`                   | Creates `.venv`, installs the tools from `requirements.txt` and detects a default Conan profile. `--recreate` deletes `.venv` first; deactivate the virtual environment before using it. |
-| `install [config\|group ...] [--all]`  | Exports the local recipes under `recipes/` and runs `conan install` for each configuration. Without arguments, installs the `gcc` group. `--all` installs every configuration.           |
+| `install [config\|group ...] [--all]`  | Exports the local recipes under `recipes/` and runs `conan install` for each configuration. Without arguments, installs the group of the current OS (`lnx` or `win`). `--all` installs every configuration for the current OS. `install -h` lists the configurations and groups.           |
 | `lock [--update pkg ...] [--recreate]` | Creates or updates `conan.lock` for every configuration. Without options, missing entries are added and unused ones removed. `--update` upgrades the given packages. `--recreate` relocks everything. |
 
-Available configurations: `gcc-debug`, `gcc-release` and `gcc-coverage_on-debug`. The `gcc` group contains all three. Each configuration maps to a profile under `profiles/` and produces a CMake preset with the same name.
+Available configurations, named `<os>-<compiler>-<variant>` so that names never clash between OSes:
+
+| OS      | Configurations                                               | Group (default on this OS) |
+| ------- | ------------------------------------------------------------ | -------------------------- |
+| Linux   | `lnx-gcc-debug`, `lnx-gcc-release`, `lnx-gcc-coverage`       | `lnx`                      |
+| Windows | `win-clang-debug`, `win-clang-release`, `win-clang-coverage` | `win`                      |
+
+Each configuration maps to a profile under `profiles/` and produces a CMake preset with the same name. Debug configurations only build our code in Debug: dependencies stay in Release, as ConanCenter only provides Release binaries. See [profiles/README.md](profiles/README.md) for how profiles are organized.
 
 `conan.lock` pins the exact version and revision of every dependency, and `dev.py install` applies it automatically. Run `dev.py lock` after changing requirements in `conanfile.py` or a recipe under `recipes/`, then review and commit the `conan.lock` diff.
 
-To add a configuration, add a profile under `profiles/` and register it in `CONFIGS` (and optionally `GROUPS`) in `devtools/configs.py`.
+To add a configuration, follow the steps in [profiles/README.md](profiles/README.md#adding-a-configuration).
 
 ### Optional Dependencies
 
@@ -109,8 +132,8 @@ cmake --list-presets
 
 Available configure presets:
 
-  "gcc-debug"   - 'gcc-debug' config
-  "gcc-release" - 'gcc-release' config
+  "lnx-gcc-debug"   - 'lnx-gcc-debug' config
+  "lnx-gcc-release" - 'lnx-gcc-release' config
 ```
 
 With the virtual environment active, configure and build with a chosen preset from the root folder:
@@ -128,34 +151,47 @@ ctest --list-presets
 
 Available test presets:
 
-  "gcc-debug"
-  "gcc-release"
+  "lnx-gcc-debug"
+  "lnx-gcc-release"
 ```
 
 All tests can be run with the `--preset` argument:
 ```bash
-ctest --preset gcc-debug
+ctest --preset lnx-gcc-debug
 ```
 
 Each test is labelled as a `"unit_test"` or an `"integration_test"`. This allows to filter out tests by type:
 ```bash
-ctest --preset gcc-debug -L "unit_test" # to run unit tests only
-ctest --preset gcc-debug -L "integration_test" # to run integration tests only
+ctest --preset lnx-gcc-debug -L "unit_test" # to run unit tests only
+ctest --preset lnx-gcc-debug -L "integration_test" # to run integration tests only
 ```
 
 ### Test Coverage with GCC
 
-Test coverage is supported with lcov via the `gcc-coverage_on-debug` configuration:
+Test coverage is supported with lcov via the `lnx-gcc-coverage` configuration:
 ```bash
-python3 dev.py install gcc-coverage_on-debug
-cmake --preset gcc-coverage_on-debug
-cmake --build --preset gcc-coverage_on-debug --target im3e_test_coverage
+python3 dev.py install lnx-gcc-coverage
+cmake --preset lnx-gcc-coverage
+cmake --build --preset lnx-gcc-coverage --target im3e_test_coverage
 ```
 
 There are several CMake targets that generate different test coverage reports:
 - `im3e_test_coverage`: combines the coverage of all tests
 - `im3e_unit_test_coverage`: generate a report for unit tests only (excluding integration tests)
 
+### Test Coverage with Clang
+
+The `win-clang-coverage` configuration uses clang's source-based coverage. Instrumented executables write their coverage data to `coverage/profiles/` in the build directory, and two CMake targets process it:
+- `im3e_coverage_clean`: deletes the coverage data of previous runs
+- `im3e_coverage_report`: merges the coverage data of the tests run since then into `coverage/lcov.info`
+
+```bash
+cmake --build --preset win-clang-coverage --target im3e_coverage_clean
+ctest --preset win-clang-coverage -L "unit_test"
+cmake --build --preset win-clang-coverage --target im3e_coverage_report
+```
+
+In VS Code, "Run Tests with Coverage" in the Testing view does these three steps and shows the coverage in the editor.
 
 ## Development with VS Code
 
@@ -163,5 +199,10 @@ The repository includes a shared VS Code setup under `.vscode/`:
 
 - `extensions.json` recommends CMake Tools, C/C++ and Python.
 - `settings.json` makes CMake Tools use the Conan-generated presets, which also tell it which CMake binary to use. VS Code picks up `.venv` automatically and activates it in new terminals. Run `python3 dev.py setup` and `python3 dev.py install` before opening the folder.
-- It also sets shared editor conventions: format on save and a ruler at 120 columns.
-- `launch.json` provides a gdb "Launch" configuration for the target selected in CMake Tools.
+- The Testing view groups tests by GTest suite and runs them in parallel. With a clang coverage preset, "Run Tests with Coverage" shows the coverage of the tests in the editor (see [Test Coverage with Clang](#test-coverage-with-clang)).
+- It also sets shared editor conventions: format on save and a ruler at 120 columns, and highlights the extensionless Conan profiles under `profiles/` as INI files.
+- `launch.json` provides a gdb "Launch" configuration for the target selected in CMake Tools (Linux only for now).
+
+## Code Standards
+
+The rules for C++ code in the codebase (namespaces, naming, includes, text encoding...) are in [docs/code_standards.md](docs/code_standards.md).

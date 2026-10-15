@@ -2,7 +2,6 @@
 #include <im3e/utils/loggers.h>
 
 using namespace im3e;
-using namespace std;
 
 int main([[maybe_unused]] int argc, char* argv[])
 {

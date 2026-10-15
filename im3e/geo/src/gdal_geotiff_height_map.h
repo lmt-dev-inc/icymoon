@@ -4,6 +4,7 @@
 #include "geo.h"
 
 #include <im3e/api/height_map.h>
+#include <im3e/utils/core/path_utils.h>
 #include <im3e/utils/loggers.h>
 
 #include <gdal_priv.h>
@@ -24,7 +25,7 @@ public:
     auto getTileSampler(const glm::u32vec2& rTilePos, uint32_t level)
         -> std::unique_ptr<IHeightMapTileSampler> override;
 
-    auto getName() const -> std::string override { return m_config.path.stem().string(); }
+    auto getName() const -> std::string override { return path::toUtf8(m_config.path.stem()); }
     auto getSize() const -> glm::u32vec2 override { return m_size; }
     auto getTileSize() const -> glm::u32vec2 override { return m_tileSize; }
     auto getTileCount(uint32_t lod) const -> glm::u32vec2 override;

@@ -17,6 +17,8 @@ namespace im3e {
 class IAnariObject
 {
 public:
+    virtual ~IAnariObject() = default;
+
     virtual auto getProperties() -> std::shared_ptr<IPropertyGroup> = 0;
 };
 

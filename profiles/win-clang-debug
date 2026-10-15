@@ -1,0 +1,4 @@
+include(base/common)
+include(os/windows)
+include(compilers/clang-cl)
+include(variants/debug)

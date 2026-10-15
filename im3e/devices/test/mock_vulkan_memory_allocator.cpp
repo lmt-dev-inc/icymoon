@@ -1,7 +1,6 @@
 #include "mock_vulkan_memory_allocator.h"
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -40,7 +39,7 @@ private:
 MockVulkanMemoryAllocator::MockVulkanMemoryAllocator() = default;
 MockVulkanMemoryAllocator::~MockVulkanMemoryAllocator() = default;
 
-auto MockVulkanMemoryAllocator::createMockProxy() -> unique_ptr<IVulkanMemoryAllocator>
+auto MockVulkanMemoryAllocator::createMockProxy() -> std::unique_ptr<IVulkanMemoryAllocator>
 {
-    return make_unique<MockProxyMemoryAllocator>(*this);
+    return std::make_unique<MockProxyMemoryAllocator>(*this);
 }

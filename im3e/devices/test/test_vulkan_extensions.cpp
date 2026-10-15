@@ -7,7 +7,6 @@
 #include <im3e/utils/mock/mock_logger.h>
 
 using namespace im3e;
-using namespace std;
 
 struct VulkanExtensionsTest : public Test
 {
@@ -22,15 +21,15 @@ TEST_F(VulkanExtensionsTest, constructor)
     expectInstanceExtensionsEnumerated(m_mockVk.getMockGlobalFcts(), DebubDisabled);
 
     VulkanExtensions extensions(m_mockLogger, m_globalFcts, DebubDisabled);
-    EXPECT_THAT(extensions.getInstanceExtensions(), IsSupersetOf(vector<string>{
+    EXPECT_THAT(extensions.getInstanceExtensions(), IsSupersetOf(std::vector<std::string>{
                                                         VK_KHR_SURFACE_EXTENSION_NAME,
                                                     }));
-    EXPECT_THAT(extensions.getDeviceExtensions(), IsSupersetOf(vector<string>{
+    EXPECT_THAT(extensions.getDeviceExtensions(), IsSupersetOf(std::vector<std::string>{
                                                       VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
                                                       VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
                                                       VK_KHR_RAY_QUERY_EXTENSION_NAME,
                                                       VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
                                                       VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
                                                   }));
-    EXPECT_THAT(extensions.getLayers(), ContainerEq(vector<const char*>{}));
+    EXPECT_THAT(extensions.getLayers(), ContainerEq(std::vector<const char*>{}));
 }

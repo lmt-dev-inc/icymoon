@@ -10,11 +10,10 @@
 #include <vector>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
-string toString(VkPhysicalDeviceType deviceType)
+std::string toString(VkPhysicalDeviceType deviceType)
 {
     switch (deviceType)
     {
@@ -42,7 +41,7 @@ bool doesDeviceSupportExtensions(const ILogger& rLogger, const VulkanInstanceFct
     bool allSupported = true;
     for (const auto& rExtension : rExtensions.getDeviceExtensions())
     {
-        auto itFind = ranges::find_if(supportedExtensions, [&](const auto& rSupportedExtension) {
+        auto itFind = std::ranges::find_if(supportedExtensions, [&](const auto& rSupportedExtension) {
             return strcmp(rExtension, &rSupportedExtension.extensionName[0]) == 0;
         });
 
@@ -136,7 +135,7 @@ auto getQueueFamilyProperties(const VulkanInstanceFcts& rFcts, VkInstance vkInst
 auto enumerateDevices(const ILogger& rLogger, const VulkanInstanceFcts& rFcts, VkInstance vkInstance)
 {
     const auto devices = getVkList<VkPhysicalDevice>(rFcts.vkEnumeratePhysicalDevices, "physical devices", vkInstance);
-    throwIfFalse<runtime_error>(!devices.empty(), "Could not detect any physical device");
+    throwIfFalse<std::runtime_error>(!devices.empty(), "Could not detect any physical device");
     rLogger.info(fmt::format("Detected {} device(s)", devices.size()));
     return devices;
 }
@@ -147,7 +146,7 @@ auto enumerateAndRankDevices(const ILogger& rLogger, const VulkanInstanceFcts& r
 {
     const auto vkPhysicalDevices = enumerateDevices(rLogger, rFcts, vkInstance);
 
-    multimap<uint32_t, VulkanPhysicalDevice> scoresToDevices;
+    std::multimap<uint32_t, VulkanPhysicalDevice> scoresToDevices;
     for (const auto vkPhysicalDevice : vkPhysicalDevices)
     {
         VulkanPhysicalDevice device{
@@ -160,14 +159,14 @@ auto enumerateAndRankDevices(const ILogger& rLogger, const VulkanInstanceFcts& r
 
         if (const auto deviceScore = getDeviceScore(rLogger, rFcts, device, rExtensions, !!rIsPresentationSupported))
         {
-            scoresToDevices.insert(make_pair(deviceScore, move(device)));
+            scoresToDevices.insert(std::make_pair(deviceScore, std::move(device)));
         }
     }
-    throwIfFalse<runtime_error>(!scoresToDevices.empty(), "Could not find a suitable device");
+    throwIfFalse<std::runtime_error>(!scoresToDevices.empty(), "Could not find a suitable device");
     return scoresToDevices;
 }
 
-void logDeviceRanks(const ILogger& rLogger, const multimap<uint32_t, VulkanPhysicalDevice>& rScoresToDevices)
+void logDeviceRanks(const ILogger& rLogger, const std::multimap<uint32_t, VulkanPhysicalDevice>& rScoresToDevices)
 {
     for (const auto& scoreToDevice : rScoresToDevices)
     {

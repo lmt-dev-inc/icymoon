@@ -1,7 +1,6 @@
 #include "mock_command_buffer.h"
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -24,9 +23,9 @@ private:
 MockCommandBufferFuture::MockCommandBufferFuture() = default;
 MockCommandBufferFuture::~MockCommandBufferFuture() = default;
 
-auto MockCommandBufferFuture::createMockProxy() -> unique_ptr<ICommandBufferFuture>
+auto MockCommandBufferFuture::createMockProxy() -> std::unique_ptr<ICommandBufferFuture>
 {
-    return make_unique<MockProxyCommandBufferFuture>(*this);
+    return std::make_unique<MockProxyCommandBufferFuture>(*this);
 }
 
 namespace {
@@ -41,7 +40,7 @@ public:
 
     void addImageBarrier(IImage& rImage, ImageBarrierConfig config) override
     {
-        return m_rMock.addImageBarrier(rImage, move(config));
+        return m_rMock.addImageBarrier(rImage, std::move(config));
     }
 
 private:
@@ -53,9 +52,9 @@ private:
 MockCommandBarrierRecorder::MockCommandBarrierRecorder() = default;
 MockCommandBarrierRecorder::~MockCommandBarrierRecorder() = default;
 
-auto MockCommandBarrierRecorder::createMockProxy() -> unique_ptr<ICommandBarrierRecorder>
+auto MockCommandBarrierRecorder::createMockProxy() -> std::unique_ptr<ICommandBarrierRecorder>
 {
-    return make_unique<MockProxyCommandBarrierRecorder>(*this);
+    return std::make_unique<MockProxyCommandBarrierRecorder>(*this);
 }
 
 namespace {
@@ -68,11 +67,11 @@ public:
     {
     }
 
-    auto startScopedBarrier(string_view name) const -> unique_ptr<ICommandBarrierRecorder> override
+    auto startScopedBarrier(std::string_view name) const -> std::unique_ptr<ICommandBarrierRecorder> override
     {
         return m_rMock.startScopedBarrier(name);
     }
-    auto createFuture() -> shared_ptr<ICommandBufferFuture> override { return m_rMock.createFuture(); }
+    auto createFuture() -> std::shared_ptr<ICommandBufferFuture> override { return m_rMock.createFuture(); }
 
     void setVkSignalSemaphore(VkSharedPtr<VkSemaphore> vkSemaphore) override
     {
@@ -99,9 +98,9 @@ MockCommandBuffer::MockCommandBuffer()
 
 MockCommandBuffer::~MockCommandBuffer() = default;
 
-auto MockCommandBuffer::createMockProxy() -> unique_ptr<ICommandBuffer>
+auto MockCommandBuffer::createMockProxy() -> std::unique_ptr<ICommandBuffer>
 {
-    return make_unique<MockProxyCommandBuffer>(*this);
+    return std::make_unique<MockProxyCommandBuffer>(*this);
 }
 
 namespace {
@@ -114,7 +113,7 @@ public:
     {
     }
 
-    auto startScopedCommand(string_view name, CommandExecutionType executionType)
+    auto startScopedCommand(std::string_view name, CommandExecutionType executionType)
         -> UniquePtrWithDeleter<ICommandBuffer> override
     {
         return m_rMock.startScopedCommand(name, executionType);
@@ -141,7 +140,7 @@ MockCommandQueue::MockCommandQueue()
 
 MockCommandQueue::~MockCommandQueue() = default;
 
-auto MockCommandQueue::createMockProxy() -> unique_ptr<ICommandQueue>
+auto MockCommandQueue::createMockProxy() -> std::unique_ptr<ICommandQueue>
 {
-    return make_unique<MockProxyCommandQueue>(*this);
+    return std::make_unique<MockProxyCommandQueue>(*this);
 }

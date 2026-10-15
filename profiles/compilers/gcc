@@ -1,5 +1,3 @@
-include(common)
-
 {% set gcc_version = "11" %}
 
 [settings]

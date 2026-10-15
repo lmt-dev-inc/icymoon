@@ -2,6 +2,17 @@
     // C++ IntelliSense: include paths and defines come from the active CMake preset
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "cmake.useCMakePresets": "always",
+    // Test Explorer: group tests by GTest suite ("Suite.Test"), and run the selected tests in one parallel ctest
+    // invocation instead of one ctest invocation per test:
+    "cmake.ctest.testSuiteDelimiter": "\\.",
+    "cmake.ctest.testSuiteDelimiterMaxOccurrence": 1,
+    "cmake.ctest.allowParallelJobs": true,
+    // "Run Tests with Coverage" (coverage presets only): see cmake/code_coverage/im3e_init_code_coverage.cmake
+    "cmake.preRunCoverageTarget": "im3e_coverage_clean",
+    "cmake.postRunCoverageTarget": "im3e_coverage_report",
+    "cmake.coverageInfoFiles": [
+        "${command:cmake.buildDirectory}/coverage/lcov.info"
+    ],
     "editor.formatOnSave": true,
     "editor.acceptSuggestionOnCommitCharacter": false,
     "editor.acceptSuggestionOnEnter": "off",
@@ -13,7 +24,10 @@
         "*.rgen": "glsl",
         "*.rchit": "glsl",
         "*.rmiss": "glsl",
-        "*.rint": "glsl"
+        "*.rint": "glsl",
+        // Conan profiles have no extension: highlight them as INI (without matching profiles/README.md)
+        "**/profiles/{base,os,compilers,variants}/*": "ini",
+        "**/profiles/*-*-*": "ini"
     },
     "python.terminal.activateEnvironment": true,
     "python.analysis.typeCheckingMode": "standard",

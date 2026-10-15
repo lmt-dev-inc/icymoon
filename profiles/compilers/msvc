@@ -1,0 +1,14 @@
+# Version 194 (Visual Studio 2022) because ConanCenter has prebuilt binaries for it
+{% set msvc_version = "194" %}
+
+[settings]
+compiler=msvc
+compiler.version={{ msvc_version }}
+compiler.cppstd=20
+compiler.runtime=dynamic
+# Always the release C runtime (/MD), including in debug builds: dependencies are always built in
+# Release (see variants/debug), and debug and release runtimes can't be mixed when standard
+# library objects cross library boundaries
+compiler.runtime_type=Release
+# GDAL 3.10 doesn't compile with msvc in C++20 (error C2445: ambiguous conditional with CPLString)
+gdal/*:compiler.cppstd=17

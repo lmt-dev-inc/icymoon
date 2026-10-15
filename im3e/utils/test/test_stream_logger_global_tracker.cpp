@@ -8,13 +8,12 @@
 #include <sstream>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
 auto createStreamLogger()
 {
-    return make_unique<StreamLogger>("Test", make_shared<stringstream>());
+    return std::make_unique<StreamLogger>("Test", std::make_shared<std::stringstream>());
 }
 
 }  // namespace
@@ -29,7 +28,7 @@ public:
     }
 
 protected:
-    unique_ptr<ILogger> m_pLogger;
+    std::unique_ptr<ILogger> m_pLogger;
     UniquePtrWithDeleter<ILoggerTracker> m_pTracker;
 };
 

@@ -8,13 +8,12 @@
 #include <string>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
-string toString(VkDebugUtilsMessageTypeFlagsEXT type)
+std::string toString(VkDebugUtilsMessageTypeFlagsEXT type)
 {
-    string result;
+    std::string result;
     if (vkFlagsContain(type, VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT))
     {
         result += "[General] ";

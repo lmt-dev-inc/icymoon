@@ -5,11 +5,10 @@
 #include <im3e/utils/loggers.h>
 
 using namespace im3e;
-using namespace std;
 
 struct VulkanImageIntegration : public DeviceIntegrationTest
 {
-    shared_ptr<const IImageFactory> m_pImageFactory = getDevice()->getImageFactory();
+    std::shared_ptr<const IImageFactory> m_pImageFactory = getDevice()->getImageFactory();
 };
 
 TEST_F(VulkanImageIntegration, createImageRgbaSnorm)

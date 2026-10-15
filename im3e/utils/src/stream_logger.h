@@ -16,7 +16,7 @@ public:
 
     void clearErrors() override { m_errors.clear(); }
 
-    auto getErrors() const -> std::vector<std::string> { return m_errors; }
+    auto getErrors() const -> std::vector<std::string> override { return m_errors; }
 
 private:
     std::vector<std::string> m_errors;

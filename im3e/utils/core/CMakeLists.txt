@@ -1,5 +1,7 @@
 add_library(im3e_utils_core STATIC
+    src/path_utils.cpp
     src/platform_utils.cpp
+    path_utils.h
     platform_utils.h
     throw_utils.h
     types.h

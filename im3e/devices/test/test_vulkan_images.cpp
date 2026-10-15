@@ -7,13 +7,12 @@
 #include <im3e/test_utils/vk.h>
 
 using namespace im3e;
-using namespace std;
 
 struct ImageFactoryTest : public Test
 {
     auto createFactory() { return createVulkanImageFactory(m_pMockDevice, m_pMockAllocator); }
 
-    void expectDebugNameSet(VkObjectType vkExpectedType, void* pVkExpectedObject, string expectedName)
+    void expectDebugNameSet(VkObjectType vkExpectedType, void* pVkExpectedObject, std::string expectedName)
     {
         EXPECT_CALL(m_rMockFcts, vkSetDebugUtilsObjectNameEXT(m_mockVkDevice, NotNull()))
             .WillOnce(Invoke([vkExpectedType, pVkExpectedObject, expectedName](Unused, auto* pDebugInfo) {
@@ -25,8 +24,8 @@ struct ImageFactoryTest : public Test
             }));
     }
 
-    shared_ptr<MockDevice> m_pMockDevice = make_shared<NiceMock<MockDevice>>();
-    shared_ptr<MockVulkanMemoryAllocator> m_pMockAllocator = make_shared<MockVulkanMemoryAllocator>();
+    std::shared_ptr<MockDevice> m_pMockDevice = std::make_shared<NiceMock<MockDevice>>();
+    std::shared_ptr<MockVulkanMemoryAllocator> m_pMockAllocator = std::make_shared<MockVulkanMemoryAllocator>();
 
     VkDevice m_mockVkDevice = m_pMockDevice->getMockVkDevice();
     MockVulkanDeviceFcts& m_rMockFcts = m_pMockDevice->getMockDeviceFcts();
@@ -34,7 +33,7 @@ struct ImageFactoryTest : public Test
 
 TEST_F(ImageFactoryTest, createVulkanImageFactoryThrowsIfAllocatorNull)
 {
-    EXPECT_THROW(auto pFactory = createVulkanImageFactory(m_pMockDevice, nullptr), invalid_argument);
+    EXPECT_THROW(auto pFactory = createVulkanImageFactory(m_pMockDevice, nullptr), std::invalid_argument);
 }
 
 TEST_F(ImageFactoryTest, createVulkanImageFactory)

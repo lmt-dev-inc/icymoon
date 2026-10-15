@@ -9,6 +9,7 @@
 #include <anari/anari.h>
 
 #include <memory>
+#include <string>
 
 namespace im3e {
 

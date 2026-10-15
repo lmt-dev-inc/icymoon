@@ -6,7 +6,6 @@
 #include <imgui_impl_vulkan.h>
 
 using namespace im3e;
-using namespace std;
 
 namespace {
 
@@ -62,7 +61,7 @@ auto makeRenderPass(const VulkanDeviceFcts& rFcts, VkDevice vkDevice, VkFormat v
 
 auto makeDescriptorPool(const VulkanDeviceFcts& rFcts, VkDevice vkDevice)
 {
-    const vector<VkDescriptorPoolSize> poolSizes{
+    const std::vector<VkDescriptorPoolSize> poolSizes{
         {VK_DESCRIPTOR_TYPE_SAMPLER, 1000U},
         {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000U},
         {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000U},
@@ -116,7 +115,7 @@ void initializeImguiVulkan(const ILogger& rLogger, const IDevice& rDevice, VkDes
     ImGui_ImplVulkan_LoadFunctions(
         [](const char* pFctName, void* pUserData) {
             auto* pDevice = reinterpret_cast<const IDevice*>(pUserData);
-            return throwIfNull<runtime_error>(
+            return throwIfNull<std::runtime_error>(
                 pDevice->getInstanceFcts().vkGetInstanceProcAddr(pDevice->getVkInstance(), pFctName),
                 fmt::format("Failed to load function for ImGui: \"{}\" not found", pFctName));
         },
@@ -161,10 +160,10 @@ auto beginRenderPass(const VulkanDeviceFcts& rFcts, VkCommandBuffer vkCommandBuf
 
 }  // namespace
 
-ImguiVulkanBackend::ImguiVulkanBackend(shared_ptr<const IDevice> pDevice, shared_ptr<IImage> pOutputImage,
+ImguiVulkanBackend::ImguiVulkanBackend(std::shared_ptr<const IDevice> pDevice, std::shared_ptr<IImage> pOutputImage,
                                        uint32_t frameInFlightCount, GLFWwindow* pGlfwWindow)
-  : m_pDevice(throwIfArgNull(move(pDevice), "ImGui Vulkan backend requires a device"))
-  , m_pOutputImage(throwIfArgNull(move(pOutputImage), "ImGui Vulkan backend requires an output image"))
+  : m_pDevice(throwIfArgNull(std::move(pDevice), "ImGui Vulkan backend requires a device"))
+  , m_pOutputImage(throwIfArgNull(std::move(pOutputImage), "ImGui Vulkan backend requires an output image"))
   , m_pOutputImageView(m_pOutputImage->createView())
   , m_pGlfwWindow(pGlfwWindow)
   , m_pLogger(m_pDevice->createLogger("ImGui Vulkan Backend"))
@@ -181,7 +180,7 @@ ImguiVulkanBackend::ImguiVulkanBackend(shared_ptr<const IDevice> pDevice, shared
 
     // ImGui requires that the frame in flight count must be at least two:
     constexpr uint32_t DefaultFrameInFlightCount = 2U;
-    frameInFlightCount = max(DefaultFrameInFlightCount, frameInFlightCount);
+    frameInFlightCount = std::max(DefaultFrameInFlightCount, frameInFlightCount);
 
     initializeImguiVulkan(*m_pLogger, *m_pDevice, m_pVkDescriptorPool.get(), frameInFlightCount, m_pVkRenderPass.get());
 }

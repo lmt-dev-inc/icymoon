@@ -27,10 +27,10 @@ AnariMapCamera::AnariMapCamera(std::shared_ptr<AnariDevice> pAnDevice)
   : m_pAnDevice(throwIfArgNull(std::move(pAnDevice), "ANARI Map Camera requires an ANARI Device"))
   , m_pLogger(m_pAnDevice->createLogger("AnariMapCamera"))
   , m_pAnCamera(createAnariCamera(*m_pLogger, m_pAnDevice->getHandle()))
-  , m_viewFrustum(this->createViewFrustum())
+  , m_viewFrustum(_createViewFrustum())
 {
-    this->update();  // calculate initial view state
-    this->commitChanges();
+    _update();  // calculate initial view state
+    commitChanges();
 }
 
 void AnariMapCamera::commitChanges()
@@ -57,7 +57,7 @@ void AnariMapCamera::onMouseMove(const glm::vec2& rClipOffset, const std::array<
 
         m_view.angleX = std::clamp(m_view.angleX + angleXOffset, 0.0F, HalfPi);
         m_view.angleY += angleYOffset;
-        this->update();
+        _update();
     }
     else if (rMouseButtonsDown[static_cast<size_t>(MouseButton::Middle)])
     {
@@ -66,14 +66,14 @@ void AnariMapCamera::onMouseMove(const glm::vec2& rClipOffset, const std::array<
         const auto sceneOffset = sceneVec.xyz() * m_view.distanceToTarget;
         m_view.targetPoint.x += sceneOffset.x;
         m_view.targetPoint.z += sceneOffset.z;
-        this->update();
+        _update();
     }
 }
 
 void AnariMapCamera::onMouseWheel(float scrollSteps)
 {
     m_view.distanceToTarget = m_view.distanceToTarget * (1.0F - scrollSteps * ScrollSensitivity);
-    this->update();
+    _update();
 }
 
 void AnariMapCamera::setAspectRatio(float aspectRatio)
@@ -86,12 +86,12 @@ void AnariMapCamera::setAspectRatio(float aspectRatio)
     m_needsCommit = true;
 }
 
-void AnariMapCamera::update()
+void AnariMapCamera::_update()
 {
     m_view.update();
 
     // TODO: replace with view frustum update
-    m_viewFrustum = this->createViewFrustum();
+    m_viewFrustum = _createViewFrustum();
     /*const auto& rPosition = m_view.getPosition();
     const auto& rDirection = m_view.getDirection();
     const auto& rUp = m_view.getUp();
@@ -112,7 +112,7 @@ void AnariMapCamera::update()
     m_needsCommit = true;
 }
 
-auto AnariMapCamera::createViewFrustum() const -> ViewFrustum
+auto AnariMapCamera::_createViewFrustum() const -> ViewFrustum
 {
     return ViewFrustum{ViewFrustum::PerspectiveConfig{
         .fovY = m_perspective.fovY,
@@ -143,12 +143,12 @@ auto AnariMapCamera::PerspectiveState::generateMatrix() const -> glm::mat4
 
 void AnariMapCamera::ViewState::update()
 {
-    const auto rotationX = glm::angleAxis(this->angleX, glm::vec3{1.0F, 0.0F, 0.0F});
-    const auto rotationY = glm::angleAxis(this->angleY, glm::vec3{0.0F, 1.0F, 0.0F});
+    const auto rotationX = glm::angleAxis(angleX, glm::vec3{1.0F, 0.0F, 0.0F});
+    const auto rotationY = glm::angleAxis(angleY, glm::vec3{0.0F, 1.0F, 0.0F});
     const auto rotation = rotationY * rotationX;
 
     m_direction = glm::normalize(rotation * glm::vec3{0.0F, -1.0F, 0.0F});
-    m_position = this->targetPoint + -m_direction * this->distanceToTarget;
+    m_position = targetPoint + -m_direction * distanceToTarget;
     m_up = rotation * glm::vec3{0.0F, 0.0F, -1.0F};
     m_right = glm::normalize(glm::cross(m_direction, m_up));
     m_up = glm::normalize(glm::cross(m_right, m_direction));
