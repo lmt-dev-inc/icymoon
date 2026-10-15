@@ -1,5 +1,6 @@
 #include <im3e/devices/devices.h>
 #include <im3e/test_utils/test_utils.h>
+#include <im3e/utils/core/platform_utils.h>
 #include <im3e/utils/loggers.h>
 
 #include <filesystem>
@@ -21,7 +22,10 @@ struct VulkanDeviceIntegration : public Test
                 suiteName.erase(suiteName.find_first_of("/"));
             }
 
-            s_pLogger = createFileLogger(std::filesystem::path{fmt::format("{}.log", suiteName)});
+            const auto logFileName = std::filesystem::path{fmt::format("{}.log", suiteName)};
+            const auto executablePath = getCurrentExecutableFolder();
+
+            s_pLogger = createFileLogger(executablePath / logFileName);
             s_pLogger->setLevelFilter(LogLevel::Debug);
         }
     }

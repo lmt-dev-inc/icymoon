@@ -74,6 +74,6 @@ void IntegrationTest::TearDownTestSuite()
 
 auto IntegrationTest::generateFilePath(std::string_view name, std::string_view extension) const -> std::filesystem::path
 {
-    return std::filesystem::current_path() /
+    return getCurrentExecutableFolder() /
            std::filesystem::path{fmt::format("{}_{}.{}", getSuiteName(), name, extension)};
 }
