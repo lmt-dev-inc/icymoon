@@ -1,3 +1,5 @@
+include("${CMAKE_CURRENT_LIST_DIR}/src/im3e_test_source_lines.cmake")
+
 set_property(GLOBAL PROPERTY COVERAGE_EXCLUDES_PROPERTY "")
 
 macro(im3e_exclude_from_coverage)
@@ -33,6 +35,7 @@ function(im3e_add_unit_tests_executable)
       PROPERTIES 
         LABELS "unit_test"
     )
+    im3e_internal_add_test_source_lines(${ARG_TARGET})
 
     im3e_exclude_from_coverage()
 endfunction()
@@ -64,6 +67,7 @@ function(im3e_add_integration_tests_executable)
       PROPERTIES 
         LABELS "integration_test"
     )
+    im3e_internal_add_test_source_lines(${ARG_TARGET})
 
     im3e_exclude_from_coverage()
 endfunction()

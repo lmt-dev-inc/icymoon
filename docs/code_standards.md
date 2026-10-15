@@ -1,6 +1,6 @@
 # Code Standards
 
-Rules for C++ code in IcyMoon (`im3e/`, `applications/`). Third-party code under `external/` is excluded.
+Rules for the C++ code (`im3e/`, `applications/`) and CMake scripts (`cmake/`) of IcyMoon. Third-party code under `external/` is excluded.
 
 The project follows the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines). This document records the project's own choices and additions on top of them; where the two differ, this document takes precedence. Rules refer to guidelines by number where relevant, e.g. [ES.20](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#res-always).
 
@@ -17,6 +17,7 @@ Each rule says whether it is checked automatically today. Rules without automati
 - [Text encoding and paths](#text-encoding-and-paths)
 - [Library code](#library-code)
 - [Tests](#tests)
+- [CMake scripts](#cmake-scripts)
 - [Enforcement](#enforcement)
 
 ## Formatting
@@ -169,6 +170,26 @@ IcyMoon is meant to be used as a library from other languages, Python first. Its
 - Exceptions are checked with `EXPECT_THROW` / `EXPECT_NO_THROW`.
 
 *Automated:* the labels, through `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` (`cmake/im3e_tests.cmake`).
+
+## CMake scripts
+
+CMake has no private functions: once a file is included, everything it defines can be called from anywhere. Like C++ modules, which keep public headers at the module root and implementation in `src/`, scripts make what is public visible from their location and name:
+
+- `.cmake` files at the root of a folder are public: any `CMakeLists.txt` may include them and call their functions.
+- Files in a `src/` subfolder are internal: only the scripts of the parent folder use them.
+- Internal functions and macros are prefixed with `im3e_internal_`, and are defined in `src/`. The prefix shows misuse where the function is called. Don't use a leading `_` instead: when a command is redefined, CMake keeps the previous one under the name prefixed with `_`, which can clash.
+- Scripts that are run rather than included (`cmake -P`, or loaded by CTest through `TEST_INCLUDE_FILES`) are internal and named with a `_script` suffix. Their header comment says what runs them and with which variables.
+- Public scripts include internal ones relative to their own location: `include("${CMAKE_CURRENT_LIST_DIR}/src/<name>.cmake")`. Paths to files used later, e.g. a script run by a target, use `CMAKE_CURRENT_FUNCTION_LIST_DIR` from within the function.
+
+```
+cmake/
+  im3e_tests.cmake                         public: im3e_add_unit_tests_executable()...
+  src/
+    im3e_test_source_lines.cmake           internal: im3e_internal_add_test_source_lines()
+    im3e_test_source_lines_script.cmake    internal: run by CTest
+```
+
+*Automated:* no.
 
 ## Enforcement
 
