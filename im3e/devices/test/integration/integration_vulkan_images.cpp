@@ -9,6 +9,16 @@ using namespace im3e;
 struct VulkanImageIntegration : public DeviceIntegrationTest
 {
     std::shared_ptr<const IImageFactory> m_pImageFactory = getDevice()->getImageFactory();
+
+    auto queryRowPitch(VkImage vkImage) const -> VkDeviceSize
+    {
+        auto pDevice = getDevice();
+        auto& rFcts = pDevice->getFcts();
+        VkImageSubresource vkSubresource{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT};
+        VkSubresourceLayout vkResult{};
+        rFcts.vkGetImageSubresourceLayout(pDevice->getVkDevice(), vkImage, &vkSubresource, &vkResult);
+        return vkResult.rowPitch;
+    }
 };
 
 TEST_F(VulkanImageIntegration, createImageRgbaSnorm)
@@ -61,9 +71,11 @@ TEST_F(VulkanImageIntegration, createHostVisibleImageRgbaUnorm)
     EXPECT_THAT(pImage->getVkExtent(), Eq(ExpectedExtent));
     EXPECT_THAT(pImage->getVkFormat(), Eq(ExpectedFormat));
 
+    const auto expectedRowPitch = queryRowPitch(pImage->getVkImage());
+
     auto pImageMapping = pImage->map();
     EXPECT_THAT(pImageMapping->getData(), NotNull());
     EXPECT_THAT(pImageMapping->getConstData(), NotNull());
-    EXPECT_THAT(pImageMapping->getRowPitch(), Eq(ExpectedExtent.width * sizeof(uint32_t)));
-    EXPECT_THAT(pImageMapping->getSizeInBytes(), Eq(ExpectedExtent.width * ExpectedExtent.height * sizeof(uint32_t)));
+    EXPECT_THAT(pImageMapping->getRowPitch(), Eq(expectedRowPitch));
+    EXPECT_THAT(pImageMapping->getSizeInBytes(), Ge(expectedRowPitch * ExpectedExtent.height));
 }
