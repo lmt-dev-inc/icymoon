@@ -182,11 +182,11 @@ CMake has no private functions: once a file is included, everything it defines c
 - Public scripts include internal ones relative to their own location: `include("${CMAKE_CURRENT_LIST_DIR}/src/<name>.cmake")`. Paths to files used later, e.g. a script run by a target, use `CMAKE_CURRENT_FUNCTION_LIST_DIR` from within the function.
 
 ```
-cmake/
-  im3e_tests.cmake                         public: im3e_add_unit_tests_executable()...
+cmake/code_coverage/
+  im3e_init_code_coverage.cmake                public: im3e_init_code_coverage()...
   src/
-    im3e_test_source_lines.cmake           internal: im3e_internal_add_test_source_lines()
-    im3e_test_source_lines_script.cmake    internal: run by CTest
+    im3e_llvm_code_coverage.cmake              internal: im3e_internal_init_llvm_code_coverage()
+    im3e_llvm_coverage_report_script.cmake     internal: run by the im3e_coverage_report target
 ```
 
 *Automated:* no.
