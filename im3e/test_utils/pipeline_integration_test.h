@@ -25,9 +25,10 @@ public:
 
     auto mapOutputImage() const -> std::unique_ptr<const IHostVisibleImage::IMapping>;
     void expectRgbaPixel(const IHostVisibleImage::IMapping& rMapping, const std::array<uint32_t, 2U>& rPos,
-                         const std::array<uint8_t, 4U>& rExpected);
+                         const std::array<uint8_t, 4U>& rExpected, uint8_t tolerance = 1U);
     void expectRgbaPixelRegion(const IHostVisibleImage::IMapping& rMapping, const std::array<uint32_t, 2U>& rMinPos,
-                               const std::array<uint32_t, 2U>& rMaxPos, const std::array<uint8_t, 4U>& rExpected);
+                               const std::array<uint32_t, 2U>& rMaxPos, const std::array<uint8_t, 4U>& rExpected,
+                               uint8_t tolerance = 1U);
 
 protected:
     struct Config

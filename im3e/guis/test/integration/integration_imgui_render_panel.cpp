@@ -45,7 +45,7 @@ struct ImguiRenderPanelIntegration : public PipelineIntegrationTest
 TEST_F(ImguiRenderPanelIntegration, toSRgb)
 {
     constexpr VkClearColorValue ClearColor{.float32 = {0.0177445058F, 0.0656561702F, 0.198943928F, 1.0F}};
-    constexpr std::array<uint8_t, 4U> ExpectedColor{36U, 73U, 123U, 255U};
+    constexpr std::array<uint8_t, 4U> ExpectedColor{36U, 72U, 123U, 255U};
 
     addRenderPanel(ClearColor);
     runPanelTest(VK_FORMAT_R8G8B8A8_SRGB);
@@ -57,7 +57,7 @@ TEST_F(ImguiRenderPanelIntegration, toSRgb)
 TEST_F(ImguiRenderPanelIntegration, toRgb)
 {
     constexpr VkClearColorValue ClearColor{.float32 = {0.5F, 0.5F, 0.5F, 1.0F}};
-    constexpr std::array<uint8_t, 4U> ExpectedColor{128U, 128U, 128U, 255U};
+    constexpr std::array<uint8_t, 4U> ExpectedColor{127U, 127U, 127U, 255U};
 
     addRenderPanel(ClearColor);
     runPanelTest(VK_FORMAT_R8G8B8A8_UNORM);

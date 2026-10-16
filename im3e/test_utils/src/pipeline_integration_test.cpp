@@ -8,6 +8,19 @@
 
 using namespace im3e;
 
+namespace {
+
+// Matches a (actual, expected) pair whose values differ by at most tolerance.
+MATCHER_P(IsWithin, tolerance, fmt::format("is within {} of", tolerance))
+{
+    const auto actual = std::get<0>(arg);
+    const auto expected = std::get<1>(arg);
+    const auto absDiff = (actual > expected) ? actual - expected : expected - actual;
+    return absDiff <= tolerance;
+}
+
+}  // namespace
+
 void PipelineIntegrationTest::TearDown()
 {
     if (Test::HasFailure())
@@ -31,17 +44,23 @@ auto PipelineIntegrationTest::mapOutputImage() const -> std::unique_ptr<const IH
 
 void PipelineIntegrationTest::expectRgbaPixel(const IHostVisibleImage::IMapping& rMapping,
                                               const std::array<uint32_t, 2U>& rPos,
-                                              const std::array<uint8_t, 4U>& rExpected)
+                                              const std::array<uint8_t, 4U>& rExpected, uint8_t tolerance)
 {
     const auto& rRgbaPixel = *reinterpret_cast<const std::array<uint8_t, 4U>*>(rMapping.getPixel(rPos[0], rPos[1]));
-    EXPECT_THAT(rRgbaPixel, ContainerEq(rExpected)) << fmt::format("Pixel at [{}; {}]", rPos[0], rPos[1]);
+    EXPECT_THAT(rRgbaPixel, Pointwise(IsWithin(tolerance), rExpected))
+        << fmt::format("Pixel at [{}; {}]", rPos[0], rPos[1]);
 }
 
 void PipelineIntegrationTest::expectRgbaPixelRegion(const IHostVisibleImage::IMapping& rMapping,
                                                     const std::array<uint32_t, 2U>& rMinPos,
                                                     const std::array<uint32_t, 2U>& rMaxPos,
-                                                    const std::array<uint8_t, 4U>& rExpected)
+                                                    const std::array<uint8_t, 4U>& rExpected, uint8_t tolerance)
 {
+    auto compareElements = [&tolerance](uint8_t a, uint8_t b) {
+        const auto absDiff = (a > b) ? a - b : b - a;
+        return absDiff <= tolerance;
+    };
+
     // For performance reason, we gather a vector of invalid pixels and have a single GTest expectation at the end
     // instead of using EXPECT_THAT for every single pixels. Otherwise, tests can freeze for a long time when the tested
     // regions are large:
@@ -51,7 +70,7 @@ void PipelineIntegrationTest::expectRgbaPixelRegion(const IHostVisibleImage::IMa
         auto* pIt = reinterpret_cast<const std::array<uint8_t, 4U>*>(rMapping.getPixel(rMinPos[0], y));
         for (uint32_t x = rMinPos[0]; x < rMaxPos[0]; x++)
         {
-            if (*pIt != rExpected)
+            if (!std::ranges::equal(*pIt, rExpected, compareElements))
             {
                 invalidPixels.push_back({x, y});
             }

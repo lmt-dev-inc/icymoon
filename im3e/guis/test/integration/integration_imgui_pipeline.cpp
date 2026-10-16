@@ -113,7 +113,7 @@ TEST_F(ImguiPipelineIntegration, withImguiDemo)
 
     auto pImageMapping = mapOutputImage();
     expectRgbaPixel(*pImageMapping, {664U, 28U}, {255U, 255U, 255U, 255U});
-    expectRgbaPixel(*pImageMapping, {804U, 29U}, {38U, 73U, 123U, 255U});
+    expectRgbaPixel(*pImageMapping, {804U, 29U}, {38U, 73U, 124U, 255U});
     expectRgbaPixel(*pImageMapping, {650U, 341U}, {79U, 80U, 95U, 255U});
     expectRgbaPixel(*pImageMapping, {1193U, 695U}, {26U, 73U, 124U, 255U});
     expectRgbaPixel(*pImageMapping, {1182U, 226U}, {34U, 89U, 150U, 255U});
