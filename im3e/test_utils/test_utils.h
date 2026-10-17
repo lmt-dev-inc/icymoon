@@ -30,6 +30,7 @@ using ::testing::Ne;
 using ::testing::NiceMock;
 using ::testing::NotNull;
 using ::testing::Pointee;
+using ::testing::Pointwise;
 using ::testing::Return;
 using ::testing::ReturnRef;
 using ::testing::SetArgPointee;

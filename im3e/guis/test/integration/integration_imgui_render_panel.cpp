@@ -42,10 +42,14 @@ struct ImguiRenderPanelIntegration : public PipelineIntegrationTest
     std::shared_ptr<ImguiWorkspace> m_pWorkspace = std::make_shared<ImguiWorkspace>("Test Workspace");
 };
 
+// Clear colors are chosen so that their 8-bit conversion lands at the centre of an integer value rather than near a
+// rounding boundary (e.g. 0.5F * 255 = 127.5), where the rounding direction is driver-dependent.
+
 TEST_F(ImguiRenderPanelIntegration, toSRgb)
 {
-    constexpr VkClearColorValue ClearColor{.float32 = {0.0177445058F, 0.0656561702F, 0.198943928F, 1.0F}};
-    constexpr std::array<uint8_t, 4U> ExpectedColor{36U, 72U, 123U, 255U};
+    // Linear values of sRGB {36, 73, 123} / 255:
+    constexpr VkClearColorValue ClearColor{.float32 = {0.0176419541F, 0.0666259378F, 0.198069319F, 1.0F}};
+    constexpr std::array<uint8_t, 4U> ExpectedColor{36U, 73U, 123U, 255U};
 
     addRenderPanel(ClearColor);
     runPanelTest(VK_FORMAT_R8G8B8A8_SRGB);
@@ -56,8 +60,8 @@ TEST_F(ImguiRenderPanelIntegration, toSRgb)
 
 TEST_F(ImguiRenderPanelIntegration, toRgb)
 {
-    constexpr VkClearColorValue ClearColor{.float32 = {0.5F, 0.5F, 0.5F, 1.0F}};
-    constexpr std::array<uint8_t, 4U> ExpectedColor{127U, 127U, 127U, 255U};
+    constexpr VkClearColorValue ClearColor{.float32 = {128.0F / 255.0F, 128.0F / 255.0F, 128.0F / 255.0F, 1.0F}};
+    constexpr std::array<uint8_t, 4U> ExpectedColor{128U, 128U, 128U, 255U};
 
     addRenderPanel(ClearColor);
     runPanelTest(VK_FORMAT_R8G8B8A8_UNORM);

@@ -1,6 +1,7 @@
 #include "device_integration_test.h"
 
 #include <im3e/devices/devices.h>
+#include <im3e/utils/core/platform_utils.h>
 #include <im3e/utils/loggers.h>
 
 #include <fmt/format.h>
@@ -72,7 +73,10 @@ void DeviceIntegrationTest::SetUpTestSuite()
             s_suiteName.erase(s_suiteName.find_first_of("/"));
         }
 
-        s_pLogger = createFileLogger(std::filesystem::path{fmt::format("{}.log", s_suiteName)});
+        const auto logFileName = std::filesystem::path{fmt::format("{}.log", s_suiteName)};
+        const auto executablePath = getCurrentExecutableFolder();
+
+        s_pLogger = createFileLogger(executablePath / logFileName);
         s_pLogger->setLevelFilter(TestsLogLevel);
         s_pLoggerTracker = s_pLogger->createGlobalTracker();
     }
@@ -97,6 +101,6 @@ void DeviceIntegrationTest::TearDownTestSuite()
 auto DeviceIntegrationTest::generateFilePath(std::string_view name, std::string_view extension) const
     -> std::filesystem::path
 {
-    return std::filesystem::current_path() /
+    return getCurrentExecutableFolder() /
            std::filesystem::path{fmt::format("{}_{}.{}", getSuiteName(), name, extension)};
 }

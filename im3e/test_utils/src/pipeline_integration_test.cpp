@@ -1,11 +1,25 @@
 #include "pipeline_integration_test.h"
 
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <fmt/std.h>
 
 #include <filesystem>
 
 using namespace im3e;
+
+namespace {
+
+// Matches a (actual, expected) pair whose values differ by at most tolerance.
+MATCHER_P(IsWithin, tolerance, fmt::format("is within {} of", tolerance))
+{
+    const auto actual = std::get<0>(arg);
+    const auto expected = std::get<1>(arg);
+    const auto absDiff = (actual > expected) ? actual - expected : expected - actual;
+    return absDiff <= tolerance;
+}
+
+}  // namespace
 
 void PipelineIntegrationTest::TearDown()
 {
@@ -30,23 +44,27 @@ auto PipelineIntegrationTest::mapOutputImage() const -> std::unique_ptr<const IH
 
 void PipelineIntegrationTest::expectRgbaPixel(const IHostVisibleImage::IMapping& rMapping,
                                               const std::array<uint32_t, 2U>& rPos,
-                                              const std::array<uint8_t, 4U>& rExpected)
+                                              const std::array<uint8_t, 4U>& rExpected, uint8_t tolerance)
 {
     const auto& rRgbaPixel = *reinterpret_cast<const std::array<uint8_t, 4U>*>(rMapping.getPixel(rPos[0], rPos[1]));
-    EXPECT_THAT(rRgbaPixel, ContainerEq(rExpected)) << fmt::format("Pixel at [{}; {}]", rPos[0], rPos[1]);
+    EXPECT_THAT(rRgbaPixel, Pointwise(IsWithin(tolerance), rExpected))
+        << fmt::format("Pixel at [{}; {}]", rPos[0], rPos[1]);
 }
 
 void PipelineIntegrationTest::expectRgbaPixelRegion(const IHostVisibleImage::IMapping& rMapping,
                                                     const std::array<uint32_t, 2U>& rMinPos,
                                                     const std::array<uint32_t, 2U>& rMaxPos,
-                                                    const std::array<uint8_t, 4U>& rExpected)
+                                                    const std::array<uint8_t, 4U>& rExpected, uint8_t tolerance)
 {
+    std::vector<std::array<uint32_t, 2U>> invalidPixels;
     for (uint32_t y = rMinPos[1]; y < rMaxPos[1]; y++)
     {
         auto* pIt = reinterpret_cast<const std::array<uint8_t, 4U>*>(rMapping.getPixel(rMinPos[0], y));
         for (uint32_t x = rMinPos[0]; x < rMaxPos[0]; x++)
         {
-            EXPECT_THAT(*pIt, ContainerEq(rExpected)) << fmt::format("Pixel at [{}; {}]", x, y);
+            // This function can be used with large regions. If we were to use EXPECT_THAT here, a failing test could
+            // take a very long time to run. Instead, we use ASSERT_THAT so that only the first failure is reported:
+            ASSERT_THAT(*pIt, Pointwise(IsWithin(tolerance), rExpected));
             pIt++;
         }
     }
