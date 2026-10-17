@@ -56,29 +56,18 @@ void PipelineIntegrationTest::expectRgbaPixelRegion(const IHostVisibleImage::IMa
                                                     const std::array<uint32_t, 2U>& rMaxPos,
                                                     const std::array<uint8_t, 4U>& rExpected, uint8_t tolerance)
 {
-    auto compareElements = [&tolerance](uint8_t a, uint8_t b) {
-        const auto absDiff = (a > b) ? a - b : b - a;
-        return absDiff <= tolerance;
-    };
-
-    // For performance reason, we gather a vector of invalid pixels and have a single GTest expectation at the end
-    // instead of using EXPECT_THAT for every single pixels. Otherwise, tests can freeze for a long time when the tested
-    // regions are large:
     std::vector<std::array<uint32_t, 2U>> invalidPixels;
     for (uint32_t y = rMinPos[1]; y < rMaxPos[1]; y++)
     {
         auto* pIt = reinterpret_cast<const std::array<uint8_t, 4U>*>(rMapping.getPixel(rMinPos[0], y));
         for (uint32_t x = rMinPos[0]; x < rMaxPos[0]; x++)
         {
-            if (!std::ranges::equal(*pIt, rExpected, compareElements))
-            {
-                invalidPixels.push_back({x, y});
-            }
+            // This function can be used with large regions. If we were to use EXPECT_THAT here, a failing test could
+            // take a very long time to run. Instead, we use ASSERT_THAT so that only the first failure is reported:
+            ASSERT_THAT(*pIt, Pointwise(IsWithin(tolerance), rExpected));
             pIt++;
         }
     }
-
-    EXPECT_THAT(invalidPixels, IsEmpty()) << fmt::format("Expected region with value {}", rExpected);
 }
 
 void PipelineIntegrationTest::initialize(Config config, std::unique_ptr<IFramePipeline> pFramePipeline)
