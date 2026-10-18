@@ -1,5 +1,8 @@
 #pragma once
 
+#include <im3e/utils/core/platform_utils.h>
+
+#include <fmt/format.h>
 #include <gmock/gmock.h>
 
 namespace im3e {
@@ -40,5 +43,15 @@ using ::testing::Test;
 using ::testing::Unused;
 using ::testing::Values;
 using ::testing::ValuesIn;
+
+/// @brief Generate a file path to save test output e.g. images
+/// @details The file path points to the test suite folder within the current test binary folder and the file name is
+/// the given name and extension.
+inline auto generateTestOutputFilePath(std::string_view suiteName, std::string_view name, std::string_view extension)
+{
+    const auto suiteFolder = getCurrentExecutableFolder() / suiteName;
+    std::filesystem::create_directories(suiteFolder);
+    return suiteFolder / fmt::format("{}.{}", name, extension);
+}
 
 }  // namespace im3e

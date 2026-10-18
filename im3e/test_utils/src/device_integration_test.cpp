@@ -97,10 +97,3 @@ void DeviceIntegrationTest::TearDownTestSuite()
     s_pDevice.reset();
     s_pLogger.reset();
 }
-
-auto DeviceIntegrationTest::generateFilePath(std::string_view name, std::string_view extension) const
-    -> std::filesystem::path
-{
-    return getCurrentExecutableFolder() /
-           std::filesystem::path{fmt::format("{}_{}.{}", getSuiteName(), name, extension)};
-}
