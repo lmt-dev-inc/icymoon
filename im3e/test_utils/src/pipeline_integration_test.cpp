@@ -56,7 +56,6 @@ void PipelineIntegrationTest::expectRgbaPixelRegion(const IHostVisibleImage::IMa
                                                     const std::array<uint32_t, 2U>& rMaxPos,
                                                     const std::array<uint8_t, 4U>& rExpected, uint8_t tolerance)
 {
-    std::vector<std::array<uint32_t, 2U>> invalidPixels;
     for (uint32_t y = rMinPos[1]; y < rMaxPos[1]; y++)
     {
         auto* pIt = reinterpret_cast<const std::array<uint8_t, 4U>*>(rMapping.getPixel(rMinPos[0], y));
@@ -64,7 +63,7 @@ void PipelineIntegrationTest::expectRgbaPixelRegion(const IHostVisibleImage::IMa
         {
             // This function can be used with large regions. If we were to use EXPECT_THAT here, a failing test could
             // take a very long time to run. Instead, we use ASSERT_THAT so that only the first failure is reported:
-            ASSERT_THAT(*pIt, Pointwise(IsWithin(tolerance), rExpected));
+            ASSERT_THAT(*pIt, Pointwise(IsWithin(tolerance), rExpected)) << fmt::format("Pixel at [{}; {}]", x, y);
             pIt++;
         }
     }
