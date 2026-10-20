@@ -23,5 +23,6 @@ target_link_libraries(im3e_anari_viewer
 
 add_dependencies(im3e_anari_viewer
     im3e_resources_proj
+    im3e_runtime_dlls
 )
 
