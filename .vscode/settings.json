@@ -13,6 +13,10 @@
     "cmake.coverageInfoFiles": [
         "${command:cmake.buildDirectory}/coverage/lcov.info"
     ],
+    // Don't re-run configure when a CMakeLists.txt / *.cmake file changes
+    "cmake.configureOnEdit": false,
+    // Don't re-run configure when CMakePresets.json changes (the preset is reloaded and re-applied)
+    "cmake.automaticReconfigure": false,
     "editor.formatOnSave": true,
     "editor.acceptSuggestionOnCommitCharacter": false,
     "editor.acceptSuggestionOnEnter": "off",
