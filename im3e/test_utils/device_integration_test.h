@@ -27,11 +27,6 @@ public:
     static void SetUpTestSuite();
     static void TearDownTestSuite();
 
-    /// @brief Generate a file path to save test output e.g. images
-    /// @details The file path points to the test binary folder and is prefixed with the test suite name followed by
-    /// the given name and extension.
-    auto generateFilePath(std::string_view name, std::string_view extension) const -> std::filesystem::path;
-
     static auto getSuiteName() { return s_suiteName; }
     static auto getLogger() -> const ILogger& { return *s_pLogger; }
     static auto getDevice() { return s_pDevice; }

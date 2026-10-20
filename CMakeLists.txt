@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30.1)
+cmake_minimum_required(VERSION 4.2.3)
 
 project (IcyMoonEngine VERSION 0.1.0)
 

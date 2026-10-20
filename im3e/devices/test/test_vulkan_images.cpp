@@ -140,6 +140,8 @@ TEST_F(ImageFactoryTest, createHostVisibleImage)
     EXPECT_CALL(m_rMockFcts, vkGetImageSubresourceLayout(m_mockVkDevice, vkImage, NotNull(), NotNull()))
         .WillOnce(Invoke([&](Unused, Unused, const VkImageSubresource* pVkSubresource, VkSubresourceLayout* pVkLayout) {
             EXPECT_THAT(pVkSubresource->aspectMask, Eq(VK_IMAGE_ASPECT_COLOR_BIT));
+            EXPECT_THAT(pVkSubresource->mipLevel, Eq(0U));
+            EXPECT_THAT(pVkSubresource->arrayLayer, Eq(0U));
             pVkLayout->rowPitch = rowPitch;
         }));
     expectDebugNameSet(VK_OBJECT_TYPE_IMAGE, vkImage, "Im3eImage.testImage");

@@ -102,7 +102,6 @@ auto createVkDevice(const VulkanInstanceFcts& rInstFcts, const VulkanExtensions&
                     const VulkanPhysicalDevice& rPhysicalDevice)
 {
     const auto vkQueueCreateInfos = makeQueueCreateInfos(rPhysicalDevice);
-    const auto& rLayers = rExtensions.getLayers();
     const auto& rDeviceExtensions = rExtensions.getDeviceExtensions();
 
     VkPhysicalDeviceFeatures features{
@@ -119,8 +118,6 @@ auto createVkDevice(const VulkanInstanceFcts& rInstFcts, const VulkanExtensions&
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .queueCreateInfoCount = static_cast<uint32_t>(vkQueueCreateInfos.size()),
         .pQueueCreateInfos = vkQueueCreateInfos.data(),
-        .enabledLayerCount = static_cast<uint32_t>(rLayers.size()),
-        .ppEnabledLayerNames = rLayers.data(),
         .enabledExtensionCount = static_cast<uint32_t>(rDeviceExtensions.size()),
         .ppEnabledExtensionNames = rDeviceExtensions.data(),
         .pEnabledFeatures = &features,

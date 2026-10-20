@@ -1,7 +1,7 @@
-# Script run by the im3e_coverage_report target (see im3e_init_llvm_code_coverage()):
+# Script run by the im3e_coverage_report target (see im3e_internal_init_llvm_code_coverage()):
 # merges the raw profiles written by the test executables and exports them in lcov format.
 #
-# Usage: cmake -DCONFIG_FILE=<build>/coverage/coverage_config.cmake -P im3e_llvm_coverage_report.cmake
+# Usage: cmake -DCONFIG_FILE=<build>/coverage/coverage_config.cmake -P im3e_llvm_coverage_report_script.cmake
 
 include("${CONFIG_FILE}")
 
