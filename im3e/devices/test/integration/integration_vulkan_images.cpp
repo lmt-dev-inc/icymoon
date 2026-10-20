@@ -68,4 +68,6 @@ TEST_F(VulkanImageIntegration, createHostVisibleImageRgbaUnorm)
     // our expected sizes exactly:
     EXPECT_THAT(pImageMapping->getRowPitch(), Ge(ExpectedExtent.width * sizeof(uint32_t)));
     EXPECT_THAT(pImageMapping->getSizeInBytes(), Ge(ExpectedExtent.width * ExpectedExtent.height * sizeof(uint32_t)));
+    EXPECT_THAT(pImageMapping->getSizeInBytes(), Ge(pImageMapping->getRowPitch() * (ExpectedExtent.height - 1U) +
+                                                    ExpectedExtent.width * sizeof(uint32_t)));
 }

@@ -22,10 +22,8 @@ struct VulkanDeviceIntegration : public Test
                 suiteName.erase(suiteName.find_first_of("/"));
             }
 
-            const auto logFileName = std::filesystem::path{fmt::format("{}.log", suiteName)};
-            const auto executablePath = getCurrentExecutableFolder();
-
-            s_pLogger = createFileLogger(executablePath / logFileName);
+            const auto logFilePath = generateTestOutputFilePath(suiteName, suiteName, "log");
+            s_pLogger = createFileLogger(logFilePath);
             s_pLogger->setLevelFilter(LogLevel::Debug);
         }
     }

@@ -10,6 +10,7 @@ add_library(im3e_test_utils STATIC
     src/glm.cpp
     src/integration_test.cpp
     src/pipeline_integration_test.cpp
+    src/test_utils.cpp
     src/vk.cpp
 )
 

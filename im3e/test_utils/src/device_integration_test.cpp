@@ -73,10 +73,8 @@ void DeviceIntegrationTest::SetUpTestSuite()
             s_suiteName.erase(s_suiteName.find_first_of("/"));
         }
 
-        const auto logFileName = std::filesystem::path{fmt::format("{}.log", s_suiteName)};
-        const auto executablePath = getCurrentExecutableFolder();
-
-        s_pLogger = createFileLogger(executablePath / logFileName);
+        const auto logFilePath = generateTestOutputFilePath(s_suiteName, s_suiteName, "log");
+        s_pLogger = createFileLogger(logFilePath);
         s_pLogger->setLevelFilter(TestsLogLevel);
         s_pLoggerTracker = s_pLogger->createGlobalTracker();
     }
