@@ -55,9 +55,21 @@ function(im3e_copy_anari_devices TARGET)
     endif()
 
     if(NOT TARGET im3e_anari_devices)
-        # anari is packaged as a static library, so Conan has no bin dir for it: its DLLs are in the package folder
+        # The package folder is only known for the build type, and the DLLs are all copied to a single folder
+        get_property(_IS_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+        if(_IS_MULTI_CONFIG)
+            message(FATAL_ERROR "Multi-config generators are not supported: use a single-config one, such as Ninja")
+        endif()
+
+        # anari is packaged as a static library, so Conan has no bin dir for it: its DLLs are in the package folder.
+        # CMakeDeps names the variable after our build type, even when the dependencies are built with another one.
         string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
-        set(_ANARI_BIN_DIR "${anari_PACKAGE_FOLDER_${_BUILD_TYPE}}/bin")
+        set(_ANARI_PACKAGE_FOLDER "${anari_PACKAGE_FOLDER_${_BUILD_TYPE}}")
+        if(NOT _ANARI_PACKAGE_FOLDER)
+            # Without it, the glob below would read the bin folder at the root of the drive
+            message(FATAL_ERROR "anari_PACKAGE_FOLDER_${_BUILD_TYPE} is not defined: was anari found with Conan?")
+        endif()
+        set(_ANARI_BIN_DIR "${_ANARI_PACKAGE_FOLDER}/bin")
         file(GLOB _ANARI_DLLS "${_ANARI_BIN_DIR}/*.dll")
         if(NOT _ANARI_DLLS)
             message(WARNING "No anari device found in \"${_ANARI_BIN_DIR}\": anari applications will fail to load devices")
