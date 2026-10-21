@@ -2,6 +2,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <numbers>
+
 using namespace im3e;
 
 namespace {
