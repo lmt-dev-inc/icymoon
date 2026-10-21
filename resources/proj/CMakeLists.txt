@@ -5,13 +5,22 @@ endif()
 
 set(dstFolder "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
-add_custom_target(im3e_resources_proj
-  COMMAND
-    ${CMAKE_COMMAND} -E copy "${PROJ_RES_PATH}/proj.db" ${dstFolder}
-  DEPENDS
-    "${PROJ_RES_PATH}/proj.db"
-  BYPRODUCTS
+set(srcPath "${PROJ_RES_PATH}/proj.db")
+set(dstPath "${dstFolder}/proj.db")
+
+# The copy is an output of a custom command, so it only runs when proj.db changes
+add_custom_command(
+  OUTPUT
     "${dstFolder}/proj.db"
+  COMMAND
+    ${CMAKE_COMMAND} -E copy_if_different "${srcPath}" "${dstPath}"
+  DEPENDS
+    "${srcPath}"
   COMMENT
     "Copying proj.db from \"${PROJ_RES_PATH}\" to \"${dstFolder}\""
+)
+
+add_custom_target(im3e_resources_proj
+  DEPENDS
+    "${dstPath}"
 )
