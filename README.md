@@ -54,8 +54,6 @@ On Windows, use `python` instead of `python3` and the `win-clang-debug` configur
 - `dev.py setup` installs the Visual Studio 2022 Build Tools if they are missing. The installer asks for administrator rights (UAC prompt).
 - Activate the virtual environment with `.venv\Scripts\Activate.ps1` in PowerShell, `.venv\Scripts\activate.bat` in cmd, or `source .venv/Scripts/activate` in Git Bash.
 - No Visual Studio developer prompt is needed: `dev.py install` writes the Visual Studio environment into the CMake presets, so `cmake --preset` and VS Code's CMake Tools work from any terminal. Run `dev.py install` again after updating the Build Tools, as the presets contain the paths of the installed toolset.
-- To run `clang-cl` or other Visual Studio tools by hand, use the "Developer PowerShell for VS 2022" from the Start menu.
-- Paths are UTF-16 on Windows (`std::filesystem::path::c_str()` returns `const wchar_t*`). Convert them with `path::toUtf8()` / `path::fromUtf8()` from `im3e/utils/core/path_utils.h` when passing them to or getting them from libraries that use UTF-8 strings (GDAL, ImGui...). Don't use `std::filesystem::path::string()` for that: on Windows it converts to the process code page, which isn't UTF-8 and can't represent every character.
 
 ### dev.py Commands
 
