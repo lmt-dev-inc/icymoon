@@ -7,20 +7,39 @@
 # The copy runs on every build, before the executable is linked: a DLL updated or deleted without any relink is still
 # copied, and the DLLs are in place for the post-build steps that run the executable (e.g. gtest_discover_tests).
 # copy_if_different compares the contents, so the DLLs that did not change are not copied again.
+# All executables are built in the same folder, so the DLLs of all of them are copied by a single target:
+# separate targets would write the same files at the same time in parallel builds.
 function(im3e_copy_runtime_dlls TARGET)
     if(NOT WIN32)
         return()
     endif()
 
-    # copy_if_different fails without files, so executables without any DLL dependency run a no-op instead
-    set(_RUNTIME_DLLS "$<TARGET_RUNTIME_DLLS:${TARGET}>")
-    add_custom_target(${TARGET}_runtime_dlls
+    get_property(_TARGETS GLOBAL PROPERTY IM3E_RUNTIME_DLL_TARGETS)
+    if(NOT _TARGETS)
+        # The copy target is created once all executables are known, at the end of the top-level directory
+        cmake_language(DEFER DIRECTORY "${CMAKE_SOURCE_DIR}" CALL _im3e_add_runtime_dlls_target)
+    endif()
+    set_property(GLOBAL APPEND PROPERTY IM3E_RUNTIME_DLL_TARGETS ${TARGET})
+
+    # Dependencies are resolved at generate time, so the copy target does not need to exist yet
+    add_dependencies(${TARGET} im3e_runtime_dlls)
+endfunction()
+
+function(_im3e_add_runtime_dlls_target)
+    get_property(_TARGETS GLOBAL PROPERTY IM3E_RUNTIME_DLL_TARGETS)
+    set(_RUNTIME_DLLS "")
+    foreach(_TARGET IN LISTS _TARGETS)
+        list(APPEND _RUNTIME_DLLS "$<TARGET_RUNTIME_DLLS:${_TARGET}>")
+    endforeach()
+    set(_RUNTIME_DLLS "$<REMOVE_DUPLICATES:${_RUNTIME_DLLS}>")
+
+    # copy_if_different fails without files, so a no-op runs instead when there is no DLL dependency
+    add_custom_target(im3e_runtime_dlls
       COMMAND
         ${CMAKE_COMMAND} -E
-        "$<IF:$<BOOL:${_RUNTIME_DLLS}>,copy_if_different;${_RUNTIME_DLLS};$<TARGET_FILE_DIR:${TARGET}>,true>"
+        "$<IF:$<BOOL:${_RUNTIME_DLLS}>,copy_if_different;${_RUNTIME_DLLS};${CMAKE_RUNTIME_OUTPUT_DIRECTORY},true>"
       COMMAND_EXPAND_LISTS
     )
-    add_dependencies(${TARGET} ${TARGET}_runtime_dlls)
 endfunction()
 
 # Anari devices (anari_library_*.dll) are plugins loaded at run time, so they are not in the imports of any executable.
