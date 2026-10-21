@@ -29,19 +29,26 @@ function(_im3e_add_runtime_dlls_target)
     get_property(_TARGETS GLOBAL PROPERTY IM3E_RUNTIME_DLL_TARGETS)
     set(_RUNTIME_DLLS "")
     foreach(_TARGET IN LISTS _TARGETS)
+        # The DLLs, the anari devices and the resources are all copied to that folder only
+        get_target_property(_OUTPUT_DIR ${_TARGET} RUNTIME_OUTPUT_DIRECTORY)
+        if(NOT _OUTPUT_DIR STREQUAL CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+            message(FATAL_ERROR "${_TARGET} is built in \"${_OUTPUT_DIR}\": executables must be built in "
+                                "\"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\" to find the DLLs they need")
+        endif()
         list(APPEND _RUNTIME_DLLS "$<TARGET_RUNTIME_DLLS:${_TARGET}>")
     endforeach()
     set(_RUNTIME_DLLS "$<REMOVE_DUPLICATES:${_RUNTIME_DLLS}>")
 
     # The target has no dependencies, so it can run before anything else created the folder, and copy_if_different
     # would then write a file named after it with one DLL, or fail with several.
-    # copy_if_different fails without files, so a no-op runs instead when there is no DLL dependency
+    # copy_if_different fails without files, so a no-op runs instead when there is no DLL dependency: true ignores the
+    # arguments. Only the command is chosen by $<IF>, as a comma or a '>' in a path given to it would break it.
     add_custom_target(im3e_runtime_dlls
       COMMAND
         ${CMAKE_COMMAND} -E make_directory "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
       COMMAND
-        ${CMAKE_COMMAND} -E
-        "$<IF:$<BOOL:${_RUNTIME_DLLS}>,copy_if_different;${_RUNTIME_DLLS};${CMAKE_RUNTIME_OUTPUT_DIRECTORY},true>"
+        ${CMAKE_COMMAND} -E "$<IF:$<BOOL:${_RUNTIME_DLLS}>,copy_if_different,true>"
+        "${_RUNTIME_DLLS}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
       COMMAND_EXPAND_LISTS
     )
 endfunction()
