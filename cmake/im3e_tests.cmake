@@ -26,7 +26,7 @@ function(im3e_add_unit_tests_executable)
     endif()
 
     add_executable(${ARG_TARGET} ${ARG_SOURCES})
-    add_dependencies(${ARG_TARGET} im3e_runtime_dlls)
+    im3e_copy_runtime_dlls(${ARG_TARGET})
     set_property(GLOBAL APPEND PROPERTY IM3E_COVERAGE_TEST_TARGETS ${ARG_TARGET})
 
     gtest_discover_tests(${ARG_TARGET}
@@ -58,7 +58,7 @@ function(im3e_add_integration_tests_executable)
     endif()
 
     add_executable(${ARG_TARGET} ${ARG_SOURCES})
-    add_dependencies(${ARG_TARGET} im3e_runtime_dlls)
+    im3e_copy_runtime_dlls(${ARG_TARGET})
     set_property(GLOBAL APPEND PROPERTY IM3E_COVERAGE_TEST_TARGETS ${ARG_TARGET})
 
     gtest_discover_tests(${ARG_TARGET}

@@ -41,3 +41,5 @@ target_link_libraries(im3e_anari
   PRIVATE
     fmt::fmt
 )
+
+im3e_copy_anari_devices(im3e_anari)

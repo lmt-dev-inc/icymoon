@@ -1,7 +1,6 @@
 #include "integration_test.h"
 
 #include <im3e/devices/devices.h>
-#include <im3e/utils/core/platform_utils.h>
 #include <im3e/utils/loggers.h>
 
 #include <fmt/format.h>

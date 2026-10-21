@@ -12,5 +12,6 @@ target_link_libraries(im3e_geo_processor
 
 add_dependencies(im3e_geo_processor
     im3e_resources_proj
-    im3e_runtime_dlls
 )
+
+im3e_copy_runtime_dlls(im3e_geo_processor)

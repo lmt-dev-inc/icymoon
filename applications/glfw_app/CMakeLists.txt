@@ -7,6 +7,4 @@ target_link_libraries(im3e_glfw_app
     im3e_guis
 )
 
-add_dependencies(im3e_glfw_app
-    im3e_runtime_dlls
-)
+im3e_copy_runtime_dlls(im3e_glfw_app)

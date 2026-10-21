@@ -1,47 +1,68 @@
-# Copies the DLLs of the Conan dependencies next to our executables, so that they start without any environment set up.
+# Copies the DLLs our executables need next to them, so that they start without any environment set up.
 # Windows has no RPATH: the loader looks for DLLs in the executable's folder, then in the system folders and the PATH.
 # On Linux, CMake adds the folders of the shared libraries we link to the build-tree RPATH, so nothing is copied.
-#
-# Not every DLL is an import of our executables: anari devices (anari_library_*.dll) are plugins loaded at run time.
-# So all the DLLs of the Conan dependencies are copied, rather than only the ones found in the executables' imports.
-# All executables are built in the same folder, so they are copied once: executables depend on im3e_runtime_dlls.
 
-set(_RUNTIME_DLL_COPIES "")
-
-if(WIN32)
-    if(NOT DEFINED CONAN_RUNTIME_LIB_DIRS)
-        message(STATUS "CONAN_RUNTIME_LIB_DIRS is not defined: no runtime DLL is copied next to the executables")
+# Copies the DLLs that the executable imports, directly or through its dependencies, next to it.
+# Only the shared libraries linked as SHARED IMPORTED targets are listed, which is what Conan generates for them.
+# The copy runs on every build, before the executable is linked: a DLL updated or deleted without any relink is still
+# copied, and the DLLs are in place for the post-build steps that run the executable (e.g. gtest_discover_tests).
+# copy_if_different compares the contents, so the DLLs that did not change are not copied again.
+function(im3e_copy_runtime_dlls TARGET)
+    if(NOT WIN32)
+        return()
     endif()
 
-    foreach(_RUNTIME_DIR IN LISTS CONAN_RUNTIME_LIB_DIRS)
-        # Conan still lists the packages whose binaries it skipped. Their package_info() never ran, so their dirs keep
-        # the relative defaults ("bin"). They have nothing to copy, and globbing a relative dir would search for a "bin"
-        # folder in this script folder i.e. our own code.
-        if(NOT IS_ABSOLUTE "${_RUNTIME_DIR}")
-            continue()
+    # copy_if_different fails without files, so executables without any DLL dependency run a no-op instead
+    set(_RUNTIME_DLLS "$<TARGET_RUNTIME_DLLS:${TARGET}>")
+    add_custom_target(${TARGET}_runtime_dlls
+      COMMAND
+        ${CMAKE_COMMAND} -E
+        "$<IF:$<BOOL:${_RUNTIME_DLLS}>,copy_if_different;${_RUNTIME_DLLS};$<TARGET_FILE_DIR:${TARGET}>,true>"
+      COMMAND_EXPAND_LISTS
+    )
+    add_dependencies(${TARGET} ${TARGET}_runtime_dlls)
+endfunction()
+
+# Anari devices (anari_library_*.dll) are plugins loaded at run time, so they are not in the imports of any executable.
+# They are copied with the rest of the anari package's DLLs, which they import (e.g. the debug device imports anari.dll).
+# All executables are built in the same folder, so they are copied once: im3e_anari depends on im3e_anari_devices.
+function(im3e_copy_anari_devices TARGET)
+    if(NOT WIN32)
+        return()
+    endif()
+
+    if(NOT TARGET im3e_anari_devices)
+        # anari is packaged as a static library, so Conan has no bin dir for it: its DLLs are in the package folder
+        string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
+        set(_ANARI_BIN_DIR "${anari_PACKAGE_FOLDER_${_BUILD_TYPE}}/bin")
+        file(GLOB _ANARI_DLLS "${_ANARI_BIN_DIR}/*.dll")
+        if(NOT _ANARI_DLLS)
+            message(WARNING "No anari device found in \"${_ANARI_BIN_DIR}\": anari applications will fail to load devices")
         endif()
 
-        file(GLOB _RUNTIME_DLLS "${_RUNTIME_DIR}/*.dll")
-        foreach(_RUNTIME_DLL IN LISTS _RUNTIME_DLLS)
-            cmake_path(GET _RUNTIME_DLL FILENAME _RUNTIME_DLL_NAME)
-            set(_RUNTIME_DLL_COPY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_RUNTIME_DLL_NAME}")
+        set(_ANARI_DLL_COPIES "")
+        foreach(_ANARI_DLL IN LISTS _ANARI_DLLS)
+            cmake_path(GET _ANARI_DLL FILENAME _ANARI_DLL_NAME)
+            set(_ANARI_DLL_COPY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_ANARI_DLL_NAME}")
 
             add_custom_command(
               OUTPUT
-                "${_RUNTIME_DLL_COPY}"
+                "${_ANARI_DLL_COPY}"
               COMMAND
-                ${CMAKE_COMMAND} -E copy_if_different "${_RUNTIME_DLL}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                ${CMAKE_COMMAND} -E copy_if_different "${_ANARI_DLL}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
               DEPENDS
-                "${_RUNTIME_DLL}"
+                "${_ANARI_DLL}"
               COMMENT
-                "Copying ${_RUNTIME_DLL_NAME} from \"${_RUNTIME_DIR}\" to \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\""
+                "Copying ${_ANARI_DLL_NAME} from \"${_ANARI_BIN_DIR}\" to \"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}\""
             )
-            list(APPEND _RUNTIME_DLL_COPIES "${_RUNTIME_DLL_COPY}")
+            list(APPEND _ANARI_DLL_COPIES "${_ANARI_DLL_COPY}")
         endforeach()
-    endforeach()
-endif()
 
-add_custom_target(im3e_runtime_dlls
-  DEPENDS
-    ${_RUNTIME_DLL_COPIES}
-)
+        add_custom_target(im3e_anari_devices
+          DEPENDS
+            ${_ANARI_DLL_COPIES}
+        )
+    endif()
+
+    add_dependencies(${TARGET} im3e_anari_devices)
+endfunction()
