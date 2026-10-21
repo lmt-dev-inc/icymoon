@@ -33,8 +33,12 @@ function(_im3e_add_runtime_dlls_target)
     endforeach()
     set(_RUNTIME_DLLS "$<REMOVE_DUPLICATES:${_RUNTIME_DLLS}>")
 
+    # The target has no dependencies, so it can run before anything else created the folder, and copy_if_different
+    # would then write a file named after it with one DLL, or fail with several.
     # copy_if_different fails without files, so a no-op runs instead when there is no DLL dependency
     add_custom_target(im3e_runtime_dlls
+      COMMAND
+        ${CMAKE_COMMAND} -E make_directory "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
       COMMAND
         ${CMAKE_COMMAND} -E
         "$<IF:$<BOOL:${_RUNTIME_DLLS}>,copy_if_different;${_RUNTIME_DLLS};${CMAKE_RUNTIME_OUTPUT_DIRECTORY},true>"
@@ -68,7 +72,7 @@ function(im3e_copy_anari_devices TARGET)
               OUTPUT
                 "${_ANARI_DLL_COPY}"
               COMMAND
-                ${CMAKE_COMMAND} -E copy_if_different "${_ANARI_DLL}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                ${CMAKE_COMMAND} -E copy_if_different "${_ANARI_DLL}" "${_ANARI_DLL_COPY}"
               DEPENDS
                 "${_ANARI_DLL}"
               COMMENT
