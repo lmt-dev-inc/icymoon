@@ -51,9 +51,9 @@ public:
 
     enum class MouseButton : uint32_t
     {
-        Left = 0U,
-        Right = 1U,
-        Middle = 2U,
+        Left = 1 << 0U,
+        Right = 1U << 1U,
+        Middle = 1U << 2U,
     };
     virtual void onMouseMove(const glm::vec2& rClipOffset, const std::array<bool, 3U>& rMouseButtonsDown) = 0;
     virtual void onMouseWheel(float scrollSteps) = 0;

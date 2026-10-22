@@ -2,6 +2,7 @@ im3e_add_unit_tests_executable(
   TARGET
     test_im3e_utils_core
   SOURCES
+    test_flags.cpp
     test_path_utils.cpp
     test_platform_utils.cpp
     test_throw_utils.cpp
