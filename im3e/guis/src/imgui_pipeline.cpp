@@ -25,8 +25,10 @@ auto getUiScale(const ILogger& rLogger, GLFWwindow* pGlfwWindow)
 
 void loadFont(ImGuiIO& rIo, float uiScale)
 {
+    const auto FontSize = 14.0F;
+
     const auto fontPathStr = path::toUtf8(getGuiFontPath());
-    auto pFont = rIo.Fonts->AddFontFromFileTTF(fontPathStr.c_str(), uiScale * 16.0F);
+    auto pFont = rIo.Fonts->AddFontFromFileTTF(fontPathStr.c_str(), uiScale * FontSize);
     pFont->Scale = 1.0F / uiScale;
 
     rIo.FontGlobalScale = uiScale;

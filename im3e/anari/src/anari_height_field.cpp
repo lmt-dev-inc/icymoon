@@ -55,7 +55,7 @@ void AnariHeightField::updateAsync([[maybe_unused]] const AnariMapCamera& rCamer
     // TODO: frustum culling not fully working.
     // When zoomed out and switching between levels of details, some tiles that should be visible are not
     auto visibleTileIDs = m_pQuadTreeRoot->findVisible(rCamera.getViewFrustum(), m_pLodProp->getValue());
-    m_pLogger->debug(fmt::format("Found {} visible tiles", visibleTileIDs.size()));
+    // m_pLogger->debug(fmt::format("Found {} visible tiles", visibleTileIDs.size()));
 
     // Removed no longer visible tiles
     auto visibleTileIt = m_pVisibleTiles.begin();
