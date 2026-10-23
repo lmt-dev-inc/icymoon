@@ -67,6 +67,28 @@ auto createMouseButtonsFromIo(const ImGuiIO& rIo)
     return mouseButtons;
 }
 
+auto createKeyModifiersFromIo(const ImGuiIO& rIo)
+{
+    KeyModifiers keyModifiers;
+    if (rIo.KeyShift)
+    {
+        keyModifiers |= KeyModifier::Shift;
+    }
+    if (rIo.KeyCtrl)
+    {
+        keyModifiers |= KeyModifier::Ctrl;
+    }
+    if (rIo.KeyAlt)
+    {
+        keyModifiers |= KeyModifier::Alt;
+    }
+    if (rIo.KeySuper)
+    {
+        keyModifiers |= KeyModifier::Super;
+    }
+    return keyModifiers;
+}
+
 void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
 {
     if (ImGui::IsItemHovered() && rIo.MouseWheel)
@@ -81,8 +103,9 @@ void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
             rIo.MouseDelta.x * 2.0F / static_cast<float>(imViewportSize.x),
             rIo.MouseDelta.y * 2.0F / static_cast<float>(imViewportSize.y),
         };
-        const auto mouseButtonsDown = createMouseButtonsFromIo(rIo);
-        rEventListener.onMouseMove(normalizedMouseOffset, mouseButtonsDown);
+        const auto mouseButtons = createMouseButtonsFromIo(rIo);
+        const auto keyModifiers = createKeyModifiersFromIo(rIo);
+        rEventListener.onMouseMove(normalizedMouseOffset, mouseButtons, keyModifiers);
     }
 }
 

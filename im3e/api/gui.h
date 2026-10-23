@@ -56,12 +56,23 @@ template <>
 inline constexpr bool IsFlagEnum<MouseButton> = true;
 using MouseButtons = Flags<MouseButton>;
 
+enum class KeyModifier : uint32_t
+{
+    Shift = 1U << 0U,
+    Ctrl = 1U << 1U,
+    Alt = 1U << 2U,
+    Super = 1U << 3U,
+};
+template <>
+inline constexpr bool IsFlagEnum<KeyModifier> = true;
+using KeyModifiers = Flags<KeyModifier>;
+
 class IGuiEventListener
 {
 public:
     virtual ~IGuiEventListener() = default;
 
-    virtual void onMouseMove(const glm::vec2& rClipOffset, MouseButtons mouseButtonsDown) = 0;
+    virtual void onMouseMove(const glm::vec2& rClipOffset, MouseButtons mouseButtons, KeyModifiers keyModifiers) = 0;
     virtual void onMouseWheel(float scrollSteps) = 0;
 };
 
