@@ -64,8 +64,8 @@ TEST_F(ImguiPipelineIntegration, emptyWorkspace)
     auto pImageMapping = mapOutputImage();
     expectRgbaPixel(*pImageMapping, {137U, 158U}, {0U, 0U, 0U, 0U});
     expectRgbaPixel(*pImageMapping, {376U, 253U}, {0U, 0U, 0U, 0U});
-    expectRgbaPixel(*pImageMapping, {766U, 22U}, {62U, 62U, 71U, 255U});
-    expectRgbaPixel(*pImageMapping, {745U, 24U}, {88U, 88U, 103U, 160U});
+    expectRgbaPixel(*pImageMapping, {766U, 20U}, {62U, 62U, 71U, 255U});
+    expectRgbaPixel(*pImageMapping, {745U, 22U}, {88U, 88U, 103U, 160U});
     expectRgbaPixel(*pImageMapping, {589, 5U}, {28U, 28U, 28U, 255U});
 }
 
@@ -89,12 +89,12 @@ TEST_F(ImguiPipelineIntegration, withTestPanels)
     auto pImageMapping = mapOutputImage();
     expectRgbaPixel(*pImageMapping, {768U, 160U}, {0U, 13U, 28U, 254U});
     expectRgbaPixel(*pImageMapping, {60U, 10U}, {28U, 28U, 28U, 255U});
-    expectRgbaPixel(*pImageMapping, {379U, 23U}, {82U, 82U, 95U, 255U});
+    expectRgbaPixel(*pImageMapping, {379U, 21U}, {82U, 82U, 95U, 255U});
     expectRgbaPixel(*pImageMapping, {55U, 238U}, {0U, 13U, 28U, 254U});
     expectRgbaPixel(*pImageMapping, {200U, 288U}, {79U, 80U, 95U, 255U});
     expectRgbaPixel(*pImageMapping, {290U, 192U}, {28U, 64U, 109U, 255U});
     expectRgbaPixel(*pImageMapping, {550U, 167U}, {0U, 13U, 28U, 254U});
-    expectRgbaPixel(*pImageMapping, {531U, 511U}, {28U, 64U, 109U, 255U});
+    expectRgbaPixel(*pImageMapping, {531U, 509U}, {28U, 64U, 109U, 255U});
     expectRgbaPixel(*pImageMapping, {272U, 595U}, {0U, 13U, 28U, 254U});
 }
 
