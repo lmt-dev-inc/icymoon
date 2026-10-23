@@ -17,6 +17,14 @@
     "cmake.configureOnEdit": false,
     // Don't re-run configure when CMakePresets.json changes (the preset is reloaded and re-applied)
     "cmake.automaticReconfigure": false,
+    // Status bar: show the CMake Tools launch target picker (hidden by default since CMake Tools 1.17), and hide
+    // VS Code's own launch.json debug button in favour of the CMake Tools one
+    "cmake.options.advanced": {
+        "launchTarget": {
+            "statusBarVisibility": "visible"
+        }
+    },
+    "debug.showInStatusBar": "never",
     "editor.formatOnSave": true,
     "editor.acceptSuggestionOnCommitCharacter": false,
     "editor.acceptSuggestionOnEnter": "off",
