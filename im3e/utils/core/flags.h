@@ -35,6 +35,9 @@ public:
     constexpr auto hasAny(Flags flags) const -> bool { return (m_bits & flags.m_bits) != 0; }
     constexpr auto isEmpty() const -> bool { return m_bits == 0; }
 
+    constexpr auto operator==(const Flags& flags) const -> bool = default;
+    constexpr auto operator!=(const Flags& flags) const -> bool = default;
+
     constexpr auto operator|(Flags other) const -> Flags { return Flags::fromBits(m_bits | other.m_bits); }
     constexpr auto operator&(Flags other) const -> Flags { return Flags::fromBits(m_bits & other.m_bits); }
     constexpr auto operator|=(Flags other) -> Flags&
