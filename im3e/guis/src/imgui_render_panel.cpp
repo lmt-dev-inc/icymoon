@@ -99,13 +99,14 @@ void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
     if (ImGui::IsItemActive() && (rIo.MouseDelta.x || rIo.MouseDelta.y))
     {
         const auto imViewportSize = getWindowContentRegionSize();
-        const glm::vec2 normalizedMouseOffset{
+        // We flip the y axis offset because ImGui uses a Y axis down while our NDC coordinates use a Y axis down.
+        const glm::vec2 ndcOffset{
             rIo.MouseDelta.x * 2.0F / static_cast<float>(imViewportSize.x),
-            rIo.MouseDelta.y * 2.0F / static_cast<float>(imViewportSize.y),
+            -rIo.MouseDelta.y * 2.0F / static_cast<float>(imViewportSize.y),
         };
         const auto mouseButtons = createMouseButtonsFromIo(rIo);
         const auto keyModifiers = createKeyModifiersFromIo(rIo);
-        rEventListener.onMouseMove(normalizedMouseOffset, mouseButtons, keyModifiers);
+        rEventListener.onMouseMove(ndcOffset, mouseButtons, keyModifiers);
     }
 }
 

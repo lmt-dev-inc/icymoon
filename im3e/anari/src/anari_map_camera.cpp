@@ -82,27 +82,31 @@ auto AnariMapCamera::createProperties() -> std::shared_ptr<IPropertyGroup>
     return createPropertyGroup("Map Camera", {m_perspective.getProperties(), m_view.getProperties()});
 }
 
-void AnariMapCamera::onMouseMove(const glm::vec2& rClipOffset, MouseButtons mouseButtons,
+void AnariMapCamera::onMouseMove(const glm::vec2& rNdcOffset, MouseButtons mouseButtons,
                                  [[maybe_unused]] KeyModifiers keyModifiers)
 {
-    if (mouseButtons.has(MouseButton::Left))
+    if (!mouseButtons.has(MouseButton::Left))
+    {
+        return;
+    }
+
+    if (keyModifiers.has(KeyModifier::Ctrl))
     {
         constexpr auto HalfPi = std::numbers::pi_v<float> / 2.0F;
 
-        const auto angleXOffset = -rClipOffset.y * HalfPi;
-        const auto angleYOffset = -rClipOffset.x * HalfPi / 2.0F;
+        const auto angleXOffset = -rNdcOffset.y * HalfPi;
+        const auto angleYOffset = -rNdcOffset.x * HalfPi / 2.0F;
 
         m_angleX = std::clamp(m_angleX + angleXOffset, 0.0F, HalfPi);
         m_angleY += angleYOffset;
         _update();
     }
-    else if (mouseButtons.has(MouseButton::Middle))
+    else
     {
         const auto inverseVpMatrix = glm::inverse(m_perspective.getMatrix() * m_view.getMatrix());
-        const auto sceneVec = inverseVpMatrix * glm::vec4(rClipOffset, 0.0F, 0.0F);
+        const auto sceneVec = inverseVpMatrix * glm::vec4(rNdcOffset, 0.0F, 0.0F);
         const auto sceneOffset = sceneVec.xyz() * m_distanceToTarget;
-        m_targetPoint.x += sceneOffset.x;
-        m_targetPoint.z += sceneOffset.z;
+        m_targetPoint -= sceneOffset;
         _update();
     }
 }
