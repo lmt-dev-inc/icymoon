@@ -49,6 +49,24 @@ auto createRenderOutputSampler(const IDevice& rDevice)
     return makeVkUniquePtr<VkSampler>(vkDevice, vkSampler, rVkFcts.vkDestroySampler);
 }
 
+auto createMouseButtonsFromIo(const ImGuiIO& rIo)
+{
+    MouseButtons mouseButtons{};
+    if (rIo.MouseDown[0])
+    {
+        mouseButtons |= MouseButton::Left;
+    }
+    if (rIo.MouseDown[1])
+    {
+        mouseButtons |= MouseButton::Right;
+    }
+    if (rIo.MouseDown[2])
+    {
+        mouseButtons |= MouseButton::Middle;
+    }
+    return mouseButtons;
+}
+
 void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
 {
     if (ImGui::IsItemHovered() && rIo.MouseWheel)
@@ -63,9 +81,7 @@ void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
             rIo.MouseDelta.x * 2.0F / static_cast<float>(imViewportSize.x),
             rIo.MouseDelta.y * 2.0F / static_cast<float>(imViewportSize.y),
         };
-
-        const std::array<bool, 3U> mouseButtonsDown{rIo.MouseDown[0], rIo.MouseDown[1], rIo.MouseDown[2]};
-
+        const auto mouseButtonsDown = createMouseButtonsFromIo(rIo);
         rEventListener.onMouseMove(normalizedMouseOffset, mouseButtonsDown);
     }
 }

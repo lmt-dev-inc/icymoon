@@ -20,7 +20,7 @@ public:
 
     auto createProperties() -> std::shared_ptr<IPropertyGroup>;
 
-    void onMouseMove(const glm::vec2& rClipOffset, const std::array<bool, 3U>& rMouseButtonsDown) override;
+    void onMouseMove(const glm::vec2& rClipOffset, MouseButtons mouseButtonsDown) override;
     void onMouseWheel(float scrollSteps) override;
 
     void setAspectRatio(float ratio);

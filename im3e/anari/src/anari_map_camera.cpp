@@ -82,9 +82,9 @@ auto AnariMapCamera::createProperties() -> std::shared_ptr<IPropertyGroup>
     return createPropertyGroup("Map Camera", {m_perspective.getProperties(), m_view.getProperties()});
 }
 
-void AnariMapCamera::onMouseMove(const glm::vec2& rClipOffset, const std::array<bool, 3U>& rMouseButtonsDown)
+void AnariMapCamera::onMouseMove(const glm::vec2& rClipOffset, MouseButtons mouseButtonsDown)
 {
-    if (rMouseButtonsDown[static_cast<size_t>(MouseButton::Left)])
+    if (mouseButtonsDown.has(MouseButton::Left))
     {
         constexpr auto HalfPi = std::numbers::pi_v<float> / 2.0F;
 
@@ -95,7 +95,7 @@ void AnariMapCamera::onMouseMove(const glm::vec2& rClipOffset, const std::array<
         m_angleY += angleYOffset;
         _update();
     }
-    else if (rMouseButtonsDown[static_cast<size_t>(MouseButton::Middle)])
+    else if (mouseButtonsDown.has(MouseButton::Middle))
     {
         const auto inverseVpMatrix = glm::inverse(m_perspective.getMatrix() * m_view.getMatrix());
         const auto sceneVec = inverseVpMatrix * glm::vec4(rClipOffset, 0.0F, 0.0F);
