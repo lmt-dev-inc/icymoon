@@ -12,6 +12,14 @@ namespace {
 
 constexpr float ScrollSensitivity = 0.1F;
 
+// Dragging accross half the viewport height tilts by 90° (pi/2) so a full viewport height drags by 180° (pi):
+constexpr float TiltPerViewportHeight = std::numbers::pi_v<float>;
+constexpr float MinTilt = 0.0F;
+constexpr float MaxTilt = std::numbers::pi_v<float> * 70.0F / 180.0F;
+
+// Dragging accross the full viewport width brings back to the original heading i.e. it does a full rotation (2pi):
+constexpr float HeadingPerViewportWidth = 2.0f * std::numbers::pi_v<float>;
+
 auto createAnariCamera(const ILogger& rLogger, ANARIDevice anDevice)
 {
     auto anCamera = anariNewCamera(anDevice, "perspective");
@@ -92,13 +100,12 @@ void AnariMapCamera::onMouseMove(const glm::vec2& rNdcOffset, MouseButtons mouse
 
     if (keyModifiers.has(KeyModifier::Ctrl))
     {
-        constexpr auto HalfPi = std::numbers::pi_v<float> / 2.0F;
+        // NDC spans 2 units per axis; convert both to screen-height units so they share one scale
+        const auto dragX = rNdcOffset.x / 2.0F;
+        const auto dragY = rNdcOffset.y / 2.0F;
 
-        const auto angleXOffset = -rNdcOffset.y * HalfPi;
-        const auto angleYOffset = -rNdcOffset.x * HalfPi / 2.0F;
-
-        m_angleX = std::clamp(m_angleX + angleXOffset, 0.0F, HalfPi);
-        m_angleY += angleYOffset;
+        m_angleX = std::clamp(m_angleX + dragY * TiltPerViewportHeight, MinTilt, MaxTilt);
+        m_angleY = std::remainder(m_angleY - dragX * HeadingPerViewportWidth, 2.0F * std::numbers::pi_v<float>);
         _update();
     }
     else
