@@ -49,7 +49,16 @@ auto createRenderOutputSampler(const IDevice& rDevice)
     return makeVkUniquePtr<VkSampler>(vkDevice, vkSampler, rVkFcts.vkDestroySampler);
 }
 
-auto convertFromPixelsToNdc(const ImVec2& rPixels, const ImVec2& rViewportSize)
+auto convertPosFromPixelsToNdc(const ImVec2& rPixels, const ImVec2& rViewportPos, const ImVec2& rViewportSize)
+{
+    // We flip the y axis offset because ImGui uses a Y axis down while our NDC coordinates use a Y axis down.
+    return glm::vec2{
+        -1.0f + (rPixels.x - rViewportPos.x) * 2.0F / static_cast<float>(rViewportSize.x),
+        1.0f - (rPixels.y - rViewportPos.y) * 2.0F / static_cast<float>(rViewportSize.y),
+    };
+}
+
+auto convertVecFromPixelsToNdc(const ImVec2& rPixels, const ImVec2& rViewportSize)
 {
     // We flip the y axis offset because ImGui uses a Y axis down while our NDC coordinates use a Y axis down.
     return glm::vec2{
@@ -107,11 +116,12 @@ void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
 
     if (ImGui::IsItemActive() && (rIo.MouseDelta.x || rIo.MouseDelta.y))
     {
-        const auto imViewportSize = getWindowContentRegionSize();
+        const auto imViewportPos = ImGui::GetItemRectMin();
+        const auto imViewportSize = ImGui::GetItemRectSize();
         rEventListener.onMouseMove(IGuiEventListener::MouseMoveEvent{
-            .ndcPrevPosition = convertFromPixelsToNdc(rIo.MousePosPrev, imViewportSize),
-            .ndcCurrPosition = convertFromPixelsToNdc(rIo.MousePos, imViewportSize),
-            .ndcOffset = convertFromPixelsToNdc(rIo.MouseDelta, imViewportSize),
+            .ndcPrevPosition = convertPosFromPixelsToNdc(rIo.MousePosPrev, imViewportPos, imViewportSize),
+            .ndcCurrPosition = convertPosFromPixelsToNdc(rIo.MousePos, imViewportPos, imViewportSize),
+            .ndcOffset = convertVecFromPixelsToNdc(rIo.MouseDelta, imViewportSize),
             .mouseButtons = createMouseButtonsFromIo(rIo),
             .keyModifiers = createKeyModifiersFromIo(rIo),
         });

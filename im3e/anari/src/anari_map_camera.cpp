@@ -55,6 +55,19 @@ auto setAnariPerspectiveParameters(ANARIDevice anDevice, ANARICamera anCamera,
     anariSetParameter(anDevice, anCamera, "direction", ANARI_FLOAT32_VEC3, &direction);
 }
 
+auto intersectHorizontalPlane(const Ray& rRay, float planeHeight) -> std::optional<glm::vec3>
+{
+    // Avoid intersections when the direction is up or at grazing angle to the horizontal plane:
+    constexpr float MinGrazing = 1.0e-3F;
+    if (rRay.direction.y > -MinGrazing)
+    {
+        return std::nullopt;
+    }
+
+    const auto t = (planeHeight - rRay.origin.y) / rRay.direction.y;
+    return rRay.origin + t * rRay.direction;
+}
+
 }  // namespace
 
 AnariMapCamera::AnariMapCamera(std::shared_ptr<AnariDevice> pAnDevice)
@@ -110,10 +123,15 @@ void AnariMapCamera::onMouseMove(const MouseMoveEvent& rEvent)
     else
     {
         const auto inverseVpMatrix = glm::inverse(m_perspective.getMatrix() * m_view.getMatrix());
-        const auto sceneVec = inverseVpMatrix * glm::vec4(rEvent.ndcOffset, 0.0F, 0.0F);
-        const auto sceneOffset = sceneVec.xyz() * m_distanceToTarget;
-        m_targetPoint -= sceneOffset;
-        _update();
+        const auto prevTarget = intersectHorizontalPlane(
+            Ray::createViewRayFromNdc(rEvent.ndcPrevPosition, inverseVpMatrix), m_targetPoint.y);
+        const auto currTarget = intersectHorizontalPlane(
+            Ray::createViewRayFromNdc(rEvent.ndcCurrPosition, inverseVpMatrix), m_targetPoint.y);
+        if (prevTarget && currTarget)
+        {
+            m_targetPoint += *prevTarget - *currTarget;
+            _update();
+        }
     }
 }
 
