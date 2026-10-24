@@ -72,7 +72,15 @@ class IGuiEventListener
 public:
     virtual ~IGuiEventListener() = default;
 
-    virtual void onMouseMove(const glm::vec2& rNdcOffset, MouseButtons mouseButtons, KeyModifiers keyModifiers) = 0;
+    struct MouseMoveEvent
+    {
+        glm::vec2 ndcPrevPosition;
+        glm::vec2 ndcCurrPosition;
+        glm::vec2 ndcOffset;
+        MouseButtons mouseButtons;
+        KeyModifiers keyModifiers;
+    };
+    virtual void onMouseMove(const MouseMoveEvent& rEvent) = 0;
     virtual void onMouseWheel(float scrollSteps) = 0;
 };
 

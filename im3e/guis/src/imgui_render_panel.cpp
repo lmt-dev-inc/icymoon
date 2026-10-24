@@ -49,6 +49,15 @@ auto createRenderOutputSampler(const IDevice& rDevice)
     return makeVkUniquePtr<VkSampler>(vkDevice, vkSampler, rVkFcts.vkDestroySampler);
 }
 
+auto convertFromPixelsToNdc(const ImVec2& rPixels, const ImVec2& rViewportSize)
+{
+    // We flip the y axis offset because ImGui uses a Y axis down while our NDC coordinates use a Y axis down.
+    return glm::vec2{
+        rPixels.x * 2.0F / static_cast<float>(rViewportSize.x),
+        -rPixels.y * 2.0F / static_cast<float>(rViewportSize.y),
+    };
+}
+
 auto createMouseButtonsFromIo(const ImGuiIO& rIo)
 {
     MouseButtons mouseButtons{};
@@ -99,14 +108,13 @@ void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
     if (ImGui::IsItemActive() && (rIo.MouseDelta.x || rIo.MouseDelta.y))
     {
         const auto imViewportSize = getWindowContentRegionSize();
-        // We flip the y axis offset because ImGui uses a Y axis down while our NDC coordinates use a Y axis down.
-        const glm::vec2 ndcOffset{
-            rIo.MouseDelta.x * 2.0F / static_cast<float>(imViewportSize.x),
-            -rIo.MouseDelta.y * 2.0F / static_cast<float>(imViewportSize.y),
-        };
-        const auto mouseButtons = createMouseButtonsFromIo(rIo);
-        const auto keyModifiers = createKeyModifiersFromIo(rIo);
-        rEventListener.onMouseMove(ndcOffset, mouseButtons, keyModifiers);
+        rEventListener.onMouseMove(IGuiEventListener::MouseMoveEvent{
+            .ndcPrevPosition = convertFromPixelsToNdc(rIo.MousePosPrev, imViewportSize),
+            .ndcCurrPosition = convertFromPixelsToNdc(rIo.MousePos, imViewportSize),
+            .ndcOffset = convertFromPixelsToNdc(rIo.MouseDelta, imViewportSize),
+            .mouseButtons = createMouseButtonsFromIo(rIo),
+            .keyModifiers = createKeyModifiersFromIo(rIo),
+        });
     }
 }
 

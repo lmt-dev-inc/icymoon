@@ -90,19 +90,18 @@ auto AnariMapCamera::createProperties() -> std::shared_ptr<IPropertyGroup>
     return createPropertyGroup("Map Camera", {m_perspective.getProperties(), m_view.getProperties()});
 }
 
-void AnariMapCamera::onMouseMove(const glm::vec2& rNdcOffset, MouseButtons mouseButtons,
-                                 [[maybe_unused]] KeyModifiers keyModifiers)
+void AnariMapCamera::onMouseMove(const MouseMoveEvent& rEvent)
 {
-    if (!mouseButtons.has(MouseButton::Left))
+    if (!rEvent.mouseButtons.has(MouseButton::Left))
     {
         return;
     }
 
-    if (keyModifiers.has(KeyModifier::Ctrl))
+    if (rEvent.keyModifiers.has(KeyModifier::Ctrl))
     {
         // NDC spans 2 units per axis; convert both to screen-height units so they share one scale
-        const auto dragX = rNdcOffset.x / 2.0F;
-        const auto dragY = rNdcOffset.y / 2.0F;
+        const auto dragX = rEvent.ndcOffset.x / 2.0F;
+        const auto dragY = rEvent.ndcOffset.y / 2.0F;
 
         m_angleX = std::clamp(m_angleX + dragY * TiltPerViewportHeight, MinTilt, MaxTilt);
         m_angleY = std::remainder(m_angleY - dragX * HeadingPerViewportWidth, 2.0F * std::numbers::pi_v<float>);
@@ -111,7 +110,7 @@ void AnariMapCamera::onMouseMove(const glm::vec2& rNdcOffset, MouseButtons mouse
     else
     {
         const auto inverseVpMatrix = glm::inverse(m_perspective.getMatrix() * m_view.getMatrix());
-        const auto sceneVec = inverseVpMatrix * glm::vec4(rNdcOffset, 0.0F, 0.0F);
+        const auto sceneVec = inverseVpMatrix * glm::vec4(rEvent.ndcOffset, 0.0F, 0.0F);
         const auto sceneOffset = sceneVec.xyz() * m_distanceToTarget;
         m_targetPoint -= sceneOffset;
         _update();
