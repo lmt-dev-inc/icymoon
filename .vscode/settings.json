@@ -20,6 +20,9 @@
     // Status bar: show the CMake Tools launch target picker (hidden by default since CMake Tools 1.17), and hide
     // VS Code's own launch.json debug button in favour of the CMake Tools one
     "cmake.options.advanced": {
+        "buildTarget": {
+            "statusBarVisibility": "visible"
+        },
         "launchTarget": {
             "statusBarVisibility": "visible"
         }

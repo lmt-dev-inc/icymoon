@@ -4,15 +4,16 @@ Temporary progress tracker: delete before creating the PR.
 
 ## 1. Ray fix (in `utils`)
 
-- [ ] Move `Ray` out of `im3e/utils/camera_transforms.h` into a new `im3e/utils/ray.h`, with its implementation in `src/ray.cpp`.
-- [ ] Fix `Ray::createViewRayFromNdc`: the near point should be at NDC z = 0, not -1, because depth is [0, 1].
+- [x] Move `Ray` out of `im3e/utils/camera_transforms.h` into a new `im3e/utils/ray.h`, with its implementation in `src/ray.cpp`.
+- [x] Fix `Ray::createViewRayFromNdc`: the near point should be at NDC z = 0, not -1, because depth is [0, 1].
+- [ ] `Ray::createViewRayFromNdc` should be moved to new `Camera` class and tested there
 - [ ] Add `test_ray.cpp` to `test_im3e_utils`:
   - NDC (0, 0) gives a ray along the view direction, with its origin on the near plane.
   - Corner NDC positions give rays through the corners of the frustum.
 
 ## 2. `im3e_scene` library
 
-- [ ] Create `im3e/scene/` with an `im3e_scene` STATIC target. It links `im3e_utils` and `im3e_utils_properties` explicitly; add it to `im3e/CMakeLists.txt`.
+- [x] Create `im3e/scene/` with an `im3e_scene` STATIC target. It links `im3e_utils` and `im3e_utils_properties` explicitly; add it to `im3e/CMakeLists.txt`.
 - [ ] Move `PerspectiveProjection` and `ViewTransform` there, then delete `camera_transforms.h` and its `.cpp` from `utils`.
 - [ ] Add `Camera`:
   - It owns a projection and a view transform.

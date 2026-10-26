@@ -36,6 +36,7 @@ target_link_libraries(im3e_anari
     anari::anari_static
     im3e_api
     im3e_geo
+    im3e_scene
     im3e_utils
     im3e_utils_properties
   PRIVATE

@@ -1,0 +1,17 @@
+add_library(im3e_scene STATIC
+    include/im3e/scene/perspective_projection.h
+    src/perspective_projection.cpp
+)
+
+target_include_directories(im3e_scene
+  PUBLIC
+    include
+  PRIVATE
+    src
+)
+
+target_link_libraries(im3e_scene
+  PUBLIC
+    glm::glm
+    im3e_utils_properties
+)
