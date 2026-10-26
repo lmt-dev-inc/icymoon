@@ -14,7 +14,7 @@ Temporary progress tracker: delete before creating the PR.
 ## 2. `im3e_scene` library
 
 - [x] Create `im3e/scene/` with an `im3e_scene` STATIC target. It links `im3e_utils` and `im3e_utils_properties` explicitly; add it to `im3e/CMakeLists.txt`.
-- [ ] Move `PerspectiveProjection` and `ViewTransform` there, then delete `camera_transforms.h` and its `.cpp` from `utils`.
+- [x] Move `PerspectiveProjection` and `ViewTransform` there, then delete `camera_transforms.h` and its `.cpp` from `utils`.
 - [ ] Add `Camera`:
   - It owns a projection and a view transform.
   - Its `ViewFrustum` is rebuilt lazily from a dirty flag, so it is never stale.

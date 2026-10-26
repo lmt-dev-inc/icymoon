@@ -1,4 +1,4 @@
-#include "camera_transforms.h"
+#include <im3e/scene/view_transform.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 

@@ -144,7 +144,7 @@ There are no cycles. `im3e_api` is the hub: modules talk to each other through i
 - `loggers.h`: `ILogger` with hierarchical children (`createChild`) and trackers that collect errors from a logger tree (used by tests to fail on logged errors). Implementations: terminal and file loggers.
 - `stats.h`: `IStatsProvider` records nested timing spans per thread (`startScopedSpan`), forwarded to `IStatsReceiver`s. The stats panel of the GUI is one such receiver.
 - `math_utils.h`: `TileID` (`u16vec3`: x, y, level of detail) and small math helpers.
-- `camera_transforms.h`, `view_frustum.h`, `transform.h`: perspective projection, view transform, frustum culling, TRS transforms. Conventions are in [Coordinate Spaces](coordinate_spaces.md).
+- `view_frustum.h`, `transform.h`: perspective projection, view transform, frustum culling, TRS transforms. Conventions are in [Coordinate Spaces](coordinate_spaces.md).
 - `vk_utils.h`: `VkUniquePtr`/`VkSharedPtr` for Vulkan handles, `throwIfVkFailed`, `getVkList`, and formatting of Vulkan enums.
 - `imgui_utils.h`: header-only helpers for ImGui.
 

@@ -8,7 +8,7 @@ This document describes the coordinate spaces used in IcyMoon and the convention
 
 ## Clip space and normalized device coordinates
 
-**Clip coordinates** are the 4D homogeneous coordinates `(x, y, z, w)` produced by the projection matrix (`PerspectiveProjection` in `im3e/utils/camera_transforms.h`) applied to view-space positions. Dividing by `w` (the perspective divide) gives **normalized device coordinates (NDC)**, where the visible volume is a fixed box whatever the camera, viewport size or resolution.
+**Clip coordinates** are the 4D homogeneous coordinates `(x, y, z, w)` produced by the projection matrix (`PerspectiveProjection` in `im3e/scene/perspective_projection.h`) applied to view-space positions. Dividing by `w` (the perspective divide) gives **normalized device coordinates (NDC)**, where the visible volume is a fixed box whatever the camera, viewport size or resolution.
 
 IcyMoon follows GLM's right-handed convention, with depth in [0, 1] (`GLM_FORCE_DEPTH_ZERO_TO_ONE` in the root `CMakeLists.txt`):
 

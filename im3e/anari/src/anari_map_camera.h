@@ -4,7 +4,7 @@
 
 #include <im3e/api/gui.h>
 #include <im3e/scene/perspective_projection.h>
-#include <im3e/utils/camera_transforms.h>
+#include <im3e/scene/view_transform.h>
 #include <im3e/utils/loggers.h>
 #include <im3e/utils/view_frustum.h>
 
