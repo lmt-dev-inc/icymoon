@@ -38,7 +38,6 @@ private:
     std::shared_ptr<anari::api::Camera> m_pAnCamera;
 
     bool m_needsCommit{true};
-    std::shared_ptr<std::function<void()>> m_pOnTransformChanged;
 
     glm::vec3 m_targetPoint{3700.0F, 0.0F, 4000.0F};
     float m_distanceToTarget{5000.0F};

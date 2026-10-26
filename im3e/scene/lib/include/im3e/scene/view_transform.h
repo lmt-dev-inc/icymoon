@@ -11,7 +11,7 @@ namespace im3e {
 class ViewTransform
 {
 public:
-    ViewTransform(std::weak_ptr<std::function<void()>> pOnChanged);
+    ViewTransform(std::function<void()> onChanged);
 
     void setPosition(const glm::vec3& rPosition) { m_pPosition->setValue(rPosition); }
     void setDirection(const glm::vec3& rDirection, const glm::vec3& rUp);
@@ -24,7 +24,9 @@ public:
     [[nodiscard]] auto getMatrix() const -> const glm::mat4&;
 
 private:
-    std::weak_ptr<std::function<void()>> m_pOnChanged;
+    void _onChanged();
+
+    std::function<void()> m_onChanged;
 
     std::shared_ptr<PropertyValue<glm::vec3>> m_pPosition;
     std::shared_ptr<PropertyValue<glm::vec3>> m_pDirection;

@@ -3,6 +3,7 @@ im3e_add_unit_tests_executable(
     test_im3e_scene
   SOURCES
     test_perspective_projection.cpp
+    test_view_transform.cpp
 )
 
 target_link_libraries(test_im3e_scene
