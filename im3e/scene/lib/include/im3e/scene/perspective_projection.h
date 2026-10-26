@@ -12,7 +12,7 @@ namespace im3e {
 class PerspectiveProjection
 {
 public:
-    PerspectiveProjection(std::weak_ptr<std::function<void()>> pOnChanged);
+    PerspectiveProjection(std::function<void()> onChanged);
 
     void setFovY(float fovY) { m_pFovY->setValue(fovY); }
     void setAspectRatio(float aspectRatio) { m_pAspectRatio->setValue(aspectRatio); }
@@ -27,7 +27,9 @@ public:
     [[nodiscard]] auto getMatrix() const -> const glm::mat4&;
 
 private:
-    std::weak_ptr<std::function<void()>> m_pOnChanged;
+    void _onChanged();
+
+    std::function<void()> m_onChanged;
 
     std::shared_ptr<PropertyValue<float>> m_pFovY;
     std::shared_ptr<PropertyValue<float>> m_pAspectRatio;

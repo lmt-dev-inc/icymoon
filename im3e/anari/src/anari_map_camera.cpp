@@ -76,9 +76,9 @@ AnariMapCamera::AnariMapCamera(std::shared_ptr<AnariDevice> pAnDevice)
   , m_pLogger(m_pAnDevice->createLogger("AnariMapCamera"))
   , m_pAnCamera(createAnariCamera(*m_pLogger, m_pAnDevice->getHandle()))
 
-  , m_pOnTransformChanged(std::make_shared<std::function<void()>>([this] { m_needsCommit = true; }))
+  , m_pOnTransformChanged(std::make_shared<std::function<void()>>())
 
-  , m_perspective(m_pOnTransformChanged)
+  , m_perspective([this] { m_needsCommit = true; })
   , m_view(m_pOnTransformChanged)
 
   , m_viewFrustum(_createViewFrustum())
