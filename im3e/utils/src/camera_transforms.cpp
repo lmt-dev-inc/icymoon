@@ -18,19 +18,6 @@ void callIfExists(const std::weak_ptr<std::function<void()>>& rpOnChanged)
 
 }  // namespace
 
-auto Ray::createViewRayFromNdc(const glm::vec2& rNdcPos, const glm::mat4& rInverseVpMatrix) -> Ray
-{
-    auto nearPos = rInverseVpMatrix * glm::vec4(rNdcPos, -1.0F, 1.0F);
-    nearPos /= nearPos.w;
-    auto farPos = rInverseVpMatrix * glm::vec4(rNdcPos, 1.0F, 1.0F);
-    farPos /= farPos.w;
-
-    return Ray{
-        .origin = nearPos,
-        .direction = glm::normalize(farPos - nearPos),
-    };
-}
-
 PerspectiveProjection::PerspectiveProjection(std::weak_ptr<std::function<void()>> pOnChanged)
   : m_pOnChanged(std::move(pOnChanged))
   , m_pFovY(std::make_shared<decltype(m_pFovY)::element_type>(PropertyValueConfig<float>{

@@ -2,6 +2,7 @@
 
 #include <im3e/utils/core/throw_utils.h>
 #include <im3e/utils/properties/properties.h>
+#include <im3e/utils/ray.h>
 
 #include <fmt/format.h>
 #include <glm/gtc/quaternion.hpp>
