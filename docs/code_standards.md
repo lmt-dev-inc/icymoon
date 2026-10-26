@@ -12,6 +12,7 @@ Each rule says whether it is checked automatically today. Rules without automati
 - [Naming](#naming)
 - [Functions](#functions)
 - [Initialization](#initialization)
+- [Library folders](#library-folders)
 - [Files and includes](#files-and-includes)
 - [Error handling](#error-handling)
 - [Text encoding and paths](#text-encoding-and-paths)
@@ -110,13 +111,92 @@ The leading `_` marks methods that only the class itself can call. It applies to
 
 *Automated:* partially. The compilers warn about uninitialized variables they can detect.
 
+## Library folders
+
+### Targets and groups
+
+Every folder under `im3e/` is either a **target** folder or a **group** folder, never both. A folder that is both makes it unclear which files belong to which target, and lets the folder tree contradict the dependencies, e.g. when a target depends on another target nested in its own folder.
+
+- A **target folder** defines one CMake target in its `CMakeLists.txt`, and contains only the parts of that target:
+  - `include/`: public headers, for targets that other targets link;
+  - `src/`: implementation and private headers;
+  - `data/`: files the target needs at run time, e.g. test data;
+  - for executables, such as tests, the `.cpp` files directly in the folder, as nothing is public.
+- A **group folder** contains only other folders, and a `CMakeLists.txt` that adds them with `add_subdirectory`. It has no code and no target.
+- Folder names are singular and `snake_case`.
+
+### Libraries
+
+A library is a group: it keeps the library target together with the targets that exist for it, its mocks and its tests, because a change to a library usually changes them too.
+
+```
+im3e/scene/                                    group
+  CMakeLists.txt                               adds lib/, and mock/ and test/ when tests are built
+  lib/                                         im3e_scene
+    CMakeLists.txt
+    include/im3e/scene/camera.h
+    include/im3e/scene.h                       umbrella header
+    src/camera.cpp
+  mock/                                        mock_im3e_scene
+    CMakeLists.txt
+    include/im3e/scene/mock_camera.h
+    src/mock_camera.cpp
+  test/                                        group
+    CMakeLists.txt
+    unit/                                      test_im3e_scene
+      CMakeLists.txt
+      test_camera.cpp
+    integration/                               integration_im3e_scene
+      CMakeLists.txt
+      integration_camera.cpp
+      data/
+```
+
+- **Names come from paths.** The library target is `im3e_` followed by the library's path below `im3e/`, with `/` replaced by `_`, and its headers are included through that path: `im3e/render/anari/` is `im3e_render_anari`, and its headers are `<im3e/render/anari/...>`. The other targets are prefixed with their type: `mock_im3e_render_anari`, `test_im3e_render_anari` (unit tests), `integration_im3e_render_anari`. Sorted alphabetically, targets of the same type then sit together, in `bin/` as in `target_link_libraries`, where linked mocks are visible at a glance. Mock headers are included through the library's path, with the same prefix as their target: `<im3e/render/anari/mock_anari_renderer.h>`.
+- **Each test type is its own target**, in its own folder under `test/`, with its own `ctest` label (see [Tests](#tests)). Adding a test type means adding a folder. Helpers shared by several test types of a library go in a `test/common/` target, `test_common_im3e_<path>`.
+- **Mocks only implement interfaces** from the library's public headers. Never replace a concrete class at link time (a "link seam"): it depends on link order and ODR (one-definition rule) details, breaks silently, and behaves differently between linkers. Mocks define their constructor and destructor in `src/`, so that the mock methods are compiled once rather than in every test, as the [gMock cookbook](https://google.github.io/googletest/gmock_cook_book.html#making-the-compilation-faster) recommends.
+
+### Families of libraries
+
+Several implementations of the same interfaces form a group, each in its own library, so that they sort together and a consumer only links the backend it uses. The library holding what they share is named `api` when it only holds interfaces, and after its role otherwise.
+
+```
+im3e/
+  scene/        library  im3e_scene
+  render/       group
+    api/        library  im3e_render_api     renderer-neutral interfaces
+    anari/      library  im3e_render_anari
+    vulkan/     library  im3e_render_vulkan
+  gui/          group
+    imgui/      library  im3e_gui_imgui      workspace and panels
+    glfw/       library  im3e_gui_glfw
+```
+
+### Include directories
+
+Each target only exposes its own `include/` folder, so a target can only include the headers of the targets it links. The repository root is not an include directory.
+
+| Target | Public include directory | Private include directory |
+|---|---|---|
+| Library | `lib/include/` | `lib/src/` |
+| Mock | `mock/include/` | `mock/src/` |
+| Test executable | | `lib/src/`, only when the tests need the library's internal classes |
+
+### Public headers
+
+- One header per public concept, named after its main type: `camera.h` declares `Camera`. A small type that only exists to configure another one can share its header, e.g. `MapCameraState` in `map_camera_controller.h`.
+- Each library has an **umbrella header** that includes all its public headers and contains nothing else, so that an application includes one file per library. It is one level above the library's headers, so that it can't clash with a class header: `<im3e/scene.h>` includes `<im3e/scene/camera.h>`..., and `<im3e/render/anari.h>` includes `<im3e/render/anari/...>`.
+- Code under `im3e/` never includes an umbrella header: it includes the headers it uses (see [Files and includes](#files-and-includes)), so that a change to a header only rebuilds the files that use it. Umbrella headers are for applications and other users of the library.
+
+*Automated:* no. Once every library follows this layout, the build enforces the include directories.
+
 ## Files and includes
 
 - Headers use `#pragma once`.
 - Includes are grouped, with a blank line between groups:
   1. the header of the current `.cpp` file,
-  2. other headers of the same module (`"..."`),
-  3. other IcyMoon headers (`<im3e/...>`),
+  2. private headers of the same target, from its `src/` folder (`"..."`),
+  3. IcyMoon public headers (`<im3e/...>`), including those of the same library: a public header is always included through its full path, never with `"..."`,
   4. third-party headers (`<fmt/format.h>`, `<imgui.h>`...),
   5. standard library headers (`<filesystem>`, `<string>`...).
 - Include what you use: every file includes the headers of everything it uses, even when another header already happens to include them. Standard libraries differ in which headers they include internally, so code relying on indirect includes compiles with one standard library and fails with another (libstdc++ on Linux vs Microsoft's on Windows).
@@ -151,7 +231,7 @@ IcyMoon is meant to be used as a library from other languages, Python first. Its
 ## Tests
 
 - Tests use GoogleTest and GoogleMock (`im3e/test_utils/test_utils.h`).
-- Unit tests are in `test/test_<name>.cpp`, integration tests in `test/integration/integration_<name>.cpp`. They are labelled `unit_test` and `integration_test` for `ctest -L`.
+- Each test type is a target in its own folder of the library's `test/` group (see [Libraries](#libraries)), and its files are prefixed with the type, so that they are easy to tell apart when navigating: unit tests are in `test/unit/test_<name>.cpp`, integration tests in `test/integration/integration_<name>.cpp`. They are labelled `unit_test` and `integration_test` for `ctest -L`.
 - Test suites are named after what they test with a `Test` suffix: `TEST(PathUtilsTest, toUtf8)`.
 - Checks use `EXPECT_THAT` / `ASSERT_THAT` with matchers, not the comparison macros (`EXPECT_EQ`, `EXPECT_NE`, `EXPECT_TRUE`, `EXPECT_LT`...):
 
@@ -215,6 +295,8 @@ Nothing below is set up yet. This section lists the options for automating the r
 | `EXPECT_THAT` instead of comparison macros | Script (regular expression) in `dev.py lint` | Flag `EXPECT_`/`ASSERT_` + `EQ`, `NE`, `TRUE`, `FALSE`, `LT`, `LE`, `GT`, `GE`, `STREQ`... in test files. |
 | No `this->` unless required | Script (regular expression) in `dev.py lint` | No clang-tidy check removes it. A script can flag every `this->` outside templates for review. |
 | Trailing return types | clang-tidy `modernize-use-trailing-return-type` | Also rewrites `void` functions, unlike our convention. Either adopt `auto f() -> void` or skip this check. |
+| Library folders | Script in `dev.py lint` | Walk `im3e/`: a folder that defines a target may only contain `CMakeLists.txt`, `include/`, `src/`, `data/` and, for executables, `.cpp` files; any other folder may only contain folders and `CMakeLists.txt`. Can also check target names and include paths against folder paths. |
+| No umbrella headers inside `im3e/` | Script in `dev.py lint` | Flag includes of `<im3e/X.h>` where `im3e/X/` is a library. |
 | Include what you use | clang-tidy `misc-include-cleaner` | Would have caught the missing includes found when porting to Windows. Can report many findings at first. |
 | Include order | clang-format `IncludeCategories` | Partially configured in `.clang-format`; would need to match the groups above. |
 | Paths and encoding | Script flagging `.string().c_str()` and `.c_str()` on paths, or code review | Hard to check reliably without type information. |
