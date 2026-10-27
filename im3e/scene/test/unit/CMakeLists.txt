@@ -2,6 +2,7 @@ im3e_add_unit_tests_executable(
   TARGET
     test_im3e_scene
   SOURCES
+    test_camera.cpp
     test_perspective_projection.cpp
     test_view_transform.cpp
 )

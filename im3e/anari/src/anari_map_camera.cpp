@@ -75,11 +75,7 @@ AnariMapCamera::AnariMapCamera(std::shared_ptr<AnariDevice> pAnDevice)
   : m_pAnDevice(throwIfArgNull(std::move(pAnDevice), "ANARI Map Camera requires an ANARI Device"))
   , m_pLogger(m_pAnDevice->createLogger("AnariMapCamera"))
   , m_pAnCamera(createAnariCamera(*m_pLogger, m_pAnDevice->getHandle()))
-
-  , m_perspective([this] { m_needsCommit = true; })
-  , m_view([this] { m_needsCommit = true; })
-
-  , m_viewFrustum(_createViewFrustum())
+  , m_camera([this] { m_needsCommit = true; })
 {
     _update();  // calculate initial view state
     commitChanges();
@@ -93,13 +89,15 @@ void AnariMapCamera::commitChanges()
     }
     m_needsCommit = false;
 
-    setAnariPerspectiveParameters(m_pAnDevice->getHandle(), m_pAnCamera.get(), m_perspective, m_view);
+    setAnariPerspectiveParameters(m_pAnDevice->getHandle(), m_pAnCamera.get(), m_camera.getProjection(),
+                                  m_camera.getView());
     anariCommitParameters(m_pAnDevice->getHandle(), m_pAnCamera.get());
 }
 
 auto AnariMapCamera::createProperties() -> std::shared_ptr<IPropertyGroup>
 {
-    return createPropertyGroup("Map Camera", {m_perspective.getProperties(), m_view.getProperties()});
+    return createPropertyGroup("Map Camera", {// TODO: add properties from MapCameraController
+                                              m_camera.createProperties()});
 }
 
 void AnariMapCamera::onMouseMove(const MouseMoveEvent& rEvent)
@@ -121,11 +119,10 @@ void AnariMapCamera::onMouseMove(const MouseMoveEvent& rEvent)
     }
     else
     {
-        const auto inverseVpMatrix = glm::inverse(m_perspective.getMatrix() * m_view.getMatrix());
-        const auto prevTarget = intersectHorizontalPlane(
-            Ray::createViewRayFromNdc(rEvent.ndcPrevPosition, inverseVpMatrix), m_targetPoint.y);
-        const auto currTarget = intersectHorizontalPlane(
-            Ray::createViewRayFromNdc(rEvent.ndcCurrPosition, inverseVpMatrix), m_targetPoint.y);
+        const auto prevTarget = intersectHorizontalPlane(m_camera.createViewRayFromNdc(rEvent.ndcPrevPosition),
+                                                         m_targetPoint.y);
+        const auto currTarget = intersectHorizontalPlane(m_camera.createViewRayFromNdc(rEvent.ndcCurrPosition),
+                                                         m_targetPoint.y);
         if (prevTarget && currTarget)
         {
             m_targetPoint += *prevTarget - *currTarget;
@@ -142,7 +139,7 @@ void AnariMapCamera::onMouseWheel(float scrollSteps)
 
 void AnariMapCamera::setAspectRatio(float aspectRatio)
 {
-    m_perspective.setAspectRatio(aspectRatio);
+    m_camera.getProjection().setAspectRatio(aspectRatio);
 }
 
 void AnariMapCamera::_update()
@@ -155,25 +152,9 @@ void AnariMapCamera::_update()
     const auto position = m_targetPoint + -direction * m_distanceToTarget;
     const auto up = rotation * glm::vec3{0.0F, 0.0F, -1.0F};
 
-    m_view.setPosition(position);
-    m_view.setDirection(direction, up);
+    auto& rView = m_camera.getView();
+    rView.setPosition(position);
+    rView.setDirection(direction, up);
 
-    m_viewFrustum = _createViewFrustum();
     m_needsCommit = true;
-}
-
-auto AnariMapCamera::_createViewFrustum() const -> ViewFrustum
-{
-    return ViewFrustum{ViewFrustum::PerspectiveConfig{
-        .fovY = m_perspective.getFovY(),
-        .aspectRatio = m_perspective.getAspectRatio(),
-
-        .near = m_perspective.getNear(),
-        .far = m_perspective.getFar(),
-
-        .position = m_view.getPosition(),
-        .direction = m_view.getDirection(),
-        .up = m_view.getUp(),
-        .right = m_view.getRight(),
-    }};
 }

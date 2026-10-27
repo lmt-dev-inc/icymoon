@@ -3,10 +3,8 @@
 #include "anari_device.h"
 
 #include <im3e/api/gui.h>
-#include <im3e/scene/perspective_projection.h>
-#include <im3e/scene/view_transform.h>
+#include <im3e/scene/camera.h>
 #include <im3e/utils/loggers.h>
-#include <im3e/utils/view_frustum.h>
 
 #include <numbers>
 
@@ -16,6 +14,10 @@ class AnariMapCamera : public IGuiEventListener
 {
 public:
     AnariMapCamera(std::shared_ptr<AnariDevice> pAnDevice);
+    AnariMapCamera(const AnariMapCamera&) = delete;
+    AnariMapCamera(AnariMapCamera&&) = delete;
+    AnariMapCamera& operator=(const AnariMapCamera&) = delete;
+    AnariMapCamera& operator=(AnariMapCamera&&) = delete;
 
     void commitChanges();
 
@@ -27,11 +29,10 @@ public:
     void setAspectRatio(float ratio);
 
     auto getHandle() const -> ANARICamera { return m_pAnCamera.get(); }
-    auto getViewFrustum() const -> const ViewFrustum& { return m_viewFrustum; }
+    auto getViewFrustum() const -> const ViewFrustum& { return m_camera.getViewFrustum(); }
 
 private:
     void _update();
-    auto _createViewFrustum() const -> ViewFrustum;
 
     std::shared_ptr<AnariDevice> m_pAnDevice;
     std::unique_ptr<ILogger> m_pLogger;
@@ -44,10 +45,7 @@ private:
     float m_angleX{};
     float m_angleY{};
 
-    PerspectiveProjection m_perspective;
-    ViewTransform m_view;
-
-    ViewFrustum m_viewFrustum;
+    Camera m_camera;
 };
 
 }  // namespace im3e
