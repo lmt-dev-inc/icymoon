@@ -21,9 +21,9 @@ Temporary progress tracker: delete before creating the PR.
   - It has a `getVersion()` counter that increments on every change.
   - `createProperties()` exposes position, direction, up and right as read-only.
 - [ ] Add tests:
-  - `test_perspective_projection.cpp`: the matrix matches `glm::perspective`, values are clamped to their min/max, and setters fire the change callback.
-  - `test_view_transform.cpp`: `setDirection` makes the axes orthonormal, the matrix matches `glm::lookAt`, and setters fire the change callback.
-  - `test_camera.cpp`: the frustum follows changes to the aspect ratio, FOV, near/far and position; the version increments on each change and stays the same when nothing changes.
+  - [x] `test_perspective_projection.cpp`: the matrix matches `glm::perspective`.
+  - [x] `test_view_transform.cpp`: `setDirection` makes the axes orthonormal, the matrix matches `glm::lookAt`, and setters fire the change callback.
+  - [ ] `test_camera.cpp`: the frustum follows changes to the aspect ratio, FOV, near/far and position; the version increments on each change and stays the same when nothing changes.
 
 ## 3. `MapCameraController` (in `im3e_scene`)
 
@@ -64,6 +64,5 @@ Temporary progress tracker: delete before creating the PR.
 
 ## 6. Optional
 
-- [ ] Add an integration test for `AnariCamera` against Helide, which would be the first test of `im3e_anari`.
 - [ ] Derive the initial `MapCameraState` from the height map's bounds instead of a constant.
 - [ ] Update `docs/architecture.md` (the `im3e_anari` section, plus an `im3e_scene` entry in the libraries table and dependency graph) and `docs/coordinate_spaces.md` (`AnariMapCamera` becomes `MapCameraController`).

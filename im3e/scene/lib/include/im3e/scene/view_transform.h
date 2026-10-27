@@ -12,6 +12,10 @@ class ViewTransform
 {
 public:
     ViewTransform(std::function<void()> onChanged);
+    ViewTransform(const ViewTransform&) = delete;
+    ViewTransform(ViewTransform&&) = delete;
+    ViewTransform& operator=(const ViewTransform&) = delete;
+    ViewTransform& operator=(ViewTransform&&) = delete;
 
     void setPosition(const glm::vec3& rPosition) { m_pPosition->setValue(rPosition); }
     void setDirection(const glm::vec3& rDirection, const glm::vec3& rUp);

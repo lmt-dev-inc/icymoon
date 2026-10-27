@@ -13,6 +13,10 @@ class PerspectiveProjection
 {
 public:
     PerspectiveProjection(std::function<void()> onChanged);
+    PerspectiveProjection(const PerspectiveProjection&) = delete;
+    PerspectiveProjection(PerspectiveProjection&&) = delete;
+    PerspectiveProjection& operator=(const PerspectiveProjection&) = delete;
+    PerspectiveProjection& operator=(PerspectiveProjection&&) = delete;
 
     void setFovY(float fovY) { m_pFovY->setValue(fovY); }
     void setAspectRatio(float aspectRatio) { m_pAspectRatio->setValue(aspectRatio); }
