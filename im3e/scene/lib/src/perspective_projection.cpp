@@ -12,8 +12,8 @@ PerspectiveProjection::PerspectiveProjection(std::function<void()> onChanged)
         .name = "FOV Y",
         .description = "Vertical Field of View",
         .defaultValue = std::numbers::pi_v<float> / 3.0F,
-        .minValue = 0.0F,
-        .maxValue = std::numbers::pi_v<float>,
+        .minValue = std::numbers::pi_v<float> / 180.0F,
+        .maxValue = std::numbers::pi_v<float> * 179.0F / 180.0F,
         .onChange = [this](auto) { _onChanged(); },
     }))
   , m_pAspectRatio(std::make_shared<decltype(m_pAspectRatio)::element_type>(PropertyValueConfig<float>{
@@ -55,9 +55,9 @@ auto PerspectiveProjection::getMatrix() const -> const glm::mat4&
 
 void PerspectiveProjection::_onChanged()
 {
+    m_matrixDirty = true;
     if (m_onChanged)
     {
         m_onChanged();
     }
-    m_matrixDirty = true;
 }

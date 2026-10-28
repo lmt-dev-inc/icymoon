@@ -145,6 +145,7 @@ public:
         {
             return;
         }
+        const auto previousValue = m_value;
         m_value = std::move(value);
 
         if constexpr (HasLessThanOperator<Type>::value)
@@ -157,6 +158,10 @@ public:
             {
                 m_value = std::min(m_config.maxValue.value(), m_value);
             }
+        }
+        if (m_value == previousValue)
+        {
+            return;
         }
 
         m_notifier.notifyChanged();

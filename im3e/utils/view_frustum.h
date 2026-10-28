@@ -40,7 +40,7 @@ public:
     /// @return True if the given AABB is at least partially inside the current frustum.
     auto isAABBInside(const glm::vec3& rMinPoint, const glm::vec3& rMaxPoint) const -> bool;
 
-    auto getConfig() const -> const PerspectiveConfig { return m_config; }
+    auto getConfig() const -> const PerspectiveConfig& { return m_config; }
     auto getNearPlane() const -> const Plane& { return m_planes[NearPlaneIdx]; }
     auto getFarPlane() const -> const Plane& { return m_planes[FarPlaneIdx]; }
     auto getTopPlane() const -> const Plane& { return m_planes[TopPlaneIdx]; }

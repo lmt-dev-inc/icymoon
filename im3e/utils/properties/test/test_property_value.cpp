@@ -116,6 +116,22 @@ TEST(PropertyValueTest, setValueDoesNotNotifyIfGivenSameValue)
     EXPECT_THAT(property.getValue(), Eq(TestValue));
 }
 
+TEST(PropertyValueTest, setValueDoesNotNotifyIfGivenSameValueAfterClamping)
+{
+    constexpr auto MaxValue = 100U;
+    const PropertyValueConfig<uint32_t> intConfig{
+        .defaultValue = MaxValue,
+        .maxValue = MaxValue,
+    };
+    PropertyValue<uint32_t> property(intConfig);
+    EXPECT_THAT(property.getValue(), Eq(MaxValue));
+
+    OnChangeReceiver receiver(property);
+    property.setValue(MaxValue + 2U);
+    EXPECT_THAT(receiver.callCount, Eq(0U));
+    EXPECT_THAT(property.getValue(), Eq(MaxValue));
+}
+
 TEST(PropertyValueTest, setAnyValue)
 {
     const PropertyValueConfig<int32_t> intConfig{
