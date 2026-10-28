@@ -1,15 +1,21 @@
 #include "anari_map_camera.h"
 
 #include <im3e/utils/core/throw_utils.h>
+#include <im3e/utils/properties/properties.h>
 
 #include <fmt/format.h>
-#include <glm/gtc/quaternion.hpp>
 
 using namespace im3e;
 
 namespace {
 
 constexpr float ScrollSensitivity = 0.1F;
+
+// Dragging accross the full viewport width brings back to the original heading i.e. it does a full rotation (2pi):
+constexpr float HeadingPerViewportWidth = 2.0f * std::numbers::pi_v<float>;
+
+// Dragging accross half the viewport height tilts by 90° (pi/2) so a full viewport height drags by 180° (pi):
+constexpr float TiltPerViewportHeight = std::numbers::pi_v<float>;
 
 auto createAnariCamera(const ILogger& rLogger, ANARIDevice anDevice)
 {
@@ -21,15 +27,40 @@ auto createAnariCamera(const ILogger& rLogger, ANARIDevice anDevice)
         });
 }
 
+auto setAnariPerspectiveParameters(ANARIDevice anDevice, ANARICamera anCamera,
+                                   const PerspectiveProjection& rPerspective, const ViewTransform& rView)
+{
+    const auto fovY = rPerspective.getFovY();
+    anariSetParameter(anDevice, anCamera, "fovy", ANARI_FLOAT32, &fovY);
+
+    const auto aspectRatio = rPerspective.getAspectRatio();
+    anariSetParameter(anDevice, anCamera, "aspect", ANARI_FLOAT32, &aspectRatio);
+
+    const auto near = rPerspective.getNear();
+    anariSetParameter(anDevice, anCamera, "near", ANARI_FLOAT32, &near);
+
+    const auto far = rPerspective.getFar();
+    anariSetParameter(anDevice, anCamera, "far", ANARI_FLOAT32, &far);
+
+    const auto position = rView.getPosition();
+    anariSetParameter(anDevice, anCamera, "position", ANARI_FLOAT32_VEC3, &position);
+
+    const auto up = rView.getUp();
+    anariSetParameter(anDevice, anCamera, "up", ANARI_FLOAT32_VEC3, &up);
+
+    const auto direction = rView.getDirection();
+    anariSetParameter(anDevice, anCamera, "direction", ANARI_FLOAT32_VEC3, &direction);
+}
+
 }  // namespace
 
 AnariMapCamera::AnariMapCamera(std::shared_ptr<AnariDevice> pAnDevice)
   : m_pAnDevice(throwIfArgNull(std::move(pAnDevice), "ANARI Map Camera requires an ANARI Device"))
   , m_pLogger(m_pAnDevice->createLogger("AnariMapCamera"))
   , m_pAnCamera(createAnariCamera(*m_pLogger, m_pAnDevice->getHandle()))
-  , m_viewFrustum(_createViewFrustum())
+  , m_pCamera(createCamera([this] { m_needsCommit = true; }))
+  , m_cameraController(m_pCamera)
 {
-    _update();  // calculate initial view state
     commitChanges();
 }
 
@@ -41,127 +72,44 @@ void AnariMapCamera::commitChanges()
     }
     m_needsCommit = false;
 
-    m_perspective.setCameraParameters(m_pAnDevice->getHandle(), m_pAnCamera.get());
-    m_view.setCameraParameters(m_pAnDevice->getHandle(), m_pAnCamera.get());
+    setAnariPerspectiveParameters(m_pAnDevice->getHandle(), m_pAnCamera.get(), m_pCamera->getProjection(),
+                                  m_pCamera->getView());
     anariCommitParameters(m_pAnDevice->getHandle(), m_pAnCamera.get());
 }
 
-void AnariMapCamera::onMouseMove(const glm::vec2& rClipOffset, const std::array<bool, 3U>& rMouseButtonsDown)
+auto AnariMapCamera::createProperties() -> std::shared_ptr<IPropertyGroup>
 {
-    if (rMouseButtonsDown[static_cast<size_t>(MouseButton::Left)])
+    return createPropertyGroup("Map Camera", {m_cameraController.getProperties(), m_pCamera->createProperties()});
+}
+
+void AnariMapCamera::onMouseMove(const MouseMoveEvent& rEvent)
+{
+    if (!rEvent.mouseButtons.has(MouseButton::Left))
     {
-        constexpr auto HalfPi = std::numbers::pi_v<float> / 2.0F;
-
-        const auto angleXOffset = -rClipOffset.y * HalfPi;
-        const auto angleYOffset = -rClipOffset.x * HalfPi / 2.0F;
-
-        m_view.angleX = std::clamp(m_view.angleX + angleXOffset, 0.0F, HalfPi);
-        m_view.angleY += angleYOffset;
-        _update();
+        return;
     }
-    else if (rMouseButtonsDown[static_cast<size_t>(MouseButton::Middle)])
+
+    if (rEvent.keyModifiers.has(KeyModifier::Ctrl))
     {
-        const auto inverseVpMatrix = glm::inverse(m_perspective.generateMatrix() * m_view.generateMatrix());
-        const auto sceneVec = inverseVpMatrix * glm::vec4(rClipOffset, 0.0F, 0.0F);
-        const auto sceneOffset = sceneVec.xyz() * m_view.distanceToTarget;
-        m_view.targetPoint.x += sceneOffset.x;
-        m_view.targetPoint.z += sceneOffset.z;
-        _update();
+        // NDC spans 2 units per axis; convert both to screen-height units so they share one scale
+        const auto headingDelta = -HeadingPerViewportWidth * rEvent.ndcOffset.x / 2.0F;
+        const auto tiltDelta = TiltPerViewportHeight * rEvent.ndcOffset.y / 2.0F;
+
+        m_cameraController.rotate(headingDelta, tiltDelta);
+    }
+    else
+    {
+        m_cameraController.pan(rEvent.ndcPrevPosition, rEvent.ndcCurrPosition);
     }
 }
 
 void AnariMapCamera::onMouseWheel(float scrollSteps)
 {
-    m_view.distanceToTarget = m_view.distanceToTarget * (1.0F - scrollSteps * ScrollSensitivity);
-    _update();
+    const auto zoomFactor = std::max(1.0F - scrollSteps * ScrollSensitivity, ScrollSensitivity);
+    m_cameraController.zoom(zoomFactor);
 }
 
 void AnariMapCamera::setAspectRatio(float aspectRatio)
 {
-    if (m_perspective.aspectRatio == aspectRatio)
-    {
-        return;
-    }
-    m_perspective.aspectRatio = aspectRatio;
-    m_needsCommit = true;
-}
-
-void AnariMapCamera::_update()
-{
-    m_view.update();
-
-    // TODO: replace with view frustum update
-    m_viewFrustum = _createViewFrustum();
-    /*const auto& rPosition = m_view.getPosition();
-    const auto& rDirection = m_view.getDirection();
-    const auto& rUp = m_view.getUp();
-    const auto& rRight = m_view.getRight();
-
-    // TODO: figure out the rest including:
-    // - what is d for near and far planes
-    // - what is d for top plane
-    // - calculate the rest of the planes
-    // - how can this be tested?
-    m_viewFrustum.near = glm::vec4{rDirection, rPosition + rDirection * m_perspective.near};
-    m_viewFrustum.far = glm::vec4{-rDirection, rPosition + rDirection * m_perspective.far};
-
-    const auto topNormal = -glm::angleAxis((m_perspective.fovY - std::numbers::pi_v<float>) / 2.0F, rRight) *
-                           rDirection;
-    m_viewFrustum.top = glm::vec4{topNormal, 0.0F};*/
-
-    m_needsCommit = true;
-}
-
-auto AnariMapCamera::_createViewFrustum() const -> ViewFrustum
-{
-    return ViewFrustum{ViewFrustum::PerspectiveConfig{
-        .fovY = m_perspective.fovY,
-        .aspectRatio = m_perspective.aspectRatio,
-
-        .near = m_perspective.near,
-        .far = m_perspective.far,
-
-        .position = m_view.getPosition(),
-        .direction = m_view.getDirection(),
-        .up = m_view.getUp(),
-        .right = m_view.getRight(),
-    }};
-}
-
-void AnariMapCamera::PerspectiveState::setCameraParameters(ANARIDevice anDevice, ANARICamera anCamera) const
-{
-    anariSetParameter(anDevice, anCamera, "fovy", ANARI_FLOAT32, &fovY);
-    anariSetParameter(anDevice, anCamera, "aspect", ANARI_FLOAT32, &aspectRatio);
-    anariSetParameter(anDevice, anCamera, "near", ANARI_FLOAT32, &near);
-    anariSetParameter(anDevice, anCamera, "far", ANARI_FLOAT32, &far);
-}
-
-auto AnariMapCamera::PerspectiveState::generateMatrix() const -> glm::mat4
-{
-    return glm::perspective(fovY, aspectRatio, near, far);
-}
-
-void AnariMapCamera::ViewState::update()
-{
-    const auto rotationX = glm::angleAxis(angleX, glm::vec3{1.0F, 0.0F, 0.0F});
-    const auto rotationY = glm::angleAxis(angleY, glm::vec3{0.0F, 1.0F, 0.0F});
-    const auto rotation = rotationY * rotationX;
-
-    m_direction = glm::normalize(rotation * glm::vec3{0.0F, -1.0F, 0.0F});
-    m_position = targetPoint + -m_direction * distanceToTarget;
-    m_up = rotation * glm::vec3{0.0F, 0.0F, -1.0F};
-    m_right = glm::normalize(glm::cross(m_direction, m_up));
-    m_up = glm::normalize(glm::cross(m_right, m_direction));
-}
-
-void AnariMapCamera::ViewState::setCameraParameters(ANARIDevice anDevice, ANARICamera anCamera) const
-{
-    anariSetParameter(anDevice, anCamera, "position", ANARI_FLOAT32_VEC3, &m_position);
-    anariSetParameter(anDevice, anCamera, "up", ANARI_FLOAT32_VEC3, &m_up);
-    anariSetParameter(anDevice, anCamera, "direction", ANARI_FLOAT32_VEC3, &m_direction);
-}
-
-auto AnariMapCamera::ViewState::generateMatrix() const -> glm::mat4
-{
-    return glm::lookAt(m_direction, m_position, m_up);
+    m_pCamera->getProjection().setAspectRatio(aspectRatio);
 }

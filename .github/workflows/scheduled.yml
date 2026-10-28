@@ -1,6 +1,6 @@
 # Trigger file: checks main twice a week, to catch breakage from outside the repository (runner
 # images, package mirrors) even without commits. Also runs manually on any branch.
-# See docs/github_actions.md.
+# See docs/development/github_actions.md.
 name: Scheduled
 
 on:

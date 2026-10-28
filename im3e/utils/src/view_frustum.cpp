@@ -4,37 +4,38 @@
 
 using namespace im3e;
 
-ViewFrustum::ViewFrustum(const PerspectiveConfig& rConfig)
-  : m_planes([&rConfig] {
+ViewFrustum::ViewFrustum(PerspectiveConfig config)
+  : m_config(std::move(config))
+  , m_planes([this] {
       std::array<Plane, 6U> planes;
 
       // Near / Far planes
       {
-          const auto nearP0 = rConfig.position + rConfig.near * rConfig.direction;
-          const auto farP0 = rConfig.position + rConfig.far * rConfig.direction;
-          planes[NearPlaneIdx] = Plane(rConfig.direction, -glm::dot(rConfig.direction, nearP0));
-          planes[FarPlaneIdx] = Plane(-rConfig.direction, -glm::dot(-rConfig.direction, farP0));
+          const auto nearP0 = m_config.position + m_config.near * m_config.direction;
+          const auto farP0 = m_config.position + m_config.far * m_config.direction;
+          planes[NearPlaneIdx] = Plane(m_config.direction, -glm::dot(m_config.direction, nearP0));
+          planes[FarPlaneIdx] = Plane(-m_config.direction, -glm::dot(-m_config.direction, farP0));
       }
 
       // Top / Bottom planes
       {
-          const auto topNormalAngle = (rConfig.fovY - std::numbers::pi_v<float>) / 2.0F;
-          const auto topNormal = glm::normalize(glm::rotate(rConfig.direction, topNormalAngle, rConfig.right));
-          const auto bottomNormal = glm::normalize(glm::rotate(rConfig.direction, -topNormalAngle, rConfig.right));
+          const auto topNormalAngle = (m_config.fovY - std::numbers::pi_v<float>) / 2.0F;
+          const auto topNormal = glm::normalize(glm::rotate(m_config.direction, topNormalAngle, m_config.right));
+          const auto bottomNormal = glm::normalize(glm::rotate(m_config.direction, -topNormalAngle, m_config.right));
 
-          planes[TopPlaneIdx] = Plane(topNormal, -glm::dot(topNormal, rConfig.position));
-          planes[BottomPlaneIdx] = Plane(bottomNormal, -glm::dot(bottomNormal, rConfig.position));
+          planes[TopPlaneIdx] = Plane(topNormal, -glm::dot(topNormal, m_config.position));
+          planes[BottomPlaneIdx] = Plane(bottomNormal, -glm::dot(bottomNormal, m_config.position));
       }
 
       // Left / Right planes
       {
-          const auto fovX = rConfig.fovY * rConfig.aspectRatio;
+          const auto fovX = m_config.fovY * m_config.aspectRatio;
           const auto leftNormalAngle = (fovX - std::numbers::pi_v<float>) / 2.0F;
-          const auto leftNormal = glm::normalize(glm::rotate(rConfig.direction, leftNormalAngle, rConfig.up));
-          const auto rightNormal = glm::normalize(glm::rotate(rConfig.direction, -leftNormalAngle, rConfig.up));
+          const auto leftNormal = glm::normalize(glm::rotate(m_config.direction, leftNormalAngle, m_config.up));
+          const auto rightNormal = glm::normalize(glm::rotate(m_config.direction, -leftNormalAngle, m_config.up));
 
-          planes[LeftPlaneIdx] = Plane(leftNormal, -glm::dot(leftNormal, rConfig.position));
-          planes[RightPlaneIdx] = Plane(rightNormal, -glm::dot(rightNormal, rConfig.position));
+          planes[LeftPlaneIdx] = Plane(leftNormal, -glm::dot(leftNormal, m_config.position));
+          planes[RightPlaneIdx] = Plane(rightNormal, -glm::dot(rightNormal, m_config.position));
       }
 
       return planes;

@@ -100,6 +100,7 @@ int main()
     {
         auto pPropertyGroup = createPropertyGroup("Parameters", {
                                                                     pFramePipeline->createRendererProperties(),
+                                                                    pFramePipeline->createCameraProperties(),
                                                                     // pPlane->getProperties(),
                                                                     pHeightField->getProperties(),
                                                                 });

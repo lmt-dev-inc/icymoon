@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(build-and-test)",
+      "Skill(build-and-test:*)",
+      "PowerShell(.venv\\Scripts\\Activate.ps1)",
+      "PowerShell(cmake --preset *)",
+      "PowerShell(cmake --build --preset *)",
+      "PowerShell(ctest --preset *)",
+      "PowerShell(cmake --list-presets)"
+    ]
+  }
+}

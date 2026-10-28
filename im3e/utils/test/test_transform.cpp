@@ -7,6 +7,7 @@
 
 #include <fmt/format.h>
 #include <gmock/gmock.h>
+#include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
 #include <iostream>
@@ -19,28 +20,37 @@ TEST(TransformTest, constructor)
     EXPECT_THAT(transform.getTranslation(), Eq(glm::vec3(0.0F, 0.0F, 0.0F)));
     EXPECT_THAT(transform.getScale(), Eq(glm::vec3(1.0F, 1.0F, 1.0F)));
     EXPECT_THAT(transform.getOrientation(), Eq(glm::quat(1.0F, 0.0F, 0.0F, 0.0F)));
+    EXPECT_THAT(transform.toMatrix(), FloatEq(glm::identity<glm::mat4>()));
 }
 
 TEST(TransformTest, translate)
 {
+    constexpr auto Translation1 = glm::vec3{1.0F, 0.5F, 2.0F};
+    constexpr auto Translation2 = glm::vec3{-0.4F, 0.25F, -1.0F};
     Transform transform;
 
-    transform.translate(glm::vec3{1.0F, 0.5F, 2.0F});
-    EXPECT_THAT(transform.getTranslation(), Eq(glm::vec3{1.0F, 0.5F, 2.0F}));
+    transform.translate(Translation1);
+    EXPECT_THAT(transform.getTranslation(), FloatEq(Translation1));
+    EXPECT_THAT(transform.toMatrix(), FloatEq(glm::translate(Translation1)));
 
-    transform.translate(glm::vec3{-0.4F, 0.25F, -1.0F});
-    EXPECT_THAT(transform.getTranslation(), Eq(glm::vec3{0.6F, 0.75F, 1.0F}));
+    transform.translate(Translation2);
+    EXPECT_THAT(transform.getTranslation(), FloatEq(Translation1 + Translation2));
+    EXPECT_THAT(transform.toMatrix(), FloatEq(glm::translate(Translation1 + Translation2)));
 }
 
 TEST(TransformTest, scale)
 {
+    constexpr auto Scale1 = glm::vec3{2.0F, 3.0F, 4.0F};
+    constexpr auto Scale2 = glm::vec3{0.5F, -1.0F, 2.0F};
     Transform transform;
 
-    transform.scale(glm::vec3{2.0F, 3.0F, 4.0F});
-    EXPECT_THAT(transform.getScale(), Eq(glm::vec3{2.0F, 3.0F, 4.0F}));
+    transform.scale(Scale1);
+    EXPECT_THAT(transform.getScale(), FloatEq(Scale1));
+    EXPECT_THAT(transform.toMatrix(), FloatEq(glm::scale(Scale1)));
 
-    transform.scale(glm::vec3{0.5F, -1.0F, 2.0F});
-    EXPECT_THAT(transform.getScale(), Eq(glm::vec3{1.0F, -3.0F, 8.0F}));
+    transform.scale(Scale2);
+    EXPECT_THAT(transform.getScale(), FloatEq(Scale1 * Scale2));
+    EXPECT_THAT(transform.toMatrix(), FloatEq(glm::scale(Scale1 * Scale2)));
 }
 
 TEST(TransformTest, rotate)
@@ -51,10 +61,12 @@ TEST(TransformTest, rotate)
     Transform transform;
 
     transform.rotate(90.0_fdeg, glm::vec3(1.0F, 0.0F, 0.0F));
-    EXPECT_THAT(transform.getOrientation(), rotation1);
+    EXPECT_THAT(transform.getOrientation(), FloatEq(rotation1));
+    EXPECT_THAT(transform.toMatrix(), FloatEq(glm::mat4_cast(rotation1)));
 
     transform.rotate(-90.0_fdeg, glm::vec3(0.0F, 0.0F, 1.0F));
-    EXPECT_THAT(transform.getOrientation(), Eq(rotation2 * rotation1));
+    EXPECT_THAT(transform.getOrientation(), FloatEq(rotation2 * rotation1));
+    EXPECT_THAT(transform.toMatrix(), FloatEq(glm::mat4_cast(rotation2 * rotation1)));
 }
 
 TEST(TransformTest, reset)
@@ -68,6 +80,7 @@ TEST(TransformTest, reset)
     EXPECT_THAT(transform.getTranslation(), Eq(glm::vec3(0.0F, 0.0F, 0.0F)));
     EXPECT_THAT(transform.getScale(), Eq(glm::vec3(1.0F, 1.0F, 1.0F)));
     EXPECT_THAT(transform.getOrientation(), Eq(glm::quat(1.0F, 0.0F, 0.0F, 0.0F)));
+    EXPECT_THAT(transform.toMatrix(), FloatEq(glm::identity<glm::mat4>()));
 }
 
 TEST(TransformTest, setRotation)

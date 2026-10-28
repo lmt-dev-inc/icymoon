@@ -1,5 +1,5 @@
 # Job file: configures, builds and runs the unit tests of each given configuration.
-# Called by the trigger files, see docs/github_actions.md.
+# Called by the trigger files, see docs/development/github_actions.md.
 name: build
 
 on:

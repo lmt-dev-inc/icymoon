@@ -2,6 +2,8 @@
 
 #include "command_buffer.h"
 
+#include <im3e/utils/core/flags.h>
+
 #include <glm/glm.hpp>
 
 #include <memory>
@@ -44,18 +46,41 @@ public:
     virtual void addPanel(Location location, std::shared_ptr<IGuiPanel> pPanel, float fraction = 0.25F) = 0;
 };
 
+enum class MouseButton : uint32_t
+{
+    Left = 1 << 0U,
+    Right = 1U << 1U,
+    Middle = 1U << 2U,
+};
+template <>
+inline constexpr bool IsFlagEnum<MouseButton> = true;
+using MouseButtons = Flags<MouseButton>;
+
+enum class KeyModifier : uint32_t
+{
+    Shift = 1U << 0U,
+    Ctrl = 1U << 1U,
+    Alt = 1U << 2U,
+    Super = 1U << 3U,
+};
+template <>
+inline constexpr bool IsFlagEnum<KeyModifier> = true;
+using KeyModifiers = Flags<KeyModifier>;
+
 class IGuiEventListener
 {
 public:
     virtual ~IGuiEventListener() = default;
 
-    enum class MouseButton : uint32_t
+    struct MouseMoveEvent
     {
-        Left = 0U,
-        Right = 1U,
-        Middle = 2U,
+        glm::vec2 ndcPrevPosition;
+        glm::vec2 ndcCurrPosition;
+        glm::vec2 ndcOffset;
+        MouseButtons mouseButtons;
+        KeyModifiers keyModifiers;
     };
-    virtual void onMouseMove(const glm::vec2& rClipOffset, const std::array<bool, 3U>& rMouseButtonsDown) = 0;
+    virtual void onMouseMove(const MouseMoveEvent& rEvent) = 0;
     virtual void onMouseWheel(float scrollSteps) = 0;
 };
 

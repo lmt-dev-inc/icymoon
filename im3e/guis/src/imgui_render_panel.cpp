@@ -49,6 +49,64 @@ auto createRenderOutputSampler(const IDevice& rDevice)
     return makeVkUniquePtr<VkSampler>(vkDevice, vkSampler, rVkFcts.vkDestroySampler);
 }
 
+auto convertPosFromPixelsToNdc(const ImVec2& rPixels, const ImVec2& rViewportPos, const ImVec2& rViewportSize)
+{
+    // We flip the y axis offset because ImGui uses a Y axis down while our NDC coordinates use a Y axis down.
+    return glm::vec2{
+        -1.0f + (rPixels.x - rViewportPos.x) * 2.0F / static_cast<float>(rViewportSize.x),
+        1.0f - (rPixels.y - rViewportPos.y) * 2.0F / static_cast<float>(rViewportSize.y),
+    };
+}
+
+auto convertVecFromPixelsToNdc(const ImVec2& rPixels, const ImVec2& rViewportSize)
+{
+    // We flip the y axis offset because ImGui uses a Y axis down while our NDC coordinates use a Y axis down.
+    return glm::vec2{
+        rPixels.x * 2.0F / static_cast<float>(rViewportSize.x),
+        -rPixels.y * 2.0F / static_cast<float>(rViewportSize.y),
+    };
+}
+
+auto createMouseButtonsFromIo(const ImGuiIO& rIo)
+{
+    MouseButtons mouseButtons{};
+    if (rIo.MouseDown[0])
+    {
+        mouseButtons |= MouseButton::Left;
+    }
+    if (rIo.MouseDown[1])
+    {
+        mouseButtons |= MouseButton::Right;
+    }
+    if (rIo.MouseDown[2])
+    {
+        mouseButtons |= MouseButton::Middle;
+    }
+    return mouseButtons;
+}
+
+auto createKeyModifiersFromIo(const ImGuiIO& rIo)
+{
+    KeyModifiers keyModifiers;
+    if (rIo.KeyShift)
+    {
+        keyModifiers |= KeyModifier::Shift;
+    }
+    if (rIo.KeyCtrl)
+    {
+        keyModifiers |= KeyModifier::Ctrl;
+    }
+    if (rIo.KeyAlt)
+    {
+        keyModifiers |= KeyModifier::Alt;
+    }
+    if (rIo.KeySuper)
+    {
+        keyModifiers |= KeyModifier::Super;
+    }
+    return keyModifiers;
+}
+
 void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
 {
     if (ImGui::IsItemHovered() && rIo.MouseWheel)
@@ -58,15 +116,15 @@ void dispatchEvents(ImGuiIO& rIo, IGuiEventListener& rEventListener)
 
     if (ImGui::IsItemActive() && (rIo.MouseDelta.x || rIo.MouseDelta.y))
     {
-        const auto imViewportSize = getWindowContentRegionSize();
-        const glm::vec2 normalizedMouseOffset{
-            rIo.MouseDelta.x * 2.0F / static_cast<float>(imViewportSize.x),
-            rIo.MouseDelta.y * 2.0F / static_cast<float>(imViewportSize.y),
-        };
-
-        const std::array<bool, 3U> mouseButtonsDown{rIo.MouseDown[0], rIo.MouseDown[1], rIo.MouseDown[2]};
-
-        rEventListener.onMouseMove(normalizedMouseOffset, mouseButtonsDown);
+        const auto imViewportPos = ImGui::GetItemRectMin();
+        const auto imViewportSize = ImGui::GetItemRectSize();
+        rEventListener.onMouseMove(IGuiEventListener::MouseMoveEvent{
+            .ndcPrevPosition = convertPosFromPixelsToNdc(rIo.MousePosPrev, imViewportPos, imViewportSize),
+            .ndcCurrPosition = convertPosFromPixelsToNdc(rIo.MousePos, imViewportPos, imViewportSize),
+            .ndcOffset = convertVecFromPixelsToNdc(rIo.MouseDelta, imViewportSize),
+            .mouseButtons = createMouseButtonsFromIo(rIo),
+            .keyModifiers = createKeyModifiersFromIo(rIo),
+        });
     }
 }
 

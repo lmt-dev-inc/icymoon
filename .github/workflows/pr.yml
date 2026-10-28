@@ -1,5 +1,5 @@
 # Trigger file: checks a pull request before it is merged into main.
-# See docs/github_actions.md.
+# See docs/development/github_actions.md.
 name: PR
 
 on:

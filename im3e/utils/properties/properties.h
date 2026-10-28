@@ -145,6 +145,7 @@ public:
         {
             return;
         }
+        const auto previousValue = m_value;
         m_value = std::move(value);
 
         if constexpr (HasLessThanOperator<Type>::value)
@@ -157,6 +158,10 @@ public:
             {
                 m_value = std::min(m_config.maxValue.value(), m_value);
             }
+        }
+        if (m_value == previousValue)
+        {
+            return;
         }
 
         m_notifier.notifyChanged();
@@ -204,5 +209,15 @@ private:
 
 auto createPropertyGroup(std::string_view name, std::vector<std::shared_ptr<IProperty>> pProperties)
     -> std::shared_ptr<IPropertyGroup>;
+
+/// @brief Create a read-only proxy for a property value.
+/// This allows to pass around property values without allowing modification of the value.
+/// The proxy will forward change notifications from the original property value.
+///
+/// @param pPropertyValue The property value to create a read-only proxy for.
+///
+/// @return A read-only proxy for the given property value.
+auto createReadOnlyPropertyValueProxy(std::shared_ptr<IPropertyValue> pPropertyValue)
+    -> std::shared_ptr<IPropertyValue>;
 
 }  // namespace im3e

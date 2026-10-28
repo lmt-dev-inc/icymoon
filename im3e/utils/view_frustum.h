@@ -31,7 +31,7 @@ public:
         glm::vec3 up{0.0F, 1.0F, 0.0F};
         glm::vec3 right{1.0F, 0.0F, 0.0F};
     };
-    ViewFrustum(const PerspectiveConfig& rConfig);
+    ViewFrustum(PerspectiveConfig config);
 
     /// @brief Test if a given AABB is partially or fully inside the view frustum.
     /// @param rMin Min point of the AABB
@@ -40,6 +40,7 @@ public:
     /// @return True if the given AABB is at least partially inside the current frustum.
     auto isAABBInside(const glm::vec3& rMinPoint, const glm::vec3& rMaxPoint) const -> bool;
 
+    auto getConfig() const -> const PerspectiveConfig& { return m_config; }
     auto getNearPlane() const -> const Plane& { return m_planes[NearPlaneIdx]; }
     auto getFarPlane() const -> const Plane& { return m_planes[FarPlaneIdx]; }
     auto getTopPlane() const -> const Plane& { return m_planes[TopPlaneIdx]; }
@@ -48,6 +49,8 @@ public:
     auto getRightPlane() const -> const Plane& { return m_planes[RightPlaneIdx]; }
 
 private:
+    PerspectiveConfig m_config;
+
     static constexpr size_t NearPlaneIdx{0U};
     static constexpr size_t FarPlaneIdx{1U};
     static constexpr size_t TopPlaneIdx{2U};

@@ -203,4 +203,4 @@ The repository includes a shared VS Code setup under `.vscode/`:
 
 ## Code Standards
 
-The rules for C++ code in the codebase (namespaces, naming, includes, text encoding...) are in [docs/code_standards.md](docs/code_standards.md).
+The rules for C++ code in the codebase (namespaces, naming, includes, text encoding...) are in [docs/development/code_standards.md](docs/development/code_standards.md).

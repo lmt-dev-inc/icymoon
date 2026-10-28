@@ -1,4 +1,5 @@
 add_library(im3e_utils STATIC
+    src/ray.cpp
     src/stats_provider.cpp
     src/stream_logger.cpp
     src/stream_logger.h
@@ -7,6 +8,7 @@ add_library(im3e_utils STATIC
     imgui_utils.h
     loggers.h
     math_utils.h
+    ray.h
     stats.h
     transform.h
     view_frustum.h
