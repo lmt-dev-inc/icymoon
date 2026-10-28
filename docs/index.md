@@ -20,4 +20,3 @@ How to work on the project.
 Temporary documents: reviews, plans and trackers, to delete once their content is done or moved into the documents above.
 
 - [Architecture Review](work_in_progress/architecture_review.md): inconsistencies in the current architecture, preparation for new renderers, and a roadmap of proposed changes.
-- [Camera Todo](work_in_progress/camera_todo.md): progress tracker for ticket #72.
