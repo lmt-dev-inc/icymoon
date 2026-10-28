@@ -23,8 +23,14 @@ public:
     MOCK_METHOD(const ViewTransform&, getView, (), (const, override));
     MOCK_METHOD(const ViewFrustum&, getViewFrustum, (), (const, override));
 
+    auto getMockOnChanged() -> MockFunction<void()>& { return m_mockOnChanged; }
+    auto getMockProjection() -> PerspectiveProjection& { return m_projection; }
+    auto getMockProjection() const -> const PerspectiveProjection& { return m_projection; }
+    auto getMockView() -> ViewTransform& { return m_view; }
+    auto getMockView() const -> const ViewTransform& { return m_view; }
+
 private:
-    MockFunction<void()> m_mockOnChanged;
+    NiceMock<MockFunction<void()>> m_mockOnChanged;
 
     PerspectiveProjection m_projection;
     ViewTransform m_view;

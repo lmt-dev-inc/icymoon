@@ -45,6 +45,8 @@ MapCameraController::MapCameraController(std::shared_ptr<ICamera> pCamera)
         .description = "Horizontal rotation in radians of the map around the target point."
                        "0 means the top of the screen is aligned with the north of the map.",
         .defaultValue = 0.0F,
+        .minValue = -std::numbers::pi_v<float>,
+        .maxValue = std::numbers::pi_v<float>,
         .onChange = [this](auto) { _update(); },
     }))
   , m_pTilt(std::make_shared<decltype(m_pTilt)::element_type>(PropertyValueConfig<float>{
@@ -70,8 +72,8 @@ void MapCameraController::pan(const glm::vec2& rNdcFrom, const glm::vec2& rNdcTo
     if (prevTarget && currTarget)
     {
         targetPoint += *prevTarget - *currTarget;
+        m_pTargetPoint->setValue(targetPoint);
     }
-    m_pTargetPoint->setValue(targetPoint);
 }
 
 void MapCameraController::rotate(float headingDelta, float tiltDelta)
