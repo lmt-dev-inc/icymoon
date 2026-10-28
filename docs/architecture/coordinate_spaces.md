@@ -25,5 +25,5 @@ Graphics APIs and libraries use different conventions, so be careful when you cr
 
 ### Use in GUI events
 
-`IGuiEventListener` (`im3e/api/gui.h`) receives mouse movements in NDC units rather than in pixels. Listeners therefore do not depend on the GUI library, the panel size or the display scaling. They can also map movements straight into the scene with the inverse view-projection matrix, which is how `AnariMapCamera` pans.
+`IGuiEventListener` (`im3e/api/gui.h`) receives mouse movements in NDC units rather than in pixels. Listeners therefore do not depend on the GUI library, the panel size or the display scaling. They can also map positions straight into the scene by casting a view ray through them (`ICamera::createViewRayFromNdc`), which is how `MapCameraController::pan` keeps the ground point under the cursor (see [Camera](camera.md#navigation)).
 

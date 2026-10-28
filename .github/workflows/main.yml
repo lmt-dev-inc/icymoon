@@ -1,5 +1,5 @@
 # Trigger file: checks main after each push (merged pull requests included).
-# See docs/github_actions.md.
+# See docs/development/github_actions.md.
 name: Main
 
 on:

@@ -1,6 +1,6 @@
 # Architecture Review
 
-This document reviews the architecture described in [Architecture](architecture.md): where it is inconsistent, how it compares with similar projects, and how it can evolve to stay maintainable as the project grows and replaces ANARI with its own renderers. It ends with a roadmap of the proposed changes, ordered so that each step is useful on its own.
+This document reviews the architecture described in [Architecture](../architecture/index.md): where it is inconsistent, how it compares with similar projects, and how it can evolve to stay maintainable as the project grows and replaces ANARI with its own renderers. It ends with a roadmap of the proposed changes, ordered so that each step is useful on its own.
 
 - [Architecture Review](#architecture-review)
   - [Summary](#summary)

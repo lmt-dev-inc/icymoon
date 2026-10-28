@@ -56,7 +56,7 @@ Job files are prefixed with `_`, as GitHub doesn't allow subdirectories under
 
 ### `_build.yml`
 
-Takes `configs`, a JSON list of [dev.py configurations](../README.md#devpy-commands), and runs
+Takes `configs`, a JSON list of [dev.py configurations](../../README.md#devpy-commands), and runs
 one job per configuration: setup, `cmake --preset`, `cmake --build --preset` and the unit tests
 with `ctest --preset`.
 
