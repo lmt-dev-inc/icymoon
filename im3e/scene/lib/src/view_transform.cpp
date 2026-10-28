@@ -32,9 +32,10 @@ ViewTransform::ViewTransform(std::function<void()> onChanged)
         .defaultValue = glm::vec3(1.0F, 0.0F, 0.0F),
         .onChange = [this](auto) { _onChanged(); },
     }))
-  , m_pPropertyGroup(
-        createPropertyGroup("View Transform", {m_pPosition, m_pDirection, createReadOnlyPropertyValueProxy(m_pUp),
-                                               createReadOnlyPropertyValueProxy(m_pRight)}))
+  , m_pPropertyGroup(createPropertyGroup(
+        "View Transform",
+        {createReadOnlyPropertyValueProxy(m_pPosition), createReadOnlyPropertyValueProxy(m_pDirection),
+         createReadOnlyPropertyValueProxy(m_pUp), createReadOnlyPropertyValueProxy(m_pRight)}))
 {
 }
 

@@ -2,10 +2,8 @@
 
 #include <im3e/utils/core/throw_utils.h>
 #include <im3e/utils/properties/properties.h>
-#include <im3e/utils/ray.h>
 
 #include <fmt/format.h>
-#include <glm/gtc/quaternion.hpp>
 
 using namespace im3e;
 
@@ -13,13 +11,11 @@ namespace {
 
 constexpr float ScrollSensitivity = 0.1F;
 
-// Dragging accross half the viewport height tilts by 90° (pi/2) so a full viewport height drags by 180° (pi):
-constexpr float TiltPerViewportHeight = std::numbers::pi_v<float>;
-constexpr float MinTilt = 0.0F;
-constexpr float MaxTilt = std::numbers::pi_v<float> * 70.0F / 180.0F;
-
 // Dragging accross the full viewport width brings back to the original heading i.e. it does a full rotation (2pi):
 constexpr float HeadingPerViewportWidth = 2.0f * std::numbers::pi_v<float>;
+
+// Dragging accross half the viewport height tilts by 90° (pi/2) so a full viewport height drags by 180° (pi):
+constexpr float TiltPerViewportHeight = std::numbers::pi_v<float>;
 
 auto createAnariCamera(const ILogger& rLogger, ANARIDevice anDevice)
 {
@@ -56,28 +52,15 @@ auto setAnariPerspectiveParameters(ANARIDevice anDevice, ANARICamera anCamera,
     anariSetParameter(anDevice, anCamera, "direction", ANARI_FLOAT32_VEC3, &direction);
 }
 
-auto intersectHorizontalPlane(const Ray& rRay, float planeHeight) -> std::optional<glm::vec3>
-{
-    // Avoid intersections when the direction is up or at grazing angle to the horizontal plane:
-    constexpr float MinGrazing = 1.0e-3F;
-    if (rRay.direction.y > -MinGrazing)
-    {
-        return std::nullopt;
-    }
-
-    const auto t = (planeHeight - rRay.origin.y) / rRay.direction.y;
-    return rRay.origin + t * rRay.direction;
-}
-
 }  // namespace
 
 AnariMapCamera::AnariMapCamera(std::shared_ptr<AnariDevice> pAnDevice)
   : m_pAnDevice(throwIfArgNull(std::move(pAnDevice), "ANARI Map Camera requires an ANARI Device"))
   , m_pLogger(m_pAnDevice->createLogger("AnariMapCamera"))
   , m_pAnCamera(createAnariCamera(*m_pLogger, m_pAnDevice->getHandle()))
-  , m_camera([this] { m_needsCommit = true; })
+  , m_pCamera(std::make_shared<Camera>([this] { m_needsCommit = true; }))
+  , m_cameraController(m_pCamera)
 {
-    _update();  // calculate initial view state
     commitChanges();
 }
 
@@ -89,15 +72,14 @@ void AnariMapCamera::commitChanges()
     }
     m_needsCommit = false;
 
-    setAnariPerspectiveParameters(m_pAnDevice->getHandle(), m_pAnCamera.get(), m_camera.getProjection(),
-                                  m_camera.getView());
+    setAnariPerspectiveParameters(m_pAnDevice->getHandle(), m_pAnCamera.get(), m_pCamera->getProjection(),
+                                  m_pCamera->getView());
     anariCommitParameters(m_pAnDevice->getHandle(), m_pAnCamera.get());
 }
 
 auto AnariMapCamera::createProperties() -> std::shared_ptr<IPropertyGroup>
 {
-    return createPropertyGroup("Map Camera", {// TODO: add properties from MapCameraController
-                                              m_camera.createProperties()});
+    return createPropertyGroup("Map Camera", {m_cameraController.getProperties(), m_pCamera->createProperties()});
 }
 
 void AnariMapCamera::onMouseMove(const MouseMoveEvent& rEvent)
@@ -110,51 +92,27 @@ void AnariMapCamera::onMouseMove(const MouseMoveEvent& rEvent)
     if (rEvent.keyModifiers.has(KeyModifier::Ctrl))
     {
         // NDC spans 2 units per axis; convert both to screen-height units so they share one scale
-        const auto dragX = rEvent.ndcOffset.x / 2.0F;
-        const auto dragY = rEvent.ndcOffset.y / 2.0F;
+        const auto headingDelta = -HeadingPerViewportWidth * rEvent.ndcOffset.x / 2.0F;
+        const auto tiltDelta = TiltPerViewportHeight * rEvent.ndcOffset.y / 2.0F;
 
-        m_angleX = std::clamp(m_angleX + dragY * TiltPerViewportHeight, MinTilt, MaxTilt);
-        m_angleY = std::remainder(m_angleY - dragX * HeadingPerViewportWidth, 2.0F * std::numbers::pi_v<float>);
-        _update();
+        m_cameraController.rotate(headingDelta, tiltDelta);
+        m_needsCommit = true;
     }
     else
     {
-        const auto prevTarget = intersectHorizontalPlane(m_camera.createViewRayFromNdc(rEvent.ndcPrevPosition),
-                                                         m_targetPoint.y);
-        const auto currTarget = intersectHorizontalPlane(m_camera.createViewRayFromNdc(rEvent.ndcCurrPosition),
-                                                         m_targetPoint.y);
-        if (prevTarget && currTarget)
-        {
-            m_targetPoint += *prevTarget - *currTarget;
-            _update();
-        }
+        m_cameraController.pan(rEvent.ndcPrevPosition, rEvent.ndcCurrPosition);
+        m_needsCommit = true;
     }
 }
 
 void AnariMapCamera::onMouseWheel(float scrollSteps)
 {
-    m_distanceToTarget = m_distanceToTarget * (1.0F - scrollSteps * ScrollSensitivity);
-    _update();
+    const auto zoomFactor = std::max(1.0F - scrollSteps * ScrollSensitivity, ScrollSensitivity);
+    m_cameraController.zoom(zoomFactor);
+    m_needsCommit = true;
 }
 
 void AnariMapCamera::setAspectRatio(float aspectRatio)
 {
-    m_camera.getProjection().setAspectRatio(aspectRatio);
-}
-
-void AnariMapCamera::_update()
-{
-    const auto rotationX = glm::angleAxis(m_angleX, glm::vec3{1.0F, 0.0F, 0.0F});
-    const auto rotationY = glm::angleAxis(m_angleY, glm::vec3{0.0F, 1.0F, 0.0F});
-    const auto rotation = rotationY * rotationX;
-
-    const auto direction = glm::normalize(rotation * glm::vec3{0.0F, -1.0F, 0.0F});
-    const auto position = m_targetPoint + -direction * m_distanceToTarget;
-    const auto up = rotation * glm::vec3{0.0F, 0.0F, -1.0F};
-
-    auto& rView = m_camera.getView();
-    rView.setPosition(position);
-    rView.setDirection(direction, up);
-
-    m_needsCommit = true;
+    m_pCamera->getProjection().setAspectRatio(aspectRatio);
 }

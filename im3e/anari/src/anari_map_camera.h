@@ -4,6 +4,7 @@
 
 #include <im3e/api/gui.h>
 #include <im3e/scene/camera.h>
+#include <im3e/scene/map_camera_controller.h>
 #include <im3e/utils/loggers.h>
 
 #include <numbers>
@@ -29,23 +30,17 @@ public:
     void setAspectRatio(float ratio);
 
     auto getHandle() const -> ANARICamera { return m_pAnCamera.get(); }
-    auto getViewFrustum() const -> const ViewFrustum& { return m_camera.getViewFrustum(); }
+    auto getViewFrustum() const -> const ViewFrustum& { return m_pCamera->getViewFrustum(); }
 
 private:
-    void _update();
-
     std::shared_ptr<AnariDevice> m_pAnDevice;
     std::unique_ptr<ILogger> m_pLogger;
     std::shared_ptr<anari::api::Camera> m_pAnCamera;
 
     bool m_needsCommit{true};
 
-    glm::vec3 m_targetPoint{3700.0F, 0.0F, 4000.0F};
-    float m_distanceToTarget{5000.0F};
-    float m_angleX{};
-    float m_angleY{};
-
-    Camera m_camera;
+    std::shared_ptr<Camera> m_pCamera;
+    MapCameraController m_cameraController;
 };
 
 }  // namespace im3e
