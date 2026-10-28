@@ -26,7 +26,7 @@ auto intersectHorizontalPlane(const Ray& rRay, float planeHeight) -> std::option
 
 }  // namespace
 
-MapCameraController::MapCameraController(std::shared_ptr<Camera> pCamera)
+MapCameraController::MapCameraController(std::shared_ptr<ICamera> pCamera)
   : m_pCamera(throwIfArgNull(std::move(pCamera), "MapCameraController requires a camera"))
   , m_pTargetPoint(std::make_shared<decltype(m_pTargetPoint)::element_type>(PropertyValueConfig<glm::vec3>{
         .name = "Target Point",

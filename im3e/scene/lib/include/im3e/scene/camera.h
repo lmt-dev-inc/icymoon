@@ -8,41 +8,30 @@
 #include <glm/glm.hpp>
 
 #include <functional>
+#include <memory>
 
 namespace im3e {
 
-class Camera
+class ICamera
 {
 public:
-    explicit Camera(std::function<void()> onChanged = {});
-    Camera(const Camera&) = delete;
-    Camera(Camera&&) = delete;
-    Camera& operator=(const Camera&) = delete;
-    Camera& operator=(Camera&&) = delete;
+    virtual ~ICamera() = default;
 
     /// @brief Create a view ray from a NDC position.
     /// @param rNdcPos Target position in NDC coordinates.
     /// @return A view ray going from the origin of the camera to the given rNdcPos in scene coordinates.
-    auto createViewRayFromNdc(const glm::vec2& rNdcPos) const -> Ray;
+    virtual auto createViewRayFromNdc(const glm::vec2& rNdcPos) const -> Ray = 0;
 
-    auto createProperties() -> std::shared_ptr<IPropertyGroup>;
+    virtual auto createProperties() -> std::shared_ptr<IPropertyGroup> = 0;
 
-    auto getProjection() -> PerspectiveProjection& { return m_projection; }
-    auto getProjection() const -> const PerspectiveProjection& { return m_projection; }
-    auto getView() -> ViewTransform& { return m_view; }
-    auto getView() const -> const ViewTransform& { return m_view; }
-    auto getViewFrustum() const -> const ViewFrustum& { return m_viewFrustum; }
-
-private:
-    void _onChanged();
-
-    std::function<void()> m_onChanged;
-
-    PerspectiveProjection m_projection;
-    ViewTransform m_view;
-
-    ViewFrustum m_viewFrustum;
-    glm::mat4 m_inverseVpMatrix;
+    virtual auto getProjection() -> PerspectiveProjection& = 0;
+    virtual auto getProjection() const -> const PerspectiveProjection& = 0;
+    virtual auto getView() -> ViewTransform& = 0;
+    virtual auto getView() const -> const ViewTransform& = 0;
+    virtual auto getViewFrustum() const -> const ViewFrustum& = 0;
 };
+
+auto createViewFrustum(const PerspectiveProjection& rProjection, const ViewTransform& rView) -> ViewFrustum;
+auto createCamera(std::function<void()> onChanged = {}) -> std::shared_ptr<ICamera>;
 
 }  // namespace im3e

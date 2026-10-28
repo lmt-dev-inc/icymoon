@@ -39,7 +39,7 @@ private:
 
     bool m_needsCommit{true};
 
-    std::shared_ptr<Camera> m_pCamera;
+    std::shared_ptr<ICamera> m_pCamera;
     MapCameraController m_cameraController;
 };
 

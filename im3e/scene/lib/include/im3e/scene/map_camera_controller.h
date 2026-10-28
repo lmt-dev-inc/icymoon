@@ -12,7 +12,7 @@ namespace im3e {
 class MapCameraController
 {
 public:
-    MapCameraController(std::shared_ptr<Camera> pCamera);
+    MapCameraController(std::shared_ptr<ICamera> pCamera);
     MapCameraController(const MapCameraController&) = delete;
     MapCameraController(MapCameraController&&) = delete;
     MapCameraController& operator=(const MapCameraController&) = delete;
@@ -41,7 +41,7 @@ public:
 private:
     void _update();
 
-    std::shared_ptr<Camera> m_pCamera;
+    std::shared_ptr<ICamera> m_pCamera;
 
     std::shared_ptr<PropertyValue<glm::vec3>> m_pTargetPoint;
     std::shared_ptr<PropertyValue<float>> m_pDistanceToTarget;

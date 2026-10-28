@@ -58,7 +58,7 @@ AnariMapCamera::AnariMapCamera(std::shared_ptr<AnariDevice> pAnDevice)
   : m_pAnDevice(throwIfArgNull(std::move(pAnDevice), "ANARI Map Camera requires an ANARI Device"))
   , m_pLogger(m_pAnDevice->createLogger("AnariMapCamera"))
   , m_pAnCamera(createAnariCamera(*m_pLogger, m_pAnDevice->getHandle()))
-  , m_pCamera(std::make_shared<Camera>([this] { m_needsCommit = true; }))
+  , m_pCamera(createCamera([this] { m_needsCommit = true; }))
   , m_cameraController(m_pCamera)
 {
     commitChanges();
