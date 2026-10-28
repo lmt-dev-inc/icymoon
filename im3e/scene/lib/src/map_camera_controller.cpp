@@ -38,6 +38,7 @@ MapCameraController::MapCameraController(std::shared_ptr<ICamera> pCamera)
         .name = "Distance to Target",
         .description = "Distance between the camera position and the target point",
         .defaultValue = 5000.0F,
+        .minValue = 0.0F,
         .onChange = [this](auto) { _update(); },
     }))
   , m_pHeading(std::make_shared<decltype(m_pHeading)::element_type>(PropertyValueConfig<float>{

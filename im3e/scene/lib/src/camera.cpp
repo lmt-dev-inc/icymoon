@@ -4,15 +4,6 @@ using namespace im3e;
 
 namespace {
 
-auto createInverseVpMatrix(const PerspectiveProjection& rProjection, const ViewTransform& rView)
-{
-    return glm::inverse(rProjection.getMatrix() * rView.getMatrix());
-}
-
-}  // namespace
-
-namespace im3e {
-
 class Camera : public ICamera
 {
 public:
@@ -44,17 +35,13 @@ private:
     ViewTransform m_view;
 
     ViewFrustum m_viewFrustum;
-    glm::mat4 m_inverseVpMatrix;
 };
-
-}  // namespace im3e
 
 Camera::Camera(std::function<void()> onChanged)
   : m_onChanged(std::move(onChanged))
   , m_projection([this] { _onChanged(); })
   , m_view([this] { _onChanged(); })
   , m_viewFrustum(createViewFrustum(m_projection, m_view))
-  , m_inverseVpMatrix(createInverseVpMatrix(m_projection, m_view))
 {
 }
 
@@ -79,12 +66,13 @@ auto Camera::createViewRayFromNdc(const glm::vec2& rNdcPos) const -> Ray
 void Camera::_onChanged()
 {
     m_viewFrustum = createViewFrustum(m_projection, m_view);
-    m_inverseVpMatrix = createInverseVpMatrix(m_projection, m_view);
     if (m_onChanged)
     {
         m_onChanged();
     }
 }
+
+}  // namespace
 
 auto im3e::createViewFrustum(const PerspectiveProjection& rProjection, const ViewTransform& rView) -> ViewFrustum
 {

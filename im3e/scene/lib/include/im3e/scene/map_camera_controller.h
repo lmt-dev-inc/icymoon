@@ -30,7 +30,7 @@ public:
 
     /// @brief Move the camera closer or further away from the target point.
     /// @param factor Factor to apply to the current distance to the target point. Must be greater than 0.
-    void zoom(float steps);
+    void zoom(float factor);
 
     [[nodiscard]] auto getTargetPoint() const -> glm::vec3 { return m_pTargetPoint->getValue(); }
     [[nodiscard]] auto getDistanceToTarget() const -> float { return m_pDistanceToTarget->getValue(); }

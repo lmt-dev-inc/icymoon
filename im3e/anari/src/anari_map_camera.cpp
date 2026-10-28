@@ -96,12 +96,10 @@ void AnariMapCamera::onMouseMove(const MouseMoveEvent& rEvent)
         const auto tiltDelta = TiltPerViewportHeight * rEvent.ndcOffset.y / 2.0F;
 
         m_cameraController.rotate(headingDelta, tiltDelta);
-        m_needsCommit = true;
     }
     else
     {
         m_cameraController.pan(rEvent.ndcPrevPosition, rEvent.ndcCurrPosition);
-        m_needsCommit = true;
     }
 }
 
@@ -109,7 +107,6 @@ void AnariMapCamera::onMouseWheel(float scrollSteps)
 {
     const auto zoomFactor = std::max(1.0F - scrollSteps * ScrollSensitivity, ScrollSensitivity);
     m_cameraController.zoom(zoomFactor);
-    m_needsCommit = true;
 }
 
 void AnariMapCamera::setAspectRatio(float aspectRatio)
