@@ -65,14 +65,6 @@ class IcyMoonEngineRecipe(ConanFile):
         toolchain = CMakeToolchain(self, generator="Ninja")
         toolchain.presets_prefix = ""
 
-        # CMake Tools in vscode reads the compiler from CMakeCache.txt to pick the debugger (gdb/lldb). The toolchain
-        # only sets it as a normal variable, so also pass it as a cache variable:
-        compilers = self.conf.get("tools.build:compiler_executables", default={}, check_type=dict)
-        if "c" in compilers:
-            toolchain.cache_variables["CMAKE_C_COMPILER"] = compilers["c"]
-        if "cpp" in compilers:
-            toolchain.cache_variables["CMAKE_CXX_COMPILER"] = compilers["cpp"]
-
         # Conan replaces the `options` dict with an Options object at runtime, which Pylance can't see
         if self.options.coverage == "on":  # pyright: ignore[reportAttributeAccessIssue]
             toolchain.cache_variables["TEST_COVERAGE"] = True
