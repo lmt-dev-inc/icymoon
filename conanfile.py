@@ -66,7 +66,7 @@ class IcyMoonEngineRecipe(ConanFile):
         toolchain.presets_prefix = ""
 
         # Conan replaces the `options` dict with an Options object at runtime, which Pylance can't see
-        if self.options.coverage == "on": # pyright: ignore[reportAttributeAccessIssue]
+        if self.options.coverage == "on":  # pyright: ignore[reportAttributeAccessIssue]
             toolchain.cache_variables["TEST_COVERAGE"] = True
 
         proj_res_path = os.path.join(self.dependencies["proj"].package_folder, "res")

@@ -6,5 +6,7 @@ compiler.version={{ gcc_version }}
 compiler.cppstd=20
 compiler.libcxx=libstdc++11
 
-[conf]
-tools.build:compiler_executables={'c': 'gcc-{{ gcc_version }}', 'cpp': 'g++-{{ gcc_version }}'}
+[buildenv]
+# Ensure that the right version of gcc is picked up by cmake instead of any version installed on the system:
+CC=gcc-{{ gcc_version }}
+CXX=g++-{{ gcc_version }}
