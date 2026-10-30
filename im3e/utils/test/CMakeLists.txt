@@ -6,6 +6,7 @@ im3e_add_unit_tests_executable(
     test_logger_tracker.cpp
     test_loggers.cpp
     test_math_utils.cpp
+    test_path.cpp
     test_stream_logger_global_tracker.cpp
     test_stream_logger.cpp
     test_transform.cpp
