@@ -1,4 +1,4 @@
-#include "properties.h"
+#include <im3e/property/properties.h>
 
 #include <im3e/test_utils/test_utils.h>
 
@@ -16,15 +16,15 @@ struct OnChangeReceiver
 
 }  // namespace
 
-TEST(PropertyValueTTest, constructor)
+TEST(PropertyValueTest, constructor)
 {
-    static constexpr PropertyValueTConfig<bool> BoolConfig{
+    const PropertyValueConfig<bool> boolConfig{
         .name = "Boolean",
         .description = "Description of test property",
     };
-    PropertyValueT<BoolConfig> property;
-    EXPECT_THAT(property.getName(), StrEq(BoolConfig.name));
-    EXPECT_THAT(property.getDescription(), StrEq(BoolConfig.description));
+    PropertyValue<bool> property(boolConfig);
+    EXPECT_THAT(property.getName(), StrEq(boolConfig.name));
+    EXPECT_THAT(property.getDescription(), StrEq(boolConfig.description));
     EXPECT_THAT(property.getType() == typeid(bool), IsTrue());
     EXPECT_THAT(std::any_cast<bool>(property.getAnyValue()), Eq(bool{}));
     EXPECT_THAT(property.getAnyMinValue().has_value(), IsFalse());
@@ -34,59 +34,59 @@ TEST(PropertyValueTTest, constructor)
     EXPECT_THAT(property.getMaxValue().has_value(), IsFalse());
 }
 
-TEST(PropertyValueTTest, constructorWithDefaultValue)
+TEST(PropertyValueTest, constructorWithDefaultValue)
 {
-    static constexpr PropertyValueTConfig<uint32_t> UintConfig{
+    const PropertyValueConfig<uint32_t> uintConfig{
         .name = "Uint",
         .defaultValue = 42U,
     };
-    PropertyValueT<UintConfig> property;
-    EXPECT_THAT(property.getName(), StrEq(UintConfig.name));
+    PropertyValue<uint32_t> property(uintConfig);
+    EXPECT_THAT(property.getName(), StrEq(uintConfig.name));
     EXPECT_THAT(property.getType() == typeid(uint32_t), IsTrue());
-    EXPECT_THAT(std::any_cast<uint32_t>(property.getAnyValue()), Eq(UintConfig.defaultValue.value()));
+    EXPECT_THAT(std::any_cast<uint32_t>(property.getAnyValue()), Eq(uintConfig.defaultValue));
     EXPECT_THAT(property.getAnyMinValue().has_value(), IsFalse());
     EXPECT_THAT(property.getAnyMaxValue().has_value(), IsFalse());
-    EXPECT_THAT(property.getValue(), Eq(UintConfig.defaultValue));
+    EXPECT_THAT(property.getValue(), Eq(uintConfig.defaultValue));
     EXPECT_THAT(property.getMinValue().has_value(), IsFalse());
     EXPECT_THAT(property.getMaxValue().has_value(), IsFalse());
 }
 
-TEST(PropertyValueTTest, constructorWithMinValue)
+TEST(PropertyValueTest, constructorWithMinValue)
 {
-    static constexpr PropertyValueTConfig<float> FloatConfig{
+    const PropertyValueConfig<float> floatConfig{
         .defaultValue = -10.0F,
         .minValue = -5.9F,
     };
-    PropertyValueT<FloatConfig> property;
-    EXPECT_THAT(std::any_cast<float>(property.getAnyValue()), FloatEq(FloatConfig.minValue.value()));
-    EXPECT_THAT(std::any_cast<float>(property.getAnyMinValue().value()), Eq(FloatConfig.minValue.value()));
+    PropertyValue<float> property(floatConfig);
+    EXPECT_THAT(std::any_cast<float>(property.getAnyValue()), FloatEq(floatConfig.minValue.value()));
+    EXPECT_THAT(std::any_cast<float>(property.getAnyMinValue().value()), Eq(floatConfig.minValue.value()));
     EXPECT_THAT(property.getAnyMaxValue().has_value(), IsFalse());
-    EXPECT_THAT(property.getValue(), FloatEq(FloatConfig.minValue.value()));
-    EXPECT_THAT(property.getMinValue(), Eq(FloatConfig.minValue));
+    EXPECT_THAT(property.getValue(), FloatEq(floatConfig.minValue.value()));
+    EXPECT_THAT(property.getMinValue(), Eq(floatConfig.minValue));
     EXPECT_THAT(property.getMaxValue().has_value(), IsFalse());
 }
 
-TEST(PropertyValueTTest, constructorWithMaxValue)
+TEST(PropertyValueTest, constructorWithMaxValue)
 {
-    static constexpr PropertyValueTConfig<float> FloatConfig{
+    const PropertyValueConfig<float> floatConfig{
         .defaultValue = 100.0F,
         .maxValue = 25.0F,
     };
-    PropertyValueT<FloatConfig> property;
-    EXPECT_THAT(std::any_cast<float>(property.getAnyValue()), FloatEq(FloatConfig.maxValue.value()));
+    PropertyValue<float> property(floatConfig);
+    EXPECT_THAT(std::any_cast<float>(property.getAnyValue()), FloatEq(floatConfig.maxValue.value()));
     EXPECT_THAT(property.getAnyMinValue().has_value(), IsFalse());
-    EXPECT_THAT(std::any_cast<float>(property.getAnyMaxValue().value()), Eq(FloatConfig.maxValue.value()));
-    EXPECT_THAT(property.getValue(), FloatEq(FloatConfig.maxValue.value()));
+    EXPECT_THAT(std::any_cast<float>(property.getAnyMaxValue().value()), Eq(floatConfig.maxValue.value()));
+    EXPECT_THAT(property.getValue(), FloatEq(floatConfig.maxValue.value()));
     EXPECT_THAT(property.getMinValue().has_value(), IsFalse());
-    EXPECT_THAT(property.getMaxValue(), Eq(FloatConfig.maxValue));
+    EXPECT_THAT(property.getMaxValue(), Eq(floatConfig.maxValue));
 }
 
-TEST(PropertyValueTTest, setValue)
+TEST(PropertyValueTest, setValue)
 {
-    static constexpr PropertyValueTConfig<float> FloatConfig{
+    const PropertyValueConfig<float> floatConfig{
         .defaultValue = 2.0F,
     };
-    PropertyValueT<FloatConfig> property;
+    PropertyValue<float> property(floatConfig);
     EXPECT_THAT(property.getValue(), FloatEq(2.0F));
 
     OnChangeReceiver receiver(property);
@@ -98,14 +98,14 @@ TEST(PropertyValueTTest, setValue)
     EXPECT_THAT(property.getValue(), FloatEq(expectedValue));
 }
 
-TEST(PropertyValueTTest, setValueDoesNotNotifyIfGivenSameValue)
+TEST(PropertyValueTest, setValueDoesNotNotifyIfGivenSameValue)
 {
     constexpr uint32_t TestValue = 50U;
 
-    static constexpr PropertyValueTConfig<uint32_t> IntConfig{
+    const PropertyValueConfig<uint32_t> intConfig{
         .defaultValue = TestValue,
     };
-    PropertyValueT<IntConfig> property;
+    PropertyValue<uint32_t> property(intConfig);
     EXPECT_THAT(property.getValue(), Eq(TestValue));
 
     OnChangeReceiver receiver(property);
@@ -116,13 +116,29 @@ TEST(PropertyValueTTest, setValueDoesNotNotifyIfGivenSameValue)
     EXPECT_THAT(property.getValue(), Eq(TestValue));
 }
 
-TEST(PropertyValueTTest, setAnyValue)
+TEST(PropertyValueTest, setValueDoesNotNotifyIfGivenSameValueAfterClamping)
 {
-    static constexpr PropertyValueTConfig<int32_t> IntConfig{
+    constexpr auto MaxValue = 100U;
+    const PropertyValueConfig<uint32_t> intConfig{
+        .defaultValue = MaxValue,
+        .maxValue = MaxValue,
+    };
+    PropertyValue<uint32_t> property(intConfig);
+    EXPECT_THAT(property.getValue(), Eq(MaxValue));
+
+    OnChangeReceiver receiver(property);
+    property.setValue(MaxValue + 2U);
+    EXPECT_THAT(receiver.callCount, Eq(0U));
+    EXPECT_THAT(property.getValue(), Eq(MaxValue));
+}
+
+TEST(PropertyValueTest, setAnyValue)
+{
+    const PropertyValueConfig<int32_t> intConfig{
         .defaultValue = -5,
     };
-    PropertyValueT<IntConfig> property;
-    EXPECT_THAT(any_cast<int32_t>(property.getAnyValue()), Eq(IntConfig.defaultValue.value()));
+    PropertyValue<int32_t> property(intConfig);
+    EXPECT_THAT(any_cast<int32_t>(property.getAnyValue()), Eq(intConfig.defaultValue));
 
     OnChangeReceiver receiver(property);
 
@@ -133,14 +149,14 @@ TEST(PropertyValueTTest, setAnyValue)
     EXPECT_THAT(any_cast<int32_t>(property.getAnyValue()), Eq(expectedValue));
 }
 
-TEST(PropertyValueTTest, setAnyValueDoesNotNotifyIfGivenSameValue)
+TEST(PropertyValueTest, setAnyValueDoesNotNotifyIfGivenSameValue)
 {
     constexpr int32_t TestValue = 65;
 
-    static constexpr PropertyValueTConfig<int32_t> IntConfig{
+    const PropertyValueConfig<int32_t> intConfig{
         .defaultValue = TestValue,
     };
-    PropertyValueT<IntConfig> property;
+    PropertyValue<int32_t> property(intConfig);
     EXPECT_THAT(any_cast<int32_t>(property.getAnyValue()), Eq(TestValue));
 
     OnChangeReceiver receiver(property);

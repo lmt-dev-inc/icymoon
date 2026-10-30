@@ -38,5 +38,4 @@ target_link_libraries(im3e_utils
 
 add_subdirectory(core)
 add_subdirectory(mock)
-add_subdirectory(properties)
 add_subdirectory(test)

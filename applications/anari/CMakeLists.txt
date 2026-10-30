@@ -17,8 +17,8 @@ target_link_libraries(im3e_anari_viewer
     im3e_devices
     im3e_geo
     im3e_guis
+    im3e_property
     im3e_utils
-    im3e_utils_properties
 )
 
 add_dependencies(im3e_anari_viewer

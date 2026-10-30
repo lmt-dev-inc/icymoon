@@ -1,6 +1,6 @@
 #pragma once
 
-#include <im3e/utils/properties/properties.h>
+#include <im3e/property/properties.h>
 
 #include <glm/glm.hpp>
 

@@ -35,6 +35,7 @@ target_include_directories(im3e_guis
 target_link_libraries(im3e_guis
   PUBLIC
     im3e_api
+    im3e_property
     im3e_utils
     glm::glm
   PRIVATE
@@ -42,7 +43,6 @@ target_link_libraries(im3e_guis
     imgui
     im3e_devices
     im3e_resources
-    im3e_utils_properties_api
 )
 
 add_subdirectory(test)

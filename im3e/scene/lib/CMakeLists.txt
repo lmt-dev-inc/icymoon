@@ -19,6 +19,6 @@ target_include_directories(im3e_scene
 target_link_libraries(im3e_scene
   PUBLIC
     glm::glm
+    im3e_property
     im3e_utils
-    im3e_utils_properties
 )

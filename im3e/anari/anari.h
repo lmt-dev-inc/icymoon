@@ -5,7 +5,7 @@
 #include <im3e/api/gui.h>
 #include <im3e/api/height_map.h>
 #include <im3e/utils/loggers.h>
-#include <im3e/utils/properties/properties.h>
+#include <im3e/property/properties.h>
 
 #include <anari/anari.h>
 

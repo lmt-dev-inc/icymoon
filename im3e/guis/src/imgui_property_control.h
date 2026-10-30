@@ -1,6 +1,6 @@
 #pragma once
 
-#include <im3e/utils/properties/api/property.h>
+#include <im3e/property/property.h>
 
 #include <memory>
 #include <string>

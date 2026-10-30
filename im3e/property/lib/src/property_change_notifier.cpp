@@ -1,4 +1,4 @@
-#include "property_change_notifier.h"
+#include <im3e/property/property_change_notifier.h>
 
 #include <im3e/utils/core/throw_utils.h>
 

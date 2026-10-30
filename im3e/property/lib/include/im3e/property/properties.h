@@ -1,9 +1,8 @@
 #pragma once
 
-#include "property_change_notifier.h"
-
+#include <im3e/property/property.h>
+#include <im3e/property/property_change_notifier.h>
 #include <im3e/utils/core/types.h>
-#include <im3e/utils/properties/api/property.h>
 
 #include <optional>
 #include <string>

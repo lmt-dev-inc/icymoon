@@ -1,6 +1,6 @@
-#include "properties.h"
+#include <im3e/property/properties.h>
 
-#include "property_change_notifier.h"
+#include <im3e/property/property_change_notifier.h>
 
 #include <string>
 

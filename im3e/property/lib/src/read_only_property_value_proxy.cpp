@@ -1,4 +1,4 @@
-#include "properties.h"
+#include <im3e/property/properties.h>
 
 #include <im3e/utils/core/throw_utils.h>
 

@@ -1,4 +1,4 @@
-#include <im3e/utils/properties/property_change_notifier.h>
+#include <im3e/property/property_change_notifier.h>
 
 #include <im3e/test_utils/test_utils.h>
 

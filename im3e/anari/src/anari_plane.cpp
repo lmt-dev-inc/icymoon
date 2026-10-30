@@ -2,7 +2,7 @@
 
 #include "anari_utils.h"
 
-#include <im3e/utils/properties/properties.h>
+#include <im3e/property/properties.h>
 
 #include <fmt/format.h>
 
