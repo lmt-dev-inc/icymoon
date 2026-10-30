@@ -4,19 +4,12 @@
 
 using namespace im3e;
 
-namespace {
-
-constexpr PropertyValueTConfig<int32_t> IntPropertyConfig{.name = "Int Property"};
-constexpr PropertyValueTConfig<bool> BoolPropertyConfig{.name = "Bool Property"};
-
-}  // namespace
-
 TEST(PropertyGroupTest, constructor)
 {
     constexpr auto TestGroupName = "Test Group";
     const std::vector<std::shared_ptr<IProperty>> properties{
-        std::make_shared<PropertyValueT<IntPropertyConfig>>(),
-        std::make_shared<PropertyValueT<BoolPropertyConfig>>(),
+        std::make_shared<PropertyValue<int32_t>>(PropertyValueConfig<int32_t>{.name = "Int Property"}),
+        std::make_shared<PropertyValue<bool>>(PropertyValueConfig<bool>{.name = "Bool Property"}),
         createPropertyGroup("Other Group", {}),
     };
     auto pProperty = createPropertyGroup(TestGroupName, properties);

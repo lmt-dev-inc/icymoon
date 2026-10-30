@@ -8,7 +8,7 @@ This document describes how IcyMoon is structured: the libraries it is made of, 
   - [Libraries](#libraries)
     - [Dependency graph](#dependency-graph)
     - [Summary](#summary)
-    - [Foundation: `im3e_utils_core`, `im3e_utils`, properties](#foundation-im3e_utils_core-im3e_utils-properties)
+    - [Foundation: `im3e_utils_core`, `im3e_utils`, `im3e_property`](#foundation-im3e_utils_core-im3e_utils-im3e_property)
     - [Interfaces: `im3e_api`](#interfaces-im3e_api)
     - [GPU device: `im3e_devices` and `im3e_vulkan_loaders`](#gpu-device-im3e_devices-and-im3e_vulkan_loaders)
     - [Geospatial data: `im3e_geo`](#geospatial-data-im3e_geo)
@@ -73,8 +73,7 @@ Public (transitive) dependencies are solid arrows, private ones are dashed. Thir
 ```mermaid
 flowchart BT
     core[im3e_utils_core]
-    props_api[im3e_utils_properties_api]
-    props[im3e_utils_properties]
+    props[im3e_property]
     utils[im3e_utils]
     api[im3e_api]
     loaders[im3e_vulkan_loaders]
@@ -87,7 +86,6 @@ flowchart BT
 
     utils --> core
     props --> core
-    props --> props_api
     resources --> core
     api --> utils
     loaders --> api
@@ -96,8 +94,8 @@ flowchart BT
     geo --> api
     scene --> props
     guis --> api
+    guis --> props
     guis -.-> devices
-    guis -.-> props_api
     guis -.-> resources
     anari --> api
     anari --> geo
@@ -121,8 +119,7 @@ There are no cycles. `im3e_api` is the hub: modules talk to each other through i
 | Target                      | Kind      | Role                                                                                         | Key third-party dependencies |
 | --------------------------- | --------- | -------------------------------------------------------------------------------------------- | ---------------------------- |
 | `im3e_utils_core`           | static    | Lowest-level helpers with no graphics dependency: flags, paths, errors, platform.            | fmt, whereami                |
-| `im3e_utils_properties_api` | interface | `IProperty`, `IPropertyValue`, `IPropertyGroup`.                                             | fmt                          |
-| `im3e_utils_properties`     | static    | Property implementations, groups, change notification.                                       |                              |
+| `im3e_property`             | static    | Property interfaces and implementations, groups, change notification.                        | fmt                          |
 | `im3e_utils`                | static    | Logging, stats, math, rays, view frustum, Vulkan helpers.                                    | glm, Vulkan headers, VMA     |
 | `im3e_api`                  | interface | Abstract interfaces shared between modules: device, images, commands, frame pipeline, GUI.   | glm                          |
 | `im3e_vulkan_loaders`       | object    | Loads the Vulkan library at run time and resolves function pointers.                         | Vulkan headers               |
@@ -135,7 +132,7 @@ There are no cycles. `im3e_api` is the hub: modules talk to each other through i
 | `im3e_test_utils`           | static    | Test fixtures and GoogleTest printers/matchers for Vulkan and GLM types.                     | GoogleTest                   |
 | `mock_im3e*`                | static    | GoogleMock implementations of the interfaces.                                                | GoogleMock                   |
 
-### Foundation: `im3e_utils_core`, `im3e_utils`, properties
+### Foundation: `im3e_utils_core`, `im3e_utils`, `im3e_property`
 
 **`im3e_utils_core`** ([im3e/utils/core/](../../im3e/utils/core/)) holds what every other target can use without pulling graphics headers:
 
@@ -149,18 +146,19 @@ There are no cycles. `im3e_api` is the hub: modules talk to each other through i
 
 - `loggers.h`: `ILogger` with hierarchical children (`createChild`) and trackers that collect errors from a logger tree (used by tests to fail on logged errors). Implementations: terminal and file loggers.
 - `stats.h`: `IStatsProvider` records nested timing spans per thread (`startScopedSpan`), forwarded to `IStatsReceiver`s. The stats panel of the GUI is one such receiver.
+- `path.h`: `Path`, an absolute path in a tree of named nodes (`/camera/view`) that always uses `/`, unlike `std::filesystem::path`.
 - `math_utils.h`: `TileID` (`u16vec3`: x, y, level of detail) and small math helpers.
 - `ray.h`, `view_frustum.h`, `transform.h`: rays, frustum culling, TRS transforms. Conventions are in [Coordinate Spaces](coordinate_spaces.md).
 - `vk_utils.h`: `VkUniquePtr`/`VkSharedPtr` for Vulkan handles, `throwIfVkFailed`, `getVkList`, and formatting of Vulkan enums.
 - `imgui_utils.h`: header-only helpers for ImGui.
 
-**Properties** ([im3e/utils/properties/](../../im3e/utils/properties/)) is a small reflection system that lets objects expose editable parameters without knowing the GUI:
+**`im3e_property`** ([im3e/property/](../../im3e/property/)) is a small reflection system that lets objects expose editable parameters without knowing the GUI:
 
 - `IPropertyValue` exposes a value as `std::any`, with its type, name, description and optional min/max. `IPropertyGroup` is a named tree of properties.
-- `PropertyValue<T>` (runtime config, optional `onChange` callback) and `PropertyValueT<Config>` (compile-time config) implement it. Listeners subscribe through `registerOnChange` with a `weak_ptr` to a callback, so they unsubscribe by just dropping the callback.
+- `PropertyValue<T>` implements it, with a runtime config and an optional `onChange` callback for the owner. Listeners subscribe through `registerOnChange` with a `weak_ptr` to a callback, so they unsubscribe by just dropping the callback.
 - `createReadOnlyPropertyValueProxy` exposes a value without allowing writes.
 
-The interface lives in its own target, `im3e_utils_properties_api`, so that `im3e_guis` can draw any property group (`ImguiPropertyPanel`, `ImguiPropertyControl`) without linking the implementations. ANARI objects (camera, renderer, height fields, planes) publish their parameters this way.
+`im3e_guis` draws any property group (`ImguiPropertyPanel`, `ImguiPropertyControl`) through the interfaces only. ANARI objects (camera, renderer, height fields, planes) publish their parameters this way. See [Properties](properties.md) for the details.
 
 ### Interfaces: `im3e_api`
 
@@ -264,7 +262,7 @@ The ANARI image reaches Vulkan through the CPU: `AnariFramePipeline` maps the AN
 - `mock_im3e` ([im3e/mock/](../../im3e/mock/)) mocks the `im3e_api` interfaces: device, images, command buffers, height maps, Vulkan function tables. `mock_im3e_utils` mocks loggers and stats, `mock_im3e_vulkan_loaders` mocks the loader.
 - Test executables are declared with `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` ([cmake/im3e_tests.cmake](../../cmake/im3e_tests.cmake)), which label them for `ctest -L` and exclude them from coverage.
 
-Current coverage by module: `utils`, `utils/core`, `utils/properties`, `devices` and `vulkan_loaders` have unit and integration tests; `scene` has unit tests; `geo` tests the quad tree; `guis` has integration tests only; `anari` has no tests yet.
+Current coverage by module: `utils`, `utils/core`, `devices` and `vulkan_loaders` have unit and integration tests; `property` and `scene` have unit tests; `geo` tests the quad tree; `guis` has integration tests only; `anari` has no tests yet.
 
 ## Applications
 

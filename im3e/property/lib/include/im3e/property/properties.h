@@ -4,99 +4,12 @@
 #include <im3e/property/property_change_notifier.h>
 #include <im3e/utils/core/types.h>
 
+#include <algorithm>
+#include <functional>
 #include <optional>
 #include <string>
-#include <type_traits>
 
 namespace im3e {
-
-template <typename T>
-struct PropertyValueTConfig
-{
-    using Type = T;
-    const std::string_view name;
-    const std::string_view description;
-    std::optional<T> defaultValue;
-    std::optional<T> minValue;
-    std::optional<T> maxValue;
-};
-
-// clang-format off
-template <typename T> struct IsPropertyValueTConfigT : std::false_type{};
-template <typename T> struct IsPropertyValueTConfigT<PropertyValueTConfig<T>> : std::true_type{};
-template <typename T> inline constexpr bool IsPropertyValueTConfig = IsPropertyValueTConfigT<T>::value;
-
-template <const auto& Config> 
-concept CPropertyValueTConfig = IsPropertyValueTConfig<std::remove_cvref_t<decltype(Config)>>;
-// clang-format on
-
-template <const auto& Config>
-    requires CPropertyValueTConfig<Config>
-class PropertyValueT : public IPropertyValue
-{
-public:
-    using Type = typename std::remove_cvref_t<decltype(Config)>::Type;
-
-    PropertyValueT()
-    {
-        if (Config.minValue.has_value())
-        {
-            m_value = std::max(Config.minValue.value(), m_value);
-        }
-        if (Config.maxValue.has_value())
-        {
-            m_value = std::min(Config.maxValue.value(), m_value);
-        }
-    }
-
-    void registerOnChange(std::weak_ptr<std::function<void()>> pOnChangeCallback) const override
-    {
-        m_changeNotifier.registerOnChange(std::move(pOnChangeCallback));
-    }
-
-    void setValue(Type value)
-    {
-        if (value != m_value)
-        {
-            m_value = std::move(value);
-            m_changeNotifier.notifyChanged();
-        }
-    }
-
-    void setAnyValue(std::any anyValue) override
-    {
-        auto value = std::any_cast<Type>(anyValue);
-        setValue(std::move(value));
-    }
-
-    auto getName() const -> std::string override { return std::string{Config.name}; }
-    auto getDescription() const -> std::string override { return std::string{Config.description}; }
-    auto getType() const -> std::type_index override { return typeid(Type); }
-    auto getAnyValue() const -> std::any override { return m_value; }
-    auto getAnyMinValue() const -> std::optional<std::any> override
-    {
-        if (Config.minValue.has_value())
-        {
-            return Config.minValue.value();
-        }
-        return std::nullopt;
-    }
-    auto getAnyMaxValue() const -> std::optional<std::any> override
-    {
-        if (Config.maxValue.has_value())
-        {
-            return Config.maxValue.value();
-        }
-        return std::nullopt;
-    }
-    auto getValue() const -> Type { return m_value; }
-    auto getMinValue() const -> std::optional<Type> { return Config.minValue; }
-    auto getMaxValue() const -> std::optional<Type> { return Config.maxValue; }
-
-private:
-    mutable PropertyChangeNotifier m_changeNotifier;
-    Type m_value = Config.defaultValue.value_or(Type{});
-};
 
 template <typename T>
 struct PropertyValueConfig

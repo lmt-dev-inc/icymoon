@@ -2,28 +2,26 @@
 
 This document describes the property system as it is today: the interfaces, the implementations, how owners declare and expose properties, how the GUI consumes them, and how ownership and change notification work. It ends with the known problems of the current design.
 
-- [Properties](#properties)
-  - [Overview](#overview)
-  - [Intent and planned uses](#intent-and-planned-uses)
-    - [Intent](#intent)
-    - [Planned and possible uses](#planned-and-possible-uses)
-    - [Requirements these uses imply](#requirements-these-uses-imply)
-  - [Libraries](#libraries)
-  - [Interfaces](#interfaces)
-  - [Implementations](#implementations)
-    - [`PropertyValue<T>`](#propertyvaluet)
-    - [`PropertyValueT<Config>`](#propertyvaluetconfig)
-    - [`PropertyGroup`](#propertygroup)
-    - [`ReadOnlyPropertyValueProxy`](#readonlypropertyvalueproxy)
-    - [`PropertyChangeNotifier`](#propertychangenotifier)
-  - [Usage by owners](#usage-by-owners)
-    - [Static properties: `ViewTransform`](#static-properties-viewtransform)
-    - [Dynamic properties: `AnariRenderer`](#dynamic-properties-anarirenderer)
-    - [Composition into trees](#composition-into-trees)
-  - [Usage by the GUI](#usage-by-the-gui)
-  - [Ownership and lifetimes](#ownership-and-lifetimes)
-  - [Change notification](#change-notification)
-  - [Known problems](#known-problems)
+- [Overview](#overview)
+- [Intent and planned uses](#intent-and-planned-uses)
+  - [Intent](#intent)
+  - [Planned and possible uses](#planned-and-possible-uses)
+  - [Requirements these uses imply](#requirements-these-uses-imply)
+- [Libraries](#libraries)
+- [Interfaces](#interfaces)
+- [Implementations](#implementations)
+  - [`PropertyValue<T>`](#propertyvaluet)
+  - [`PropertyGroup`](#propertygroup)
+  - [`ReadOnlyPropertyValueProxy`](#readonlypropertyvalueproxy)
+  - [`PropertyChangeNotifier`](#propertychangenotifier)
+- [Usage by owners](#usage-by-owners)
+  - [Static properties: `ViewTransform`](#static-properties-viewtransform)
+  - [Dynamic properties: `AnariRenderer`](#dynamic-properties-anarirenderer)
+  - [Composition into trees](#composition-into-trees)
+- [Usage by the GUI](#usage-by-the-gui)
+- [Ownership and lifetimes](#ownership-and-lifetimes)
+- [Change notification](#change-notification)
+- [Known problems](#known-problems)
 
 ## Overview
 
@@ -60,10 +58,6 @@ classDiagram
         T m_value
         getValue() / setValue(T)
     }
-    class PropertyValueT~Config~ {
-        T m_value
-        getValue() / setValue(T)
-    }
     class ReadOnlyPropertyValueProxy {
         shared_ptr~IPropertyValue~ m_pPropertyValue
     }
@@ -73,7 +67,6 @@ classDiagram
     IProperty <|-- IPropertyValue
     IProperty <|-- IPropertyGroup
     IPropertyValue <|-- PropertyValue~T~
-    IPropertyValue <|-- PropertyValueT~Config~
     IPropertyValue <|-- ReadOnlyPropertyValueProxy
     IPropertyGroup <|-- PropertyGroup
     ReadOnlyPropertyValueProxy o-- IPropertyValue : shared_ptr
@@ -94,22 +87,22 @@ The ImGui property panel is the first consumer, not the reason the system exists
 
 ### Planned and possible uses
 
-| Area                         | Use                                                                                                     |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| User interfaces              | im3e's ImGui panel, and UIs built by users from im3e's properties and their own.                        |
-| Observation                  | Stats collection: read-only properties such as frame time or loaded tiles.                              |
-|                              | Logging and tracing of changes for debugging.                                                           |
-| Documentation                | Generating documentation for objects from their names, descriptions, types and bounds.                  |
-|                              | Exporting values to documents or reports.                                                               |
-| Persistence and exchange     | Saving and restoring settings, presets or a whole session without code per class.                       |
-|                              | Mapping properties to OpenUSD attributes, to export and import a scene's parameters.                    |
-|                              | Overriding values from the command line or a config file, e.g. `--camera.projection.fovY=60`.           |
-| Changes over time            | Undo/redo, recorded from change notifications.                                                          |
-|                              | Animation and keyframes: interpolating numeric properties, e.g. camera paths.                           |
-|                              | Linking properties, e.g. two views sharing a camera, or one property driving another.                   |
-| Outside the process          | Scripting, e.g. Python bindings exposing the whole tree through one generic binding.                    |
-|                              | Remote control or a web UI.                                                                             |
-| Tests                        | Snapshots of an object's state, and test inputs generated from min/max ranges.                          |
+| Area                     | Use                                                                                           |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| User interfaces          | im3e's ImGui panel, and UIs built by users from im3e's properties and their own.              |
+| Observation              | Stats collection: read-only properties such as frame time or loaded tiles.                    |
+|                          | Logging and tracing of changes for debugging.                                                 |
+| Documentation            | Generating documentation for objects from their names, descriptions, types and bounds.        |
+|                          | Exporting values to documents or reports.                                                     |
+| Persistence and exchange | Saving and restoring settings, presets or a whole session without code per class.             |
+|                          | Mapping properties to OpenUSD attributes, to export and import a scene's parameters.          |
+|                          | Overriding values from the command line or a config file, e.g. `--camera.projection.fovY=60`. |
+| Changes over time        | Undo/redo, recorded from change notifications.                                                |
+|                          | Animation and keyframes: interpolating numeric properties, e.g. camera paths.                 |
+|                          | Linking properties, e.g. two views sharing a camera, or one property driving another.         |
+| Outside the process      | Scripting, e.g. Python bindings exposing the whole tree through one generic binding.          |
+|                          | Remote control or a web UI.                                                                   |
+| Tests                    | Snapshots of an object's state, and test inputs generated from min/max ranges.                |
 
 Only the ImGui panel exists today. The others are directions the design should leave room for.
 
@@ -130,22 +123,23 @@ Not all of these have to be implemented at once, but the design should not preve
 
 ## Libraries
 
-| Target                        | Type      | Content                                                                                                     |
-| ----------------------------- | --------- | ----------------------------------------------------------------------------------------------------------- |
-| `im3e_utils_properties_api`   | interface | [api/property.h](../../im3e/utils/properties/api/property.h): `IProperty`, `IPropertyValue`, `IPropertyGroup`. |
-| `im3e_utils_properties`       | static    | [properties.h](../../im3e/utils/properties/properties.h): `PropertyValue<T>`, `PropertyValueT<Config>`, `createPropertyGroup`, `createReadOnlyPropertyValueProxy`, `PropertyChangeNotifier`. |
+A single static target, `im3e_property`, in [im3e/property/](../../im3e/property/):
 
-`im3e_guis` only needs the interfaces, so it can draw any property tree without depending on the implementations. Owners of properties (`im3e_scene`, `im3e_anari`) link `im3e_utils_properties`.
+| Header                                                                                                 | Content                                                                        |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| [property.h](../../im3e/property/lib/include/im3e/property/property.h)                                 | Interfaces: `IProperty`, `IPropertyValue`, `IPropertyGroup`.                   |
+| [properties.h](../../im3e/property/lib/include/im3e/property/properties.h)                             | `PropertyValue<T>`, `createPropertyGroup`, `createReadOnlyPropertyValueProxy`. |
+| [property_change_notifier.h](../../im3e/property/lib/include/im3e/property/property_change_notifier.h) | `PropertyChangeNotifier`.                                                      |
 
 ## Interfaces
 
-Defined in [api/property.h](../../im3e/utils/properties/api/property.h).
+Defined in [property.h](../../im3e/property/lib/include/im3e/property/property.h).
 
-| Interface        | Members                                                                                                                                                   |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `IProperty`      | `getName()`, `registerOnChange(std::weak_ptr<std::function<void()>>) const`.                                                                              |
+| Interface        | Members                                                                                                                                                                      |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `IProperty`      | `getName()`, `registerOnChange(std::weak_ptr<std::function<void()>>) const`.                                                                                                 |
 | `IPropertyValue` | `getDescription()`, `getType()` (`std::type_index`), `getAnyValue()`, `setAnyValue(std::any)`, `getAnyMinValue()`, `getAnyMaxValue()`, `isReadOnly()` (defaults to `false`). |
-| `IPropertyGroup` | `getChildren()`, returning a copy of a `std::vector<std::shared_ptr<IProperty>>`.                                                                         |
+| `IPropertyGroup` | `getChildren()`, returning a copy of a `std::vector<std::shared_ptr<IProperty>>`.                                                                                            |
 
 The interfaces are only type-erased: there is no typed interface (an `IPropertyValue<T>` with `getValue()`/`setValue()`). Typed access is only available on the concrete classes.
 
@@ -179,15 +173,9 @@ Behavior:
 
 `onChange` is how owners react to edits made through the type-erased interface (from the GUI). In practice it captures the owner's `this`.
 
-### `PropertyValueT<Config>`
-
-A variant whose configuration is a `constexpr PropertyValueTConfig<T>` passed as a non-type template parameter (`template <const auto& Config>`), so name, description, default and bounds cost no storage. It has no `onChange` callback, and `setValue` does not clamp (only the constructor does, and without the `HasLessThanOperator` guard).
-
-It is only used in the property library's tests. No production code uses it.
-
 ### `PropertyGroup`
 
-Created by `createPropertyGroup(name, children)`, which returns a `std::shared_ptr<IPropertyGroup>`. The class itself is hidden in [property_group.cpp](../../im3e/utils/properties/src/property_group.cpp). The children are fixed at creation: there is no way to add or remove one afterwards.
+Created by `createPropertyGroup(name, children)`, which returns a `std::shared_ptr<IPropertyGroup>`. The class itself is hidden in [property_group.cpp](../../im3e/property/lib/src/property_group.cpp). The children are fixed at creation: there is no way to add or remove one afterwards.
 
 A group has its own `PropertyChangeNotifier`, but nothing ever triggers it: changes of the children are not forwarded to the group's listeners.
 
@@ -199,7 +187,7 @@ This is how an owner exposes a value it computes itself (`ViewTransform`'s vecto
 
 ### `PropertyChangeNotifier`
 
-An internal helper ([property_change_notifier.h](../../im3e/utils/properties/property_change_notifier.h)) holding a list of `std::weak_ptr<std::function<void()>>`. `notifyChanged()` calls each callback still alive and drops the expired ones. A listener unsubscribes by destroying the `shared_ptr` holding its callback.
+A helper ([property_change_notifier.h](../../im3e/property/lib/include/im3e/property/property_change_notifier.h)) holding a list of `std::weak_ptr<std::function<void()>>`. `notifyChanged()` calls each callback still alive and drops the expired ones. A listener unsubscribes by destroying the `shared_ptr` holding its callback.
 
 Each property holds it as a `mutable` member, so that `registerOnChange` can be `const`.
 
@@ -303,10 +291,10 @@ Shared ownership guarantees that the GUI never holds a dangling *property*. It d
 
 There are two independent channels, both fired by `PropertyValue<T>::setValue`, whether the change comes from the owner or from the GUI:
 
-| Channel                 | Registered by                  | Signature            | Lifetime                                | Used by                                   |
-| ----------------------- | ------------------------------ | -------------------- | --------------------------------------- | ----------------------------------------- |
-| `onChange` in config    | the owner, at construction     | `void(T newValue)`   | as long as the property                 | every owner                               |
-| `registerOnChange`      | anyone, through `IProperty`    | `void()`             | as long as the caller's `shared_ptr`    | only the property library's tests         |
+| Channel              | Registered by               | Signature          | Lifetime                             | Used by                           |
+| -------------------- | --------------------------- | ------------------ | ------------------------------------ | --------------------------------- |
+| `onChange` in config | the owner, at construction  | `void(T newValue)` | as long as the property              | every owner                       |
+| `registerOnChange`   | anyone, through `IProperty` | `void()`           | as long as the caller's `shared_ptr` | only the property library's tests |
 
 Changes do not propagate up the tree: a group's listeners are never notified.
 
@@ -322,6 +310,6 @@ Usage:
 Implementation:
 
 - **`PropertyValue<T>` constructor reads a moved-from config**: `m_value(config.defaultValue)` is initialized after `m_config(std::move(config))`, so for types with a non-trivial move (`std::string`) the initial value is empty instead of the default.
-- **`PropertyValueT` diverges from `PropertyValue`**: no `onChange`, no clamping in `setValue`, no `HasLessThanOperator` guard. It is unused outside tests.
+- **Observers are notified before the owner**: `setValue` notifies the `registerOnChange` listeners before calling `onChange`, so a listener reading a value derived by the owner (e.g. `ViewTransform`'s matrix) sees the previous one.
 - **Group notifications are never fired**, and `registerOnChange` is unused by the GUI.
 - **`getChildren()` copies** a vector of `shared_ptr`s on every call, so on every frame for every group in the panel.
