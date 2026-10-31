@@ -6,6 +6,10 @@
 
 namespace im3e {
 
+class PropertySubscription
+{
+};
+
 /// @brief Internal utility class to help implement the notification system of properties.
 class PropertyChangeNotifier
 {

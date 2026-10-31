@@ -2,6 +2,7 @@ add_library(im3e_property STATIC
     include/im3e/property/properties.h
     include/im3e/property/property_change_notifier.h
     include/im3e/property/property_interface.h
+    include/im3e/property/property.h
     src/property_change_notifier.cpp
     src/property_group.cpp
     src/read_only_property_value_proxy.cpp
