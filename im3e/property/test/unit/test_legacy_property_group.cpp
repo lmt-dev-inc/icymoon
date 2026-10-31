@@ -4,7 +4,7 @@
 
 using namespace im3e;
 
-TEST(PropertyGroupTest, constructor)
+TEST(LegacyPropertyGroupTest, constructor)
 {
     constexpr auto TestGroupName = "Test Group";
     const std::vector<std::shared_ptr<IProperty>> properties{

@@ -8,10 +8,10 @@ using namespace im3e;
 
 namespace {
 
-class PropertyGroup : public IPropertyGroup
+class LegacyPropertyGroup : public IPropertyGroup
 {
 public:
-    PropertyGroup(std::string_view name, std::vector<std::shared_ptr<IProperty>> pProperties)
+    LegacyPropertyGroup(std::string_view name, std::vector<std::shared_ptr<IProperty>> pProperties)
       : m_name(name)
       , m_pProperties(std::move(pProperties))
     {
@@ -36,5 +36,5 @@ private:
 auto im3e::createPropertyGroup(std::string_view name, std::vector<std::shared_ptr<IProperty>> pProperties)
     -> std::shared_ptr<IPropertyGroup>
 {
-    return std::make_shared<PropertyGroup>(name, std::move(pProperties));
+    return std::make_shared<LegacyPropertyGroup>(name, std::move(pProperties));
 }

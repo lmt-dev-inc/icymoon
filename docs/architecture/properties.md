@@ -175,7 +175,7 @@ Behavior:
 
 ### `PropertyGroup`
 
-Created by `createPropertyGroup(name, children)`, which returns a `std::shared_ptr<IPropertyGroup>`. The class itself is hidden in [property_group.cpp](../../im3e/property/lib/src/property_group.cpp). The children are fixed at creation: there is no way to add or remove one afterwards.
+Created by `createPropertyGroup(name, children)`, which returns a `std::shared_ptr<IPropertyGroup>`. The class itself, `LegacyPropertyGroup`, is hidden in [legacy_property_group.cpp](../../im3e/property/lib/src/legacy_property_group.cpp). The children are fixed at creation: there is no way to add or remove one afterwards.
 
 A group has its own `PropertyChangeNotifier`, but nothing ever triggers it: changes of the children are not forwarded to the group's listeners.
 
