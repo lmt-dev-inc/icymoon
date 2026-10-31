@@ -1,7 +1,7 @@
 #pragma once
 
-#include <im3e/property/property.h>
 #include <im3e/property/property_change_notifier.h>
+#include <im3e/property/property_interface.h>
 #include <im3e/utils/core/types.h>
 
 #include <algorithm>

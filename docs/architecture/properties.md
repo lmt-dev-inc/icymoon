@@ -127,13 +127,13 @@ A single static target, `im3e_property`, in [im3e/property/](../../im3e/property
 
 | Header                                                                                                 | Content                                                                        |
 | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| [property.h](../../im3e/property/lib/include/im3e/property/property.h)                                 | Interfaces: `IProperty`, `IPropertyValue`, `IPropertyGroup`.                   |
+| [property_interface.h](../../im3e/property/lib/include/im3e/property/property_interface.h)             | Interfaces: `IProperty`, `IPropertyValue`, `IPropertyGroup`.                   |
 | [properties.h](../../im3e/property/lib/include/im3e/property/properties.h)                             | `PropertyValue<T>`, `createPropertyGroup`, `createReadOnlyPropertyValueProxy`. |
 | [property_change_notifier.h](../../im3e/property/lib/include/im3e/property/property_change_notifier.h) | `PropertyChangeNotifier`.                                                      |
 
 ## Interfaces
 
-Defined in [property.h](../../im3e/property/lib/include/im3e/property/property.h).
+Defined in [property_interface.h](../../im3e/property/lib/include/im3e/property/property_interface.h).
 
 | Interface        | Members                                                                                                                                                                      |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
