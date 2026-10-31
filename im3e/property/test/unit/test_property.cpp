@@ -1,4 +1,5 @@
 #include <im3e/property/property.h>
+#include <im3e/property/property_group.h>
 
 #include <im3e/test_utils/glm.h>
 #include <im3e/test_utils/test_utils.h>
@@ -22,6 +23,10 @@ public:
         .description = "Position for testing the use of glm in properties.",
         .defaultValue = glm::vec3{0.0F, 0.0F, 0.0F},
     }};
+    PropertyGroup properties{{
+        .name = "Property Owner",
+        .description = "Properties of the PropertyOwner object",
+    }};
 };
 
 }  // namespace
@@ -31,5 +36,5 @@ TEST(PropertyTest, asMember)
     [[maybe_unused]] PropertyOwner propOwner;
     propOwner.factor.setValue(1.5F);
     const auto factor = propOwner.factor.getValue();
-    // EXPECT_THAT(factor, FloatEq(1.5F));
+    EXPECT_THAT(factor, FloatEq(1.5F));
 }

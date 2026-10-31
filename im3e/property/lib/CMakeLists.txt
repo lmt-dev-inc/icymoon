@@ -1,6 +1,7 @@
 add_library(im3e_property STATIC
     include/im3e/property/properties.h
     include/im3e/property/property_change_notifier.h
+    include/im3e/property/property_group.h
     include/im3e/property/property_interface.h
     include/im3e/property/property.h
     src/legacy_property_group.cpp
