@@ -55,25 +55,27 @@ Each rule says whether it is checked automatically today. Rules without automati
 
 ## Naming
 
-| Element | Convention | Example |
-|---|---|---|
-| Files | `snake_case` | `vulkan_command_queue.cpp` |
-| Classes, structs, enums | `PascalCase` | `VulkanCommandQueue` |
-| Interfaces (abstract classes) | `I` + `PascalCase` | `ICommandQueue` |
-| Functions and methods | `camelCase` | `startScopedCommand` |
-| Private methods | `_` + `camelCase` | `_releaseCompletedCommands` |
-| Enum values | `PascalCase` | `CommandExecutionType::Async` |
-| Constants (`constexpr`, `const` at namespace scope) | `PascalCase` | `DefaultFrameInFlightCount` |
-| Member variables | `m_` + name | `m_name` |
-| Pointers (raw and smart) | `p` prefix | `pDevice`, `m_pVkCommandPool` |
-| References | `r` prefix | `const IDevice& rDevice`, `m_rDevice` |
-| Vulkan handles and structs | `vk` prefix | `vkDevice`, `vkCreateInfo` |
+| Element                                             | Convention         | Example                       |
+| --------------------------------------------------- | ------------------ | ----------------------------- |
+| Files                                               | `snake_case`       | `vulkan_command_queue.cpp`    |
+| Classes, structs, enums                             | `PascalCase`       | `VulkanCommandQueue`          |
+| Interfaces (abstract classes)                       | `I` + `PascalCase` | `ICommandQueue`               |
+| Functions and methods                               | `camelCase`        | `startScopedCommand`          |
+| Private methods                                     | `_` + `camelCase`  | `_releaseCompletedCommands`   |
+| Enum values                                         | `PascalCase`       | `CommandExecutionType::Async` |
+| Constants (`constexpr`, `const` at namespace scope) | `PascalCase`       | `DefaultFrameInFlightCount`   |
+| Member variables                                    | `m_` + name        | `m_name`                      |
+| Vulkan handles and structs                          | `vk` prefix        | `vkDevice`, `vkCreateInfo`    |
 
-The prefixes combine: a member pointer is `m_p...`, a member reference is `m_r...`.
+The prefixes combine: a member Vulkan handle is `m_vk...`.
 
 The leading `_` marks methods that only the class itself can call. It applies to `private` methods only: `protected` methods are an interface for derived classes and are named like public ones. The `_` is always followed by a lowercase letter: names starting with `_` + uppercase letter, or containing `__`, are reserved by the C++ standard.
 
-*Automated:* no.
+Names don't encode whether a variable is a pointer or a reference: `device`, not `pDevice` or `rDevice`. The use site already shows the indirection (`device->` vs `device.`), and the compiler rejects a mismatch. A prefix, on the other hand, isn't checked, and turning a value into a pointer, or the reverse, means renaming every use. The `m_` prefix stays because scope isn't visible at the use site.
+
+Existing code still uses `p` and `r` prefixes (`pDevice`, `m_rDevice`, `rpChild`...). It's migrated progressively; new code doesn't use them.
+
+*Automated:* no. clang-tidy's `readability-identifier-naming` can enforce it later (see [Enforcement](#enforcement)).
 
 ## Functions
 
@@ -87,7 +89,7 @@ The leading `_` marks methods that only the class itself can call. It applies to
 
   ```cpp
   _releaseCompletedCommands();                     // not this->_releaseCompletedCommands();
-  auto pThis = shared_from_this();                 // not this->shared_from_this();
+  auto self = shared_from_this();                  // not this->shared_from_this();
   [this](auto w, auto h) { _onWindowResized(w, h); }  // members are accessible through the [this] capture
   ```
 - Free functions declared in a header are defined with their qualified name: `auto im3e::getCurrentExecutableFolder() -> std::filesystem::path { ... }`.
@@ -176,11 +178,11 @@ im3e/
 
 Each target only exposes its own `include/` folder, so a target can only include the headers of the targets it links. The repository root is not an include directory.
 
-| Target | Public include directory | Private include directory |
-|---|---|---|
-| Library | `lib/include/` | `lib/src/` |
-| Mock | `mock/include/` | `mock/src/` |
-| Test executable | | `lib/src/`, only when the tests need the library's internal classes |
+| Target          | Public include directory | Private include directory                                           |
+| --------------- | ------------------------ | ------------------------------------------------------------------- |
+| Library         | `lib/include/`           | `lib/src/`                                                          |
+| Mock            | `mock/include/`          | `mock/src/`                                                         |
+| Test executable |                          | `lib/src/`, only when the tests need the library's internal classes |
 
 ### Public headers
 
@@ -206,7 +208,7 @@ Each target only exposes its own `include/` folder, so a target can only include
 ## Error handling
 
 - Errors are reported with exceptions, through the helpers of `im3e/utils/core/throw_utils.h`: `throwIfNull`, `throwIfArgNull`, `throwIfFalse`, and `throwIfVkFailed` for Vulkan results.
-- Constructors validate their dependencies with `throwIfArgNull`, e.g. `m_pDevice(throwIfArgNull(std::move(pDevice), "... requires a device"))`.
+- Constructors validate their dependencies with `throwIfArgNull`, e.g. `m_device(throwIfArgNull(std::move(device), "... requires a device"))`.
 
 *Automated:* no.
 
@@ -238,7 +240,7 @@ IcyMoon is meant to be used as a library from other languages, Python first. Its
   ```cpp
   EXPECT_THAT(path::toUtf8(filePath), Eq(Utf8Path));  // not EXPECT_EQ(path::toUtf8(filePath), Utf8Path)
   EXPECT_THAT(std::filesystem::is_directory(folder), IsTrue());
-  ASSERT_THAT(pLoader, NotNull());
+  ASSERT_THAT(loader, NotNull());
   ```
 
   GoogleTest recommends this style. From its [FAQ](https://google.github.io/googletest/faq.html) ("Why does GoogleTest support `EXPECT_EQ(NULL, ptr)` and `ASSERT_EQ(NULL, ptr)` but not `EXPECT_NE(NULL, ptr)` and `ASSERT_NE(NULL, ptr)`?"):
@@ -284,22 +286,22 @@ Nothing below is set up yet. This section lists the options for automating the r
 
 ### Tools per rule
 
-| Rule | Tool | Notes |
-|---|---|---|
-| Formatting | `clang-format --dry-run --Werror` | Straightforward. Pin the clang-format version (currently 19, bundled with the Visual Studio Build Tools), as formatting differs between versions. |
-| No `using namespace std` | Script (regular expression) in `dev.py lint` | clang-tidy's `google-build-using-namespace` allows only literal namespaces, but it would also reject `using namespace im3e;`, which `.cpp` files use. A small script matches the rule exactly. |
-| No `using namespace` in headers | clang-tidy `google-global-names-in-headers` | |
-| Qualified standard calls | clang's `-Wunqualified-std-cast-call` (already on, `std::move`/`std::forward` only) | No tool covers all functions. Code review. |
-| Naming | clang-tidy `readability-identifier-naming` | Covers case styles and the `m_` prefix. Pointer prefixes are only partially supported (parameters, not members), reference and `vk` prefixes not at all. |
-| Leading `_` on private methods | clang-tidy `readability-identifier-naming` (`PrivateMethodPrefix: _`) | Exact match for the rule. |
-| `EXPECT_THAT` instead of comparison macros | Script (regular expression) in `dev.py lint` | Flag `EXPECT_`/`ASSERT_` + `EQ`, `NE`, `TRUE`, `FALSE`, `LT`, `LE`, `GT`, `GE`, `STREQ`... in test files. |
-| No `this->` unless required | Script (regular expression) in `dev.py lint` | No clang-tidy check removes it. A script can flag every `this->` outside templates for review. |
-| Trailing return types | clang-tidy `modernize-use-trailing-return-type` | Also rewrites `void` functions, unlike our convention. Either adopt `auto f() -> void` or skip this check. |
-| Library folders | Script in `dev.py lint` | Walk `im3e/`: a folder that defines a target may only contain `CMakeLists.txt`, `include/`, `src/`, `data/` and, for executables, `.cpp` files; any other folder may only contain folders and `CMakeLists.txt`. Can also check target names and include paths against folder paths. |
-| No umbrella headers inside `im3e/` | Script in `dev.py lint` | Flag includes of `<im3e/X.h>` where `im3e/X/` is a library. |
-| Include what you use | clang-tidy `misc-include-cleaner` | Would have caught the missing includes found when porting to Windows. Can report many findings at first. |
-| Include order | clang-format `IncludeCategories` | Partially configured in `.clang-format`; would need to match the groups above. |
-| Paths and encoding | Script flagging `.string().c_str()` and `.c_str()` on paths, or code review | Hard to check reliably without type information. |
-| Library code | Code review | |
+| Rule                                       | Tool                                                                                | Notes                                                                                                                                                                                                                                                                               |
+| ------------------------------------------ | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Formatting                                 | `clang-format --dry-run --Werror`                                                   | Straightforward. Pin the clang-format version (currently 19, bundled with the Visual Studio Build Tools), as formatting differs between versions.                                                                                                                                   |
+| No `using namespace std`                   | Script (regular expression) in `dev.py lint`                                        | clang-tidy's `google-build-using-namespace` allows only literal namespaces, but it would also reject `using namespace im3e;`, which `.cpp` files use. A small script matches the rule exactly.                                                                                      |
+| No `using namespace` in headers            | clang-tidy `google-global-names-in-headers`                                         |                                                                                                                                                                                                                                                                                     |
+| Qualified standard calls                   | clang's `-Wunqualified-std-cast-call` (already on, `std::move`/`std::forward` only) | No tool covers all functions. Code review.                                                                                                                                                                                                                                          |
+| Naming                                     | clang-tidy `readability-identifier-naming`                                          | Covers case styles and the `m_` prefix. It can't check the `vk` prefix, nor reject leftover `p`/`r` prefixes, which code review catches.                                                                                                                                            |
+| Leading `_` on private methods             | clang-tidy `readability-identifier-naming` (`PrivateMethodPrefix: _`)               | Exact match for the rule.                                                                                                                                                                                                                                                           |
+| `EXPECT_THAT` instead of comparison macros | Script (regular expression) in `dev.py lint`                                        | Flag `EXPECT_`/`ASSERT_` + `EQ`, `NE`, `TRUE`, `FALSE`, `LT`, `LE`, `GT`, `GE`, `STREQ`... in test files.                                                                                                                                                                           |
+| No `this->` unless required                | Script (regular expression) in `dev.py lint`                                        | No clang-tidy check removes it. A script can flag every `this->` outside templates for review.                                                                                                                                                                                      |
+| Trailing return types                      | clang-tidy `modernize-use-trailing-return-type`                                     | Also rewrites `void` functions, unlike our convention. Either adopt `auto f() -> void` or skip this check.                                                                                                                                                                          |
+| Library folders                            | Script in `dev.py lint`                                                             | Walk `im3e/`: a folder that defines a target may only contain `CMakeLists.txt`, `include/`, `src/`, `data/` and, for executables, `.cpp` files; any other folder may only contain folders and `CMakeLists.txt`. Can also check target names and include paths against folder paths. |
+| No umbrella headers inside `im3e/`         | Script in `dev.py lint`                                                             | Flag includes of `<im3e/X.h>` where `im3e/X/` is a library.                                                                                                                                                                                                                         |
+| Include what you use                       | clang-tidy `misc-include-cleaner`                                                   | Would have caught the missing includes found when porting to Windows. Can report many findings at first.                                                                                                                                                                            |
+| Include order                              | clang-format `IncludeCategories`                                                    | Partially configured in `.clang-format`; would need to match the groups above.                                                                                                                                                                                                      |
+| Paths and encoding                         | Script flagging `.string().c_str()` and `.c_str()` on paths, or code review         | Hard to check reliably without type information.                                                                                                                                                                                                                                    |
+| Library code                               | Code review                                                                         |                                                                                                                                                                                                                                                                                     |
 
 clang-tidy needs the compile commands of a configured build, which CMake writes to `build/<preset>/compile_commands.json`. Running it only on changed files keeps it fast enough for CI.
