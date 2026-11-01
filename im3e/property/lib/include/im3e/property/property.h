@@ -10,30 +10,6 @@
 namespace im3e {
 
 template <typename T>
-class PropertyState
-{
-public:
-    PropertyState() = delete;
-    PropertyState(const PropertyState&) = delete;
-    PropertyState(PropertyState&&) = delete;
-    PropertyState& operator=(const PropertyState&) = delete;
-    PropertyState& operator=(PropertyState&&) = delete;
-
-    explicit PropertyState(T value)
-      : m_value(std::move(value))
-    {
-    }
-
-    void setValue(const T& value) { m_value = value; }
-    void setValue(T&& value) { m_value = std::move(value); }
-
-    auto getValue() const -> const T& { return m_value; }
-
-private:
-    T m_value;
-};
-
-template <typename T>
 class Property
 {
 public:
@@ -58,7 +34,7 @@ public:
     explicit Property(Config config, std::function<void()> onChange = {})
       : m_config(std::move(config))
       , m_onChange(std::move(onChange))
-      , m_pState(std::make_shared<PropertyState<T>>(m_config.defaultValue))
+      , m_pState(std::make_shared<State>(m_config.defaultValue))
     {
     }
 
@@ -90,7 +66,30 @@ public:
 private:
     Config m_config;
     std::function<void()> m_onChange;
-    std::shared_ptr<PropertyState<T>> m_pState;
+
+    class State
+    {
+    public:
+        State() = delete;
+        State(const State&) = delete;
+        State(State&&) = delete;
+        State& operator=(const State&) = delete;
+        State& operator=(State&&) = delete;
+
+        explicit State(T value)
+          : m_value(std::move(value))
+        {
+        }
+
+        void setValue(const T& value) { m_value = value; }
+        void setValue(T&& value) { m_value = std::move(value); }
+
+        auto getValue() const -> const T& { return m_value; }
+
+    private:
+        T m_value;
+    };
+    std::shared_ptr<State> m_pState;
 };
 
 }  // namespace im3e
