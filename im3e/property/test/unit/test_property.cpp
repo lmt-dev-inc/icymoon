@@ -23,10 +23,13 @@ public:
         .description = "Position for testing the use of glm in properties.",
         .defaultValue = glm::vec3{0.0F, 0.0F, 0.0F},
     }};
-    PropertyGroup properties{{
-        .name = "Property Owner",
-        .description = "Properties of the PropertyOwner object",
-    }};
+    PropertyGroup properties{
+        {
+            .name = "Property Owner",
+            .description = "Properties of the PropertyOwner object",
+        },
+        {factor.getInterface(), position.getInterface()},
+    };
 };
 
 }  // namespace

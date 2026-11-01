@@ -1,6 +1,7 @@
 #pragma once
 
 #include <im3e/property/property_change_notifier.h>
+#include <im3e/property/property_interface.h>
 
 #include <functional>
 #include <memory>
@@ -34,7 +35,7 @@ public:
     explicit Property(Config config, std::function<void()> onChange = {})
       : m_config(std::move(config))
       , m_onChange(std::move(onChange))
-      , m_pState(std::make_shared<State>(m_config.defaultValue))
+      , m_impl(std::make_shared<Impl>(m_config.defaultValue))
     {
     }
 
@@ -54,29 +55,26 @@ public:
         requires std::is_invocable_r_v<T, Fct, T>
     void update(Fct&& updateFct)
     {
-        m_pState->setValue(updateFct(m_pState->getValue()));
+        m_impl->setValue(updateFct(m_impl->getValue()));
     }
 
-    void setValue(const T& value) { m_pState->setValue(value); }
-    void setValue(T&& value) { m_pState->setValue(std::move(value)); }
+    void setValue(const T& value) { m_impl->setValue(value); }
+    void setValue(T&& value) { m_impl->setValue(std::move(value)); }
 
+    auto getInterface() -> std::weak_ptr<IProperty> { return m_impl; }
+    auto getInterface() const -> std::weak_ptr<const IProperty> { return m_impl; }
     auto getConfig() const -> const Config& { return m_config; }
-    auto getValue() const -> const T& { return m_pState->getValue(); }
+    auto getValue() const -> const T& { return m_impl->getValue(); }
 
 private:
     Config m_config;
     std::function<void()> m_onChange;
 
-    class State
+    class Impl : public IProperty
     {
     public:
-        State() = delete;
-        State(const State&) = delete;
-        State(State&&) = delete;
-        State& operator=(const State&) = delete;
-        State& operator=(State&&) = delete;
-
-        explicit State(T value)
+        Impl() = delete;
+        explicit Impl(T value)
           : m_value(std::move(value))
         {
         }
@@ -89,7 +87,7 @@ private:
     private:
         T m_value;
     };
-    std::shared_ptr<State> m_pState;
+    std::shared_ptr<Impl> m_impl;
 };
 
 }  // namespace im3e
