@@ -1,5 +1,7 @@
 #pragma once
 
+#include <im3e/property/property_change_notifier.h>
+
 namespace im3e {
 
 class IPropertyNode
@@ -11,6 +13,10 @@ public:
     IPropertyNode& operator=(const IPropertyNode&) = delete;
     IPropertyNode& operator=(IPropertyNode&&) = delete;
     virtual ~IPropertyNode() = default;
+
+    virtual auto registerOnChange(std::function<void()> onChange) const -> PropertySubscription = 0;
+
+    virtual auto getName() const -> const std::string& = 0;
 };
 
 class IProperty : public IPropertyNode

@@ -45,8 +45,14 @@ private:
         {
         }
 
+        auto registerOnChange(std::function<void()>) const -> PropertySubscription override
+        {
+            return PropertySubscription();
+        }
+
         auto getConfig() const -> const Config& { return m_config; }
-        auto getChildren() const -> const std::vector<std::weak_ptr<IPropertyNode>> { return m_children; }
+        auto getName() const -> const std::string& override { return m_config.name; }
+        auto getChildren() const -> const std::vector<std::weak_ptr<IPropertyNode>> override { return m_children; }
 
     private:
         Config m_config;

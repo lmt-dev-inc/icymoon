@@ -33,9 +33,8 @@ public:
         bool isReadOnly = false;
     };
     explicit Property(Config config, std::function<void()> onChange = {})
-      : m_config(std::move(config))
+      : m_impl(std::make_shared<Impl>(std::move(config)))
       , m_onChange(std::move(onChange))
-      , m_impl(std::make_shared<Impl>(m_config.defaultValue))
     {
     }
 
@@ -63,31 +62,38 @@ public:
 
     auto getInterface() -> std::weak_ptr<IProperty> { return m_impl; }
     auto getInterface() const -> std::weak_ptr<const IProperty> { return m_impl; }
-    auto getConfig() const -> const Config& { return m_config; }
+    auto getConfig() const -> const Config& { return m_impl->getConfig(); }
     auto getValue() const -> const T& { return m_impl->getValue(); }
 
 private:
-    Config m_config;
-    std::function<void()> m_onChange;
-
     class Impl : public IProperty
     {
     public:
         Impl() = delete;
-        explicit Impl(T value)
-          : m_value(std::move(value))
+        explicit Impl(Config config)
+          : m_config(std::move(config))
+          , m_value(std::move(m_config.defaultValue))
         {
+        }
+
+        auto registerOnChange(std::function<void()>) const -> PropertySubscription override
+        {
+            return PropertySubscription();
         }
 
         void setValue(const T& value) { m_value = value; }
         void setValue(T&& value) { m_value = std::move(value); }
 
+        auto getConfig() const -> const Config& { return m_config; }
+        auto getName() const -> const std::string& override { return m_config.name; }
         auto getValue() const -> const T& { return m_value; }
 
     private:
+        Config m_config;
         T m_value;
     };
     std::shared_ptr<Impl> m_impl;
+    std::function<void()> m_onChange;
 };
 
 }  // namespace im3e
