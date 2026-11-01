@@ -154,7 +154,7 @@ There are no cycles. `im3e_api` is the hub: modules talk to each other through i
 
 **`im3e_property`** ([im3e/property/](../../im3e/property/)) is a small reflection system that lets objects expose editable parameters without knowing the GUI:
 
-- `IPropertyValue` exposes a value as `std::any`, with its type, name, description and optional min/max. `IPropertyGroup` is a named tree of properties.
+- `ILegacyPropertyValue` exposes a value as `std::any`, with its type, name, description and optional min/max. `ILegacyPropertyGroup` is a named tree of properties.
 - `PropertyValue<T>` implements it, with a runtime config and an optional `onChange` callback for the owner. Listeners subscribe through `registerOnChange` with a `weak_ptr` to a callback, so they unsubscribe by just dropping the callback.
 - `createReadOnlyPropertyValueProxy` exposes a value without allowing writes.
 
@@ -220,7 +220,7 @@ For now it contains the camera:
 | `createGlfwWindowApplication` | `GlfwWindowApplication`: initializes GLFW, creates the `IDevice`, owns windows and runs the loop.                                                  |
 | `createImguiWorkspace`        | `ImguiWorkspace`: a dock space with a center panel and panels docked top/bottom/left/right.                                                        |
 | `createImguiRenderPanel`      | `ImguiRenderPanel`: runs any `IFramePipeline` into an offscreen image shown as an ImGui image, and forwards mouse input to an `IGuiEventListener`. |
-| `createImguiPropertyPanel`    | `ImguiPropertyPanel`: draws and edits an `IPropertyGroup`.                                                                                         |
+| `createImguiPropertyPanel`    | `ImguiPropertyPanel`: draws and edits an `ILegacyPropertyGroup`.                                                                                         |
 | `createImguiStatsPanel`       | `ImguiStatsPanel`: shows timing spans from an `IStatsProvider`.                                                                                    |
 | `createImguiPipeline`         | `ImguiPipeline`: the `IFramePipeline` that renders a workspace.                                                                                    |
 
@@ -297,7 +297,7 @@ pApp->run();
 - **Constructor argument checks.** Constructors validate their dependencies with `throwIfArgNull` in the member initializer list, so an object is either fully built or not built.
 - **Child loggers.** Each object creates a named child logger from its parent (`createChild`, `IDevice::createLogger`), giving messages a hierarchical origin.
 - **Scoped operations.** Command recording, barriers and stats spans are RAII objects: submission, barrier emission and span end happen in their destructor.
-- **Properties instead of GUI code.** Objects expose `IPropertyGroup`s; the GUI generates controls for them. Rendering code never includes ImGui.
+- **Properties instead of GUI code.** Objects expose `ILegacyPropertyGroup`s; the GUI generates controls for them. Rendering code never includes ImGui.
 - **Commit model.** ANARI objects accumulate parameter changes and apply them in `commitChanges()`, called by the frame pipeline between frames, never while ANARI is rendering.
 
 The rules these patterns follow (naming, includes, error handling...) are in [Code Standards](../development/code_standards.md).

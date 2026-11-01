@@ -22,7 +22,7 @@ public:
     /// @return A view ray going from the origin of the camera to the given rNdcPos in scene coordinates.
     virtual auto createViewRayFromNdc(const glm::vec2& rNdcPos) const -> Ray = 0;
 
-    virtual auto createProperties() -> std::shared_ptr<IPropertyGroup> = 0;
+    virtual auto createProperties() -> std::shared_ptr<ILegacyPropertyGroup> = 0;
 
     virtual auto getProjection() -> PerspectiveProjection& = 0;
     virtual auto getProjection() const -> const PerspectiveProjection& = 0;

@@ -30,7 +30,7 @@ public:
     void updateAsync(const AnariMapCamera& rCamera);
     void commitChanges();
 
-    auto getProperties() -> std::shared_ptr<IPropertyGroup> override { return m_pProperties; }
+    auto getProperties() -> std::shared_ptr<ILegacyPropertyGroup> override { return m_pProperties; }
 
 private:
     std::shared_ptr<AnariDevice> m_pAnDevice;
@@ -42,7 +42,7 @@ private:
 
     bool m_lodChanged = true;
     std::shared_ptr<PropertyValue<uint32_t>> m_pLodProp;
-    std::shared_ptr<IPropertyGroup> m_pProperties;
+    std::shared_ptr<ILegacyPropertyGroup> m_pProperties;
 
     std::vector<std::unique_ptr<AnariHeightFieldTile>> m_pTiles;
     std::vector<UniquePtrWithDeleter<AnariHeightFieldTile>> m_pVisibleTiles;

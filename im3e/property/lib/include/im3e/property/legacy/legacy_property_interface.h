@@ -11,20 +11,20 @@
 
 namespace im3e {
 
-class IProperty
+class ILegacyProperty
 {
 public:
-    virtual ~IProperty() = default;
+    virtual ~ILegacyProperty() = default;
 
     virtual void registerOnChange(std::weak_ptr<std::function<void()>> pOnChangeCallback) const = 0;
 
     virtual auto getName() const -> std::string = 0;
 };
 
-class IPropertyValue : public IProperty
+class ILegacyPropertyValue : public ILegacyProperty
 {
 public:
-    virtual ~IPropertyValue() = default;
+    virtual ~ILegacyPropertyValue() = default;
 
     virtual void setAnyValue(std::any value) = 0;
 
@@ -37,12 +37,12 @@ public:
     virtual auto getAnyMaxValue() const -> std::optional<std::any> = 0;
 };
 
-class IPropertyGroup : public IProperty
+class ILegacyPropertyGroup : public ILegacyProperty
 {
 public:
-    virtual ~IPropertyGroup() = default;
+    virtual ~ILegacyPropertyGroup() = default;
 
-    virtual auto getChildren() const -> std::vector<std::shared_ptr<IProperty>> = 0;
+    virtual auto getChildren() const -> std::vector<std::shared_ptr<ILegacyProperty>> = 0;
 };
 
 }  // namespace im3e

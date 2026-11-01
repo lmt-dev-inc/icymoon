@@ -83,7 +83,7 @@ struct PropertyFactory
         return std::make_shared<PropertyValue<T>>(std::move(config));
     }
 
-    auto createPropertyValueFromAnParameter(const ANARIParameter* pAnParam) -> std::shared_ptr<IPropertyValue>
+    auto createPropertyValueFromAnParameter(const ANARIParameter* pAnParam) -> std::shared_ptr<ILegacyPropertyValue>
     {
         switch (static_cast<int>(pAnParam->type))
         {
@@ -125,7 +125,7 @@ void AnariRenderer::commitChanges()
     }
 }
 
-auto AnariRenderer::createProperties() -> std::shared_ptr<IPropertyGroup>
+auto AnariRenderer::createProperties() -> std::shared_ptr<ILegacyPropertyGroup>
 {
     const auto* pAnParams = static_cast<const ANARIParameter*>(anariGetObjectInfo(
         m_pAnDevice->getHandle(), ANARI_RENDERER, m_anRendererSubtype.data(), "parameter", ANARI_PARAMETER_LIST));
@@ -136,7 +136,7 @@ auto AnariRenderer::createProperties() -> std::shared_ptr<IPropertyGroup>
         .anRendererSubtype = m_anRendererSubtype,
         .onParameterChanged = [this] { m_parametersChanged = true; },
     };
-    std::vector<std::shared_ptr<IProperty>> pProperties;
+    std::vector<std::shared_ptr<ILegacyProperty>> pProperties;
     for (const auto* pAnParam = pAnParams; pAnParam->name != nullptr; pAnParam++)
     {
         // TODO: cleanup this workaround to fix crash with helide device and file ticket with ANARI SDK

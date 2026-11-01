@@ -20,7 +20,7 @@ public:
 
     void commitChanges();
 
-    auto getProperties() -> std::shared_ptr<IPropertyGroup> override { return m_pProperties; }
+    auto getProperties() -> std::shared_ptr<ILegacyPropertyGroup> override { return m_pProperties; }
     auto getInstance() const -> ANARIInstance { return m_pAnInstance.get(); }
 
 private:
@@ -40,7 +40,7 @@ private:
     UniquePtrWithDeleter<anari::api::Instance> m_pAnInstance;
 
     std::shared_ptr<PropertyValue<glm::vec3>> m_pScaleProp;
-    std::shared_ptr<IPropertyGroup> m_pProperties;
+    std::shared_ptr<ILegacyPropertyGroup> m_pProperties;
 };
 
 }  // namespace im3e

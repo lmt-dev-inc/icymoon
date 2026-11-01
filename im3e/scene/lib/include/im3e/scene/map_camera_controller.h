@@ -36,7 +36,7 @@ public:
     [[nodiscard]] auto getDistanceToTarget() const -> float { return m_pDistanceToTarget->getValue(); }
     [[nodiscard]] auto getHeading() const -> float { return m_pHeading->getValue(); }
     [[nodiscard]] auto getTilt() const -> float { return m_pTilt->getValue(); }
-    [[nodiscard]] auto getProperties() const -> std::shared_ptr<IPropertyGroup> { return m_pPropertyGroup; }
+    [[nodiscard]] auto getProperties() const -> std::shared_ptr<ILegacyPropertyGroup> { return m_pPropertyGroup; }
 
 private:
     void _update();
@@ -47,7 +47,7 @@ private:
     std::shared_ptr<PropertyValue<float>> m_pDistanceToTarget;
     std::shared_ptr<PropertyValue<float>> m_pHeading;
     std::shared_ptr<PropertyValue<float>> m_pTilt;
-    std::shared_ptr<IPropertyGroup> m_pPropertyGroup;
+    std::shared_ptr<ILegacyPropertyGroup> m_pPropertyGroup;
 };
 
 }  // namespace im3e

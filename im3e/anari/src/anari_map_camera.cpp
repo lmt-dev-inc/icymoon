@@ -77,7 +77,7 @@ void AnariMapCamera::commitChanges()
     anariCommitParameters(m_pAnDevice->getHandle(), m_pAnCamera.get());
 }
 
-auto AnariMapCamera::createProperties() -> std::shared_ptr<IPropertyGroup>
+auto AnariMapCamera::createProperties() -> std::shared_ptr<ILegacyPropertyGroup>
 {
     return createPropertyGroup("Map Camera", {m_cameraController.getProperties(), m_pCamera->createProperties()});
 }

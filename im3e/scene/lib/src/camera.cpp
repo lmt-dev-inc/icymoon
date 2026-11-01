@@ -18,7 +18,7 @@ public:
     /// @return A view ray going from the origin of the camera to the given rNdcPos in scene coordinates.
     auto createViewRayFromNdc(const glm::vec2& rNdcPos) const -> Ray override;
 
-    auto createProperties() -> std::shared_ptr<IPropertyGroup> override;
+    auto createProperties() -> std::shared_ptr<ILegacyPropertyGroup> override;
 
     auto getProjection() -> PerspectiveProjection& override { return m_projection; }
     auto getProjection() const -> const PerspectiveProjection& override { return m_projection; }
@@ -45,7 +45,7 @@ Camera::Camera(std::function<void()> onChanged)
 {
 }
 
-auto Camera::createProperties() -> std::shared_ptr<IPropertyGroup>
+auto Camera::createProperties() -> std::shared_ptr<ILegacyPropertyGroup>
 {
     return createPropertyGroup("Camera", {m_projection.getProperties(), m_view.getProperties()});
 }

@@ -11,8 +11,8 @@ using namespace im3e;
 namespace {
 
 auto getPropertyControl(
-    const std::shared_ptr<IProperty>& pProperty,
-    std::unordered_map<std::shared_ptr<IProperty>, std::shared_ptr<IImguiPropertyControl>>& rPropertyControlMap)
+    const std::shared_ptr<ILegacyProperty>& pProperty,
+    std::unordered_map<std::shared_ptr<ILegacyProperty>, std::shared_ptr<IImguiPropertyControl>>& rPropertyControlMap)
 {
     std::shared_ptr<IImguiPropertyControl> pPropertyControl;
     if (auto itFind = rPropertyControlMap.find(pProperty); itFind != rPropertyControlMap.end())
@@ -28,8 +28,8 @@ auto getPropertyControl(
 }
 
 void drawProperty(
-    const std::shared_ptr<IProperty>& pProperty,
-    std::unordered_map<std::shared_ptr<IProperty>, std::shared_ptr<IImguiPropertyControl>>& pPropertyControlMap)
+    const std::shared_ptr<ILegacyProperty>& pProperty,
+    std::unordered_map<std::shared_ptr<ILegacyProperty>, std::shared_ptr<IImguiPropertyControl>>& pPropertyControlMap)
 {
     ImGui::PushID(static_cast<int>(reinterpret_cast<intptr_t>(pProperty.get())));
     ImguiScope idScope(&ImGui::PopID);
@@ -38,7 +38,7 @@ void drawProperty(
     ImGui::TableSetColumnIndex(0);
     ImGui::AlignTextToFramePadding();
 
-    if (auto pPropertyGroup = std::dynamic_pointer_cast<IPropertyGroup>(pProperty))
+    if (auto pPropertyGroup = std::dynamic_pointer_cast<ILegacyPropertyGroup>(pProperty))
     {
         const auto treeNodeId = fmt::format("{}##header", pPropertyGroup->getName());
         const auto treeNodeFlags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen;
@@ -65,7 +65,7 @@ void drawProperty(
         auto pPropertyControl = getPropertyControl(pProperty, pPropertyControlMap);
         ImGui::Text("%s", pPropertyControl->getName().c_str());
 
-        if (auto pValueProperty = std::dynamic_pointer_cast<IPropertyValue>(pProperty))
+        if (auto pValueProperty = std::dynamic_pointer_cast<ILegacyPropertyValue>(pProperty))
         {
             ImGui::SetItemTooltip("%s", pValueProperty->getDescription().c_str());
         }
@@ -79,7 +79,7 @@ void drawProperty(
 
 }  // namespace
 
-ImguiPropertyPanel::ImguiPropertyPanel(std::shared_ptr<IPropertyGroup> pPropertyGroup)
+ImguiPropertyPanel::ImguiPropertyPanel(std::shared_ptr<ILegacyPropertyGroup> pPropertyGroup)
   : m_pPropertyGroup(throwIfArgNull(std::move(pPropertyGroup), "ImguiPropertyPanel requires a PropertyGroup"))
 {
 }
@@ -104,7 +104,7 @@ void ImguiPropertyPanel::draw(const ICommandBuffer&)
     }
 }
 
-auto im3e::createImguiPropertyPanel(std::shared_ptr<IPropertyGroup> pPropertyGroup) -> std::shared_ptr<IGuiPanel>
+auto im3e::createImguiPropertyPanel(std::shared_ptr<ILegacyPropertyGroup> pPropertyGroup) -> std::shared_ptr<IGuiPanel>
 {
     return std::make_shared<ImguiPropertyPanel>(std::move(pPropertyGroup));
 }

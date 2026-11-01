@@ -27,7 +27,7 @@ public:
     [[nodiscard]] auto getAspectRatio() const -> float { return m_pAspectRatio->getValue(); }
     [[nodiscard]] auto getNear() const -> float { return m_pNear->getValue(); }
     [[nodiscard]] auto getFar() const -> float { return m_pFar->getValue(); }
-    [[nodiscard]] auto getProperties() const -> std::shared_ptr<IPropertyGroup> { return m_pPropertyGroup; }
+    [[nodiscard]] auto getProperties() const -> std::shared_ptr<ILegacyPropertyGroup> { return m_pPropertyGroup; }
     [[nodiscard]] auto getMatrix() const -> const glm::mat4&;
 
 private:
@@ -39,7 +39,7 @@ private:
     std::shared_ptr<PropertyValue<float>> m_pAspectRatio;
     std::shared_ptr<PropertyValue<float>> m_pNear;
     std::shared_ptr<PropertyValue<float>> m_pFar;
-    std::shared_ptr<IPropertyGroup> m_pPropertyGroup;
+    std::shared_ptr<ILegacyPropertyGroup> m_pPropertyGroup;
 
     mutable bool m_matrixDirty = true;
     mutable glm::mat4 m_matrix;

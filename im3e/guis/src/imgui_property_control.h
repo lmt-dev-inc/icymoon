@@ -1,6 +1,6 @@
 #pragma once
 
-#include <im3e/property/property_interface.h>
+#include <im3e/property/legacy/legacy_property_interface.h>
 
 #include <memory>
 #include <string>
@@ -17,6 +17,6 @@ public:
     virtual auto getName() const -> std::string = 0;
 };
 
-auto createImguiPropertyControl(std::shared_ptr<IProperty> pProperty) -> std::unique_ptr<IImguiPropertyControl>;
+auto createImguiPropertyControl(std::shared_ptr<ILegacyProperty> pProperty) -> std::unique_ptr<IImguiPropertyControl>;
 
 }  // namespace im3e

@@ -22,7 +22,7 @@ public:
 
     void commitChanges();
 
-    auto createProperties() -> std::shared_ptr<IPropertyGroup>;
+    auto createProperties() -> std::shared_ptr<ILegacyPropertyGroup>;
 
     void onMouseMove(const MouseMoveEvent& rEvent) override;
     void onMouseWheel(float scrollSteps) override;

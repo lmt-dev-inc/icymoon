@@ -8,7 +8,7 @@ namespace {
 
 struct OnChangeReceiver
 {
-    OnChangeReceiver(IProperty& rProperty) { rProperty.registerOnChange(pOnChange); }
+    OnChangeReceiver(ILegacyProperty& rProperty) { rProperty.registerOnChange(pOnChange); }
 
     uint32_t callCount{};
     std::shared_ptr<std::function<void()>> pOnChange = std::make_shared<std::function<void()>>([this] { callCount++; });

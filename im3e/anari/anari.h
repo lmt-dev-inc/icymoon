@@ -19,7 +19,7 @@ class IAnariObject
 public:
     virtual ~IAnariObject() = default;
 
-    virtual auto getProperties() -> std::shared_ptr<IPropertyGroup> = 0;
+    virtual auto getProperties() -> std::shared_ptr<ILegacyPropertyGroup> = 0;
 };
 
 class IAnariWorld
@@ -36,8 +36,8 @@ class IAnariFramePipeline : public IFramePipeline
 public:
     virtual ~IAnariFramePipeline() = default;
 
-    virtual auto createCameraProperties() -> std::shared_ptr<IPropertyGroup> = 0;
-    virtual auto createRendererProperties() -> std::shared_ptr<IPropertyGroup> = 0;
+    virtual auto createCameraProperties() -> std::shared_ptr<ILegacyPropertyGroup> = 0;
+    virtual auto createRendererProperties() -> std::shared_ptr<ILegacyPropertyGroup> = 0;
 
     virtual auto getCameraListener() -> std::shared_ptr<IGuiEventListener> = 0;
     virtual auto getWorld() -> std::shared_ptr<IAnariWorld> = 0;

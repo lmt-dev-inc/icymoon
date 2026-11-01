@@ -1,7 +1,7 @@
 #pragma once
 
+#include <im3e/property/legacy/legacy_property_interface.h>
 #include <im3e/property/property_change_notifier.h>
-#include <im3e/property/property_interface.h>
 #include <im3e/utils/core/types.h>
 
 #include <algorithm>
@@ -24,7 +24,7 @@ struct PropertyValueConfig
 };
 
 template <typename T>
-class PropertyValue : public IPropertyValue
+class PropertyValue : public ILegacyPropertyValue
 {
 public:
     using Type = T;
@@ -119,8 +119,8 @@ private:
     Type m_value;
 };
 
-auto createPropertyGroup(std::string_view name, std::vector<std::shared_ptr<IProperty>> pProperties)
-    -> std::shared_ptr<IPropertyGroup>;
+auto createPropertyGroup(std::string_view name, std::vector<std::shared_ptr<ILegacyProperty>> pProperties)
+    -> std::shared_ptr<ILegacyPropertyGroup>;
 
 /// @brief Create a read-only proxy for a property value.
 /// This allows to pass around property values without allowing modification of the value.
@@ -129,7 +129,7 @@ auto createPropertyGroup(std::string_view name, std::vector<std::shared_ptr<IPro
 /// @param pPropertyValue The property value to create a read-only proxy for.
 ///
 /// @return A read-only proxy for the given property value.
-auto createReadOnlyPropertyValueProxy(std::shared_ptr<IPropertyValue> pPropertyValue)
-    -> std::shared_ptr<IPropertyValue>;
+auto createReadOnlyPropertyValueProxy(std::shared_ptr<ILegacyPropertyValue> pPropertyValue)
+    -> std::shared_ptr<ILegacyPropertyValue>;
 
 }  // namespace im3e

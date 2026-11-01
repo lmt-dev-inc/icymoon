@@ -19,7 +19,7 @@ public:
     AnariRenderer(std::shared_ptr<AnariDevice> pAnDevice);
 
     void commitChanges();
-    auto createProperties() -> std::shared_ptr<IPropertyGroup>;
+    auto createProperties() -> std::shared_ptr<ILegacyPropertyGroup>;
 
     auto getHandle() const -> ANARIRenderer { return m_pAnRenderer.get(); }
 

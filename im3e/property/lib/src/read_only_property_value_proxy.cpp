@@ -6,10 +6,10 @@ using namespace im3e;
 
 namespace {
 
-class ReadOnlyPropertyValueProxy : public IPropertyValue
+class ReadOnlyPropertyValueProxy : public ILegacyPropertyValue
 {
 public:
-    ReadOnlyPropertyValueProxy(std::shared_ptr<IPropertyValue> pPropertyValue)
+    ReadOnlyPropertyValueProxy(std::shared_ptr<ILegacyPropertyValue> pPropertyValue)
       : m_pPropertyValue(
             throwIfArgNull(std::move(pPropertyValue), "Cannot create read-only proxy for null property value"))
     {
@@ -35,13 +35,13 @@ public:
     auto getAnyMaxValue() const -> std::optional<std::any> override { return m_pPropertyValue->getAnyMaxValue(); }
 
 private:
-    std::shared_ptr<IPropertyValue> m_pPropertyValue;
+    std::shared_ptr<ILegacyPropertyValue> m_pPropertyValue;
 };
 
 }  // namespace
 
-auto im3e::createReadOnlyPropertyValueProxy(std::shared_ptr<IPropertyValue> pPropertyValue)
-    -> std::shared_ptr<IPropertyValue>
+auto im3e::createReadOnlyPropertyValueProxy(std::shared_ptr<ILegacyPropertyValue> pPropertyValue)
+    -> std::shared_ptr<ILegacyPropertyValue>
 {
     return std::make_shared<ReadOnlyPropertyValueProxy>(std::move(pPropertyValue));
 }

@@ -24,7 +24,7 @@ public:
     [[nodiscard]] auto getDirection() const -> glm::vec3 { return m_pDirection->getValue(); }
     [[nodiscard]] auto getUp() const -> glm::vec3 { return m_pUp->getValue(); }
     [[nodiscard]] auto getRight() const -> glm::vec3 { return m_pRight->getValue(); }
-    [[nodiscard]] auto getProperties() const -> std::shared_ptr<IPropertyGroup> { return m_pPropertyGroup; }
+    [[nodiscard]] auto getProperties() const -> std::shared_ptr<ILegacyPropertyGroup> { return m_pPropertyGroup; }
     [[nodiscard]] auto getMatrix() const -> const glm::mat4&;
 
 private:
@@ -36,7 +36,7 @@ private:
     std::shared_ptr<PropertyValue<glm::vec3>> m_pDirection;
     std::shared_ptr<PropertyValue<glm::vec3>> m_pUp;
     std::shared_ptr<PropertyValue<glm::vec3>> m_pRight;
-    std::shared_ptr<IPropertyGroup> m_pPropertyGroup;
+    std::shared_ptr<ILegacyPropertyGroup> m_pPropertyGroup;
 
     mutable bool m_matrixDirty = true;
     mutable glm::mat4 m_matrix;

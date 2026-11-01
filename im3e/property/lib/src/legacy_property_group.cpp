@@ -8,10 +8,10 @@ using namespace im3e;
 
 namespace {
 
-class LegacyPropertyGroup : public IPropertyGroup
+class LegacyPropertyGroup : public ILegacyPropertyGroup
 {
 public:
-    LegacyPropertyGroup(std::string_view name, std::vector<std::shared_ptr<IProperty>> pProperties)
+    LegacyPropertyGroup(std::string_view name, std::vector<std::shared_ptr<ILegacyProperty>> pProperties)
       : m_name(name)
       , m_pProperties(std::move(pProperties))
     {
@@ -23,18 +23,18 @@ public:
     }
 
     auto getName() const -> std::string override { return m_name; }
-    auto getChildren() const -> std::vector<std::shared_ptr<IProperty>> override { return m_pProperties; }
+    auto getChildren() const -> std::vector<std::shared_ptr<ILegacyProperty>> override { return m_pProperties; }
 
 private:
     const std::string m_name;
-    std::vector<std::shared_ptr<IProperty>> m_pProperties;
+    std::vector<std::shared_ptr<ILegacyProperty>> m_pProperties;
     mutable PropertyChangeNotifier m_notifier;
 };
 
 }  // namespace
 
-auto im3e::createPropertyGroup(std::string_view name, std::vector<std::shared_ptr<IProperty>> pProperties)
-    -> std::shared_ptr<IPropertyGroup>
+auto im3e::createPropertyGroup(std::string_view name, std::vector<std::shared_ptr<ILegacyProperty>> pProperties)
+    -> std::shared_ptr<ILegacyPropertyGroup>
 {
     return std::make_shared<LegacyPropertyGroup>(name, std::move(pProperties));
 }

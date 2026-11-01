@@ -7,7 +7,7 @@ using namespace im3e;
 TEST(LegacyPropertyGroupTest, constructor)
 {
     constexpr auto TestGroupName = "Test Group";
-    const std::vector<std::shared_ptr<IProperty>> properties{
+    const std::vector<std::shared_ptr<ILegacyProperty>> properties{
         std::make_shared<PropertyValue<int32_t>>(PropertyValueConfig<int32_t>{.name = "Int Property"}),
         std::make_shared<PropertyValue<bool>>(PropertyValueConfig<bool>{.name = "Bool Property"}),
         createPropertyGroup("Other Group", {}),
