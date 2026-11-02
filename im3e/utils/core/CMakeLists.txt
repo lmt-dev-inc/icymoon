@@ -1,6 +1,7 @@
 add_library(im3e_utils_core STATIC
     src/path_utils.cpp
     src/platform_utils.cpp
+    callback_registry.h
     flags.h
     path_utils.h
     platform_utils.h
