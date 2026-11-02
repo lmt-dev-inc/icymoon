@@ -1,6 +1,5 @@
 #pragma once
 
-#include <im3e/property/property_change_notifier.h>
 #include <im3e/property/property_interface.h>
 
 #include <functional>
@@ -27,9 +26,11 @@ public:
     PropertyGroup(Config config, std::vector<std::weak_ptr<IPropertyNode>> children,
                   std::function<void()> onChange = {})
       : m_impl(std::make_shared<Impl>(std::move(config), std::move(children)))
-      , m_onChange(std::move(onChange))
+      , m_onChangeRegistration(m_impl->registerOnChange(std::move(onChange)))
     {
     }
+
+    void registerOnChange(std::function<void()> onChange) { m_impl->registerOnChange(std::move(onChange)); }
 
     auto getConfig() const -> const Config& { return m_impl->getConfig(); }
     auto getChildren() const -> const std::vector<std::weak_ptr<IPropertyNode>> { return m_impl->getChildren(); }
@@ -45,9 +46,9 @@ private:
         {
         }
 
-        auto registerOnChange(std::function<void()>) const -> PropertySubscription override
+        auto registerOnChange(std::function<void()> onChange) const -> CallbackRegistration override
         {
-            return PropertySubscription();
+            return m_callbacks.registerCallback(std::move(onChange));
         }
 
         auto getConfig() const -> const Config& { return m_config; }
@@ -57,9 +58,10 @@ private:
     private:
         Config m_config;
         std::vector<std::weak_ptr<IPropertyNode>> m_children;
+        mutable CallbackRegistry<> m_callbacks;
     };
     std::shared_ptr<Impl> m_impl;
-    std::function<void()> m_onChange;
+    CallbackRegistration m_onChangeRegistration;
 };
 
 }  // namespace im3e

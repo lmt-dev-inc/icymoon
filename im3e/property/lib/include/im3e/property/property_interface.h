@@ -1,6 +1,8 @@
 #pragma once
 
-#include <im3e/property/property_change_notifier.h>
+#include <im3e/utils/core/callback_registry.h>
+
+#include <any>
 
 namespace im3e {
 
@@ -14,7 +16,7 @@ public:
     IPropertyNode& operator=(IPropertyNode&&) = delete;
     virtual ~IPropertyNode() = default;
 
-    virtual auto registerOnChange(std::function<void()> onChange) const -> PropertySubscription = 0;
+    virtual auto registerOnChange(std::function<void()> onChange) const -> CallbackRegistration = 0;
 
     virtual auto getName() const -> const std::string& = 0;
 };
@@ -22,6 +24,8 @@ public:
 class IProperty : public IPropertyNode
 {
 public:
+    virtual void setAnyValue(std::any value) = 0;
+    virtual auto getAnyValue() const -> std::any = 0;
 };
 
 class IPropertyGroup : public IPropertyNode
