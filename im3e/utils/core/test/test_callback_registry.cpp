@@ -59,7 +59,7 @@ TEST(CallbackRegistryTest, registerCallback)
 TEST(CallbackRegistryTest, registerCallback_withNull)
 {
     auto registry = CallbackRegistry();
-    EXPECT_THROW(registry.registerCallback({}), std::invalid_argument);
+    EXPECT_THROW(auto registration = registry.registerCallback({}), std::invalid_argument);
 }
 
 TEST(CallbackRegistryTest, canCancelRegistration)
@@ -183,4 +183,3 @@ TEST(CallbackRegistryTest, invokeAllFromInvokedCallback)
     EXPECT_CALL(mockCallback, Call(0));
     registry.invokeAll(0);
 }
-

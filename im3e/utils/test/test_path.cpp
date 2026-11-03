@@ -32,8 +32,8 @@ TEST(PathTest, constructor_withInvalidPaths)
 {
     EXPECT_THROW(Path("camera"), std::invalid_argument);
     EXPECT_THROW(Path(""), std::invalid_argument);
-    EXPECT_THROW(Path("/camera") / "", std::invalid_argument);
-    EXPECT_THROW(Path("/camera") / "view/position", std::invalid_argument);
+    EXPECT_THROW(auto result = Path("/camera") / "", std::invalid_argument);
+    EXPECT_THROW(auto result = Path("/camera") / "view/position", std::invalid_argument);
 }
 
 TEST(PathTest, appendOperator)

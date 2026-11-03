@@ -53,7 +53,7 @@ private:
 
         auto getConfig() const -> const Config& { return m_config; }
         auto getName() const -> const std::string& override { return m_config.name; }
-        auto getChildren() const -> const std::vector<std::weak_ptr<IPropertyNode>> override { return m_children; }
+        auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>> override { return m_children; }
 
     private:
         Config m_config;

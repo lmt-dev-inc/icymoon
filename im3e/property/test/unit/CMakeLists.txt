@@ -4,6 +4,7 @@ im3e_add_unit_tests_executable(
   SOURCES
     test_legacy_property_group.cpp
     test_property_change_notifier.cpp
+    test_property_group.cpp
     test_property_value.cpp
     test_property.cpp
 )
@@ -12,4 +13,5 @@ target_link_libraries(test_im3e_property
   PRIVATE
     im3e_property
     im3e_test_utils
+    mock_im3e_property
 )

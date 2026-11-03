@@ -117,7 +117,7 @@ TEST(PropertyTest, registerOnChange)
 TEST(PropertyTest, registerOnChange_withNullFunction)
 {
     Property<uint32_t> property{{.defaultValue = 4U}};
-    EXPECT_THROW(property.registerOnChange({}), std::invalid_argument);
+    EXPECT_THROW(auto registration = property.registerOnChange({}), std::invalid_argument);
 }
 
 TEST(PropertyTest, registerOnChange_canBeCancelled)

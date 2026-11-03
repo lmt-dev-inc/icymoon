@@ -31,7 +31,7 @@ public:
 class IPropertyGroup : public IPropertyNode
 {
 public:
-    virtual auto getChildren() const -> const std::vector<std::weak_ptr<IPropertyNode>> = 0;
+    virtual auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>> = 0;
 };
 
 }  // namespace im3e
