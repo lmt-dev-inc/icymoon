@@ -26,14 +26,25 @@ public:
     PropertyGroup(Config config, std::vector<std::weak_ptr<IPropertyNode>> children,
                   std::function<void()> onChange = {})
       : m_impl(std::make_shared<Impl>(std::move(config), std::move(children)))
-      , m_onChangeRegistration(m_impl->registerOnChange(std::move(onChange)))
     {
+        if (onChange)
+        {
+            m_onChangeRegistration = m_impl->registerOnChange(std::move(onChange));
+        }
     }
 
-    void registerOnChange(std::function<void()> onChange) { m_impl->registerOnChange(std::move(onChange)); }
+    [[nodiscard]] auto registerOnChange(std::function<void()> onChange) const -> CallbackRegistration
+    {
+        return m_impl->registerOnChange(std::move(onChange));
+    }
 
-    auto getConfig() const -> const Config& { return m_impl->getConfig(); }
-    auto getChildren() const -> const std::vector<std::weak_ptr<IPropertyNode>> { return m_impl->getChildren(); }
+    [[nodiscard]] auto getConfig() const -> const Config& { return m_impl->getConfig(); }
+    [[nodiscard]] auto getChildren() const -> const std::vector<std::weak_ptr<IPropertyNode>>
+    {
+        return m_impl->getChildren();
+    }
+    [[nodiscard]] auto getInterface() -> std::weak_ptr<IPropertyGroup> { return m_impl; }
+    [[nodiscard]] auto getInterface() const -> std::weak_ptr<const IPropertyGroup> { return m_impl; }
 
 private:
     class Impl : public IPropertyGroup
@@ -42,8 +53,17 @@ private:
         Impl() = delete;
         Impl(Config config, std::vector<std::weak_ptr<IPropertyNode>> children)
           : m_config(std::move(config))
-          , m_children(std::move(children))
         {
+            m_children.reserve(children.size());
+            m_childRegistrations.reserve(children.size());
+            for (auto& childWeakPtr : children)
+            {
+                if (auto child = childWeakPtr.lock())
+                {
+                    m_childRegistrations.emplace_back(child->registerOnChange([this] { m_callbacks.invokeAll(); }));
+                    m_children.emplace_back(std::move(childWeakPtr));
+                }
+            }
         }
 
         auto registerOnChange(std::function<void()> onChange) const -> CallbackRegistration override
@@ -58,6 +78,7 @@ private:
     private:
         Config m_config;
         std::vector<std::weak_ptr<IPropertyNode>> m_children;
+        std::vector<CallbackRegistration> m_childRegistrations;
         mutable CallbackRegistry<> m_callbacks;
     };
     std::shared_ptr<Impl> m_impl;

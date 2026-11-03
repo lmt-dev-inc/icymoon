@@ -13,6 +13,12 @@ public:
 
     MOCK_METHOD(CallbackRegistration, registerOnChange, (std::function<void()>), (const, override));
     MOCK_METHOD(const std::string&, getName, (), (const, override));
+
+    auto getRegisteredOnChange() const -> const std::vector<std::function<void()>>& { return m_registeredOnChange; }
+
+private:
+    std::shared_ptr<void> m_token;
+    std::vector<std::function<void()>> m_registeredOnChange;
 };
 
 class MockProperty : public IProperty
@@ -26,6 +32,12 @@ public:
 
     MOCK_METHOD(void, setAnyValue, (std::any), (override));
     MOCK_METHOD(std::any, getAnyValue, (), (const, override));
+
+    auto getRegisteredOnChange() const -> const std::vector<std::function<void()>>& { return m_registeredOnChange; }
+
+private:
+    std::shared_ptr<void> m_token;
+    std::vector<std::function<void()>> m_registeredOnChange;
 };
 
 class MockPropertyGroup : public IPropertyGroup
@@ -38,6 +50,12 @@ public:
     MOCK_METHOD(const std::string&, getName, (), (const, override));
 
     MOCK_METHOD((std::vector<std::weak_ptr<IPropertyNode>>), getChildren, (), (const, override));
+
+    auto getRegisteredOnChange() const -> const std::vector<std::function<void()>>& { return m_registeredOnChange; }
+
+private:
+    std::shared_ptr<void> m_token;
+    std::vector<std::function<void()>> m_registeredOnChange;
 };
 
 }  // namespace im3e

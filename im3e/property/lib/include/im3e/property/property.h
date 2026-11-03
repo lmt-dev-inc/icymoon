@@ -66,10 +66,10 @@ public:
     void setValue(const T& value) { m_impl->setValue(value); }
     void setValue(T&& value) { m_impl->setValue(std::move(value)); }
 
-    auto getInterface() -> std::weak_ptr<IProperty> { return m_impl; }
-    auto getInterface() const -> std::weak_ptr<const IProperty> { return m_impl; }
-    auto getConfig() const -> const Config& { return m_impl->getConfig(); }
-    auto getValue() const -> const T& { return m_impl->getValue(); }
+    [[nodiscard]] auto getInterface() -> std::weak_ptr<IProperty> { return m_impl; }
+    [[nodiscard]] auto getInterface() const -> std::weak_ptr<const IProperty> { return m_impl; }
+    [[nodiscard]] auto getConfig() const -> const Config& { return m_impl->getConfig(); }
+    [[nodiscard]] auto getValue() const -> const T& { return m_impl->getValue(); }
 
 private:
     class Impl : public IProperty
