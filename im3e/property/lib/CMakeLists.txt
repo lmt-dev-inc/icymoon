@@ -7,6 +7,7 @@ add_library(im3e_property STATIC
     include/im3e/property/property.h
     src/legacy_property_group.cpp
     src/property_change_notifier.cpp
+    src/property_group.cpp
     src/read_only_property_value_proxy.cpp
 )
 
