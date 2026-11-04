@@ -2,10 +2,7 @@ im3e_add_unit_tests_executable(
   TARGET
     test_im3e_property
   SOURCES
-    test_legacy_property_group.cpp
-    test_property_change_notifier.cpp
     test_property_group.cpp
-    test_property_value.cpp
     test_property.cpp
 )
 

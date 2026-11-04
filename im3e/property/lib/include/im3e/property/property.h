@@ -10,6 +10,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <typeindex>
 
 namespace im3e {
 
@@ -110,10 +111,16 @@ private:
             _setValue(std::any_cast<T>(std::move(value)));
         }
 
+        auto isReadOnly() const -> bool override { return m_config.isReadOnly; }
+
         auto getConfig() const -> const Config& { return m_config; }
         auto getName() const -> const std::string& override { return m_config.name; }
+        auto getDescription() const -> const std::string& override { return m_config.description; }
+        auto getType() const -> std::type_index override { return typeid(T); }
         auto getValue() const -> const T& { return m_value; }
         auto getAnyValue() const -> std::any override { return m_value; }
+        auto getAnyMinValue() const -> std::optional<std::any> override { return _toAny(m_config.minValue); }
+        auto getAnyMaxValue() const -> std::optional<std::any> override { return _toAny(m_config.maxValue); }
 
     private:
         template <typename U>
@@ -150,6 +157,15 @@ private:
                 }
             }
             return value;
+        }
+
+        static auto _toAny(const std::optional<T>& rValueOpt) -> std::optional<std::any>
+        {
+            if (rValueOpt.has_value())
+            {
+                return rValueOpt.value();
+            }
+            return std::nullopt;
         }
 
         Config m_config;

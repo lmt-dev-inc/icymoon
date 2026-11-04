@@ -1,5 +1,7 @@
 #include <im3e/scene/camera.h>
 
+#include <im3e/property/property_group.h>
+
 using namespace im3e;
 
 namespace {
@@ -18,7 +20,7 @@ public:
     /// @return A view ray going from the origin of the camera to the given rNdcPos in scene coordinates.
     auto createViewRayFromNdc(const glm::vec2& rNdcPos) const -> Ray override;
 
-    auto createProperties() -> std::shared_ptr<ILegacyPropertyGroup> override;
+    auto getProperties() -> std::weak_ptr<IPropertyGroup> override { return m_properties.getInterface(); }
 
     auto getProjection() -> PerspectiveProjection& override { return m_projection; }
     auto getProjection() const -> const PerspectiveProjection& override { return m_projection; }
@@ -33,6 +35,7 @@ private:
 
     PerspectiveProjection m_projection;
     ViewTransform m_view;
+    PropertyGroup m_properties;
 
     ViewFrustum m_viewFrustum;
 };
@@ -41,13 +44,14 @@ Camera::Camera(std::function<void()> onChanged)
   : m_onChanged(std::move(onChanged))
   , m_projection([this] { _onChanged(); })
   , m_view([this] { _onChanged(); })
+  , m_properties(
+        {
+            .name = "Camera",
+            .description = "Group of properties representing a camera",
+        },
+        {m_projection.getProperties(), m_view.getProperties()})
   , m_viewFrustum(createViewFrustum(m_projection, m_view))
 {
-}
-
-auto Camera::createProperties() -> std::shared_ptr<ILegacyPropertyGroup>
-{
-    return createPropertyGroup("Camera", {m_projection.getProperties(), m_view.getProperties()});
 }
 
 auto Camera::createViewRayFromNdc(const glm::vec2& rNdcPos) const -> Ray

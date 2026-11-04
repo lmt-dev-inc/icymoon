@@ -35,6 +35,7 @@ public:
 
     auto getConfig() const -> const Config& { return m_config; }
     auto getName() const -> const std::string& override { return m_config.name; }
+    auto getDescription() const -> const std::string& override { return m_config.description; }
     auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>> override
     {
         std::vector<std::weak_ptr<IPropertyNode>> children;

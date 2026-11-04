@@ -16,6 +16,7 @@ public:
 
     MOCK_METHOD(CallbackRegistration, registerOnChange, (std::function<void()>), (const, override));
     MOCK_METHOD(const std::string&, getName, (), (const, override));
+    MOCK_METHOD(const std::string&, getDescription, (), (const, override));
 
     void notifyChanged() { m_callbacks.invokeAll(); }
     [[nodiscard]] auto getCallbackCount() const -> size_t { return m_callbacks.getCallbackCount(); }
@@ -32,9 +33,14 @@ public:
 
     MOCK_METHOD(CallbackRegistration, registerOnChange, (std::function<void()>), (const, override));
     MOCK_METHOD(const std::string&, getName, (), (const, override));
+    MOCK_METHOD(const std::string&, getDescription, (), (const, override));
 
     MOCK_METHOD(void, setAnyValue, (std::any), (override));
+    MOCK_METHOD(bool, isReadOnly, (), (const, override));
+    MOCK_METHOD(std::type_index, getType, (), (const, override));
     MOCK_METHOD(std::any, getAnyValue, (), (const, override));
+    MOCK_METHOD(std::optional<std::any>, getAnyMinValue, (), (const, override));
+    MOCK_METHOD(std::optional<std::any>, getAnyMaxValue, (), (const, override));
 
     void notifyChanged() { m_callbacks.invokeAll(); }
     [[nodiscard]] auto getCallbackCount() const -> size_t { return m_callbacks.getCallbackCount(); }
@@ -51,6 +57,7 @@ public:
 
     MOCK_METHOD(CallbackRegistration, registerOnChange, (std::function<void()>), (const, override));
     MOCK_METHOD(const std::string&, getName, (), (const, override));
+    MOCK_METHOD(const std::string&, getDescription, (), (const, override));
 
     MOCK_METHOD((std::vector<std::weak_ptr<IPropertyNode>>), getChildren, (), (const, override));
 

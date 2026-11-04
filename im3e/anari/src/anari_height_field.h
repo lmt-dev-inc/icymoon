@@ -8,9 +8,10 @@
 
 #include <im3e/api/height_map.h>
 #include <im3e/geo/geo.h>
+#include <im3e/property/property.h>
+#include <im3e/property/property_group.h>
 #include <im3e/utils/core/types.h>
 #include <im3e/utils/math_utils.h>
-#include <im3e/property/properties.h>
 
 #include <chrono>
 #include <deque>
@@ -30,7 +31,7 @@ public:
     void updateAsync(const AnariMapCamera& rCamera);
     void commitChanges();
 
-    auto getProperties() -> std::shared_ptr<ILegacyPropertyGroup> override { return m_pProperties; }
+    auto getProperties() -> std::weak_ptr<IPropertyGroup> override { return m_properties.getInterface(); }
 
 private:
     std::shared_ptr<AnariDevice> m_pAnDevice;
@@ -41,8 +42,8 @@ private:
     std::shared_ptr<HeightMapQuadTreeNode> m_pQuadTreeRoot;
 
     bool m_lodChanged = true;
-    std::shared_ptr<PropertyValue<uint32_t>> m_pLodProp;
-    std::shared_ptr<ILegacyPropertyGroup> m_pProperties;
+    Property<uint32_t> m_lod;
+    PropertyGroup m_properties;
 
     std::vector<std::unique_ptr<AnariHeightFieldTile>> m_pTiles;
     std::vector<UniquePtrWithDeleter<AnariHeightFieldTile>> m_pVisibleTiles;

@@ -50,7 +50,7 @@ classDiagram
         getProjection()
         getView()
         getViewFrustum()
-        createProperties()
+        getProperties()
     }
     class MapCameraController {
         targetPoint, distanceToTarget, heading, tilt
@@ -65,6 +65,7 @@ classDiagram
         onMouseWheel(steps)
         setAspectRatio(ratio)
         commitChanges()
+        getProperties()
     }
     class IGuiEventListener {
         <<interface>>
@@ -82,12 +83,12 @@ classDiagram
 
 ### `PerspectiveProjection` and `ViewTransform`
 
-[perspective_projection.h](../../im3e/scene/lib/include/im3e/scene/perspective_projection.h) and [view_transform.h](../../im3e/scene/lib/include/im3e/scene/view_transform.h) store their parameters as `PropertyValue`s, so the GUI can show them without extra code. Their matrices are computed lazily by `getMatrix()`, and cached until a parameter changes.
+[perspective_projection.h](../../im3e/scene/lib/include/im3e/scene/perspective_projection.h) and [view_transform.h](../../im3e/scene/lib/include/im3e/scene/view_transform.h) store their parameters as `Property<T>` members, so the GUI can show them without extra code. Their matrices are computed lazily by `getMatrix()`, and cached until a parameter changes.
 
 - `PerspectiveProjection` holds the vertical field of view (radians), aspect ratio, near and far distances. The projection follows the conventions of [Coordinate Spaces](coordinate_spaces.md).
 - `ViewTransform` holds the position and an orthonormal basis (`direction`, `up`, `right`). `setDirection(direction, up)` derives `right` and re-orthogonalizes `up`, so callers only need an approximate up vector.
 
-Each one takes an `onChanged` callback, called whenever one of its parameters changes. Both are owned by a camera and cannot be copied or moved, because their property callbacks capture `this`.
+Each one takes an `onChanged` callback, called whenever one of its parameters changes. Both are owned by a camera and cannot be copied or moved: their `Property<T>` and `PropertyGroup` members are not copyable nor movable, and their change callbacks capture `this`.
 
 ### `ICamera`
 
@@ -196,7 +197,7 @@ Values outside a property's range are clamped by the property.
 
 ## Properties
 
-`AnariMapCamera::createProperties()` (exposed as `IAnariFramePipeline::createCameraProperties()`) returns this group, which the viewer shows in its parameters panel:
+`AnariMapCamera::getProperties()` (exposed as `IAnariFramePipeline::getCameraProperties()`) returns this group, which the viewer shows in its parameters panel:
 
 ```
 Map Camera

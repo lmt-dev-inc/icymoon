@@ -3,20 +3,28 @@
 #include "guis.h"
 #include "imgui_property_control.h"
 
+#include <map>
+#include <memory>
+#include <string>
+
 namespace im3e {
 
 class ImguiPropertyPanel : public IGuiPanel
 {
 public:
-    ImguiPropertyPanel(std::shared_ptr<ILegacyPropertyGroup> pPropertyGroup);
+    using PropertyControlMap =
+        std::map<std::weak_ptr<IPropertyNode>, std::unique_ptr<IImguiPropertyControl>, std::owner_less<>>;
+
+    ImguiPropertyPanel(std::weak_ptr<IPropertyGroup> pPropertyGroup);
 
     void draw(const ICommandBuffer& rCommandBuffer) override;
 
-    auto getName() const -> std::string override { return std::string{m_pPropertyGroup->getName()}; }
+    auto getName() const -> std::string override { return m_name; }
 
 private:
-    std::shared_ptr<ILegacyPropertyGroup> m_pPropertyGroup;
-    std::unordered_map<std::shared_ptr<ILegacyProperty>, std::shared_ptr<IImguiPropertyControl>> m_pPropertyControlMap;
+    std::weak_ptr<IPropertyGroup> m_pPropertyGroup;
+    const std::string m_name;
+    PropertyControlMap m_pPropertyControlMap;
 };
 
 }  // namespace im3e

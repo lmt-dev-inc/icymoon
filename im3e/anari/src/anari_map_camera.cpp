@@ -1,7 +1,6 @@
 #include "anari_map_camera.h"
 
 #include <im3e/utils/core/throw_utils.h>
-#include <im3e/property/properties.h>
 
 #include <fmt/format.h>
 
@@ -60,6 +59,12 @@ AnariMapCamera::AnariMapCamera(std::shared_ptr<AnariDevice> pAnDevice)
   , m_pAnCamera(createAnariCamera(*m_pLogger, m_pAnDevice->getHandle()))
   , m_pCamera(createCamera([this] { m_needsCommit = true; }))
   , m_cameraController(m_pCamera)
+  , m_properties(
+        {
+            .name = "Map Camera",
+            .description = "Group of properties representing a camera navigating a map",
+        },
+        {m_cameraController.getProperties(), m_pCamera->getProperties()})
 {
     commitChanges();
 }
@@ -75,11 +80,6 @@ void AnariMapCamera::commitChanges()
     setAnariPerspectiveParameters(m_pAnDevice->getHandle(), m_pAnCamera.get(), m_pCamera->getProjection(),
                                   m_pCamera->getView());
     anariCommitParameters(m_pAnDevice->getHandle(), m_pAnCamera.get());
-}
-
-auto AnariMapCamera::createProperties() -> std::shared_ptr<ILegacyPropertyGroup>
-{
-    return createPropertyGroup("Map Camera", {m_cameraController.getProperties(), m_pCamera->createProperties()});
 }
 
 void AnariMapCamera::onMouseMove(const MouseMoveEvent& rEvent)

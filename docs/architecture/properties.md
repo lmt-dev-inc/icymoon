@@ -2,76 +2,74 @@
 
 This document describes the property system as it is today: the interfaces, the implementations, how owners declare and expose properties, how the GUI consumes them, and how ownership and change notification work. It ends with the known problems of the current design.
 
-- [Overview](#overview)
-- [Intent and planned uses](#intent-and-planned-uses)
-  - [Intent](#intent)
-  - [Planned and possible uses](#planned-and-possible-uses)
-  - [Requirements these uses imply](#requirements-these-uses-imply)
-- [Libraries](#libraries)
-- [Interfaces](#interfaces)
-- [Implementations](#implementations)
-  - [`PropertyValue<T>`](#propertyvaluet)
-  - [`PropertyGroup`](#propertygroup)
-  - [`ReadOnlyPropertyValueProxy`](#readonlypropertyvalueproxy)
-  - [`PropertyChangeNotifier`](#propertychangenotifier)
-- [Usage by owners](#usage-by-owners)
-  - [Static properties: `ViewTransform`](#static-properties-viewtransform)
-  - [Dynamic properties: `AnariRenderer`](#dynamic-properties-anarirenderer)
-  - [Composition into trees](#composition-into-trees)
-- [Usage by the GUI](#usage-by-the-gui)
-- [Ownership and lifetimes](#ownership-and-lifetimes)
-- [Change notification](#change-notification)
-- [Known problems](#known-problems)
-- [Possible improvements](#possible-improvements)
+- [Properties](#properties)
+  - [Overview](#overview)
+  - [Intent and planned uses](#intent-and-planned-uses)
+    - [Intent](#intent)
+    - [Planned and possible uses](#planned-and-possible-uses)
+    - [Requirements these uses imply](#requirements-these-uses-imply)
+  - [Libraries](#libraries)
+  - [Interfaces](#interfaces)
+  - [Implementations](#implementations)
+    - [`Property<T>`](#propertyt)
+    - [`PropertyGroup`](#propertygroup)
+  - [Usage by owners](#usage-by-owners)
+    - [Static properties: `ViewTransform`](#static-properties-viewtransform)
+    - [Dynamic properties: `AnariRenderer`](#dynamic-properties-anarirenderer)
+    - [Composition into trees](#composition-into-trees)
+  - [Usage by the GUI](#usage-by-the-gui)
+  - [Ownership and lifetimes](#ownership-and-lifetimes)
+  - [Change notification](#change-notification)
+  - [Known problems](#known-problems)
+  - [Possible improvements](#possible-improvements)
+    - [Notify when a child is destroyed](#notify-when-a-child-is-destroyed)
 
 ## Overview
 
 The property system is a small reflection layer. It lets an object expose some of its parameters, with a name, a description, a type and optional bounds, to code that does not know the object's type. Its only consumer today is the ImGui property panel, which draws and edits any property tree.
 
-There are two kinds of properties:
+There are two kinds of nodes:
 
-- A **value** (`ILegacyPropertyValue`) holds one typed value, accessible type-erased through `std::any`.
-- A **group** (`ILegacyPropertyGroup`) is a named list of child properties, values or groups, forming a tree.
+- A **property** (`IProperty`) holds one typed value, accessible type-erased through `std::any`.
+- A **group** (`IPropertyGroup`) is a named list of child nodes, properties or groups, forming a tree.
+
+Owners hold `Property<T>` and `PropertyGroup` as plain members. Each one keeps its state in a hidden, heap-allocated implementation, and hands out the interface as a `std::weak_ptr`.
 
 ```mermaid
 classDiagram
     direction TB
-    class ILegacyProperty {
+    class IPropertyNode {
         <<interface>>
-        getName()
-        registerOnChange(weak_ptr~function~)
+        getName() / getDescription()
+        registerOnChange(function) CallbackRegistration
     }
-    class ILegacyPropertyValue {
+    class IProperty {
         <<interface>>
-        getDescription()
         getType() type_index
         getAnyValue() any
         setAnyValue(any)
         getAnyMinValue() / getAnyMaxValue()
         isReadOnly()
     }
-    class ILegacyPropertyGroup {
+    class IPropertyGroup {
         <<interface>>
-        getChildren() vector~shared_ptr~ILegacyProperty~~
+        getChildren() vector~weak_ptr~IPropertyNode~~
     }
-    class PropertyValue~T~ {
-        PropertyValueConfig~T~ m_config
-        T m_value
-        getValue() / setValue(T)
-    }
-    class ReadOnlyPropertyValueProxy {
-        shared_ptr~ILegacyPropertyValue~ m_pPropertyValue
+    class Property~T~ {
+        shared_ptr~Impl~ m_impl
+        getValue() / setValue(T) / update(fct)
+        getInterface() weak_ptr~IProperty~
     }
     class PropertyGroup {
-        vector~shared_ptr~ILegacyProperty~~ m_pProperties
+        shared_ptr~Impl~ m_impl
+        getChildren()
+        getInterface() weak_ptr~IPropertyGroup~
     }
-    ILegacyProperty <|-- ILegacyPropertyValue
-    ILegacyProperty <|-- ILegacyPropertyGroup
-    ILegacyPropertyValue <|-- PropertyValue~T~
-    ILegacyPropertyValue <|-- ReadOnlyPropertyValueProxy
-    ILegacyPropertyGroup <|-- PropertyGroup
-    ReadOnlyPropertyValueProxy o-- ILegacyPropertyValue : shared_ptr
-    PropertyGroup o-- ILegacyProperty : shared_ptr
+    IPropertyNode <|-- IProperty
+    IPropertyNode <|-- IPropertyGroup
+    IProperty <|-- Property~T~ : Impl
+    IPropertyGroup <|-- PropertyGroup : Impl
+    PropertyGroup o-- IPropertyNode : weak_ptr
 ```
 
 ## Intent and planned uses
@@ -120,77 +118,68 @@ Compared to the current design, these uses need:
 7. **Low overhead for frequent updates.** Stats change every frame, and should not pay for `std::any` and a callback list on each update. Read-only metrics may deserve a lighter kind of property.
 8. **Thread safety**, if stats collection or remote control read properties from other threads.
 
-Not all of these have to be implemented at once, but the design should not prevent any of them.
+Not all of these have to be implemented at once, but the design should not prevent any of them. The current design meets requirement 6 (consumers only hold `weak_ptr`s), and part of requirement 3 (several changes can be batched with `Property<T>::update`).
 
 ## Libraries
 
-A single static target, `im3e_property`, in [im3e/property/](../../im3e/property/):
+A single static target, `im3e_property`, in [im3e/property/](../../im3e/property/), with mocks of the interfaces in `mock_im3e_property`:
 
-| Header                                                                                                          | Content                                                                        |
-| --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [legacy_property_interface.h](../../im3e/property/lib/include/im3e/property/legacy/legacy_property_interface.h) | Interfaces: `ILegacyProperty`, `ILegacyPropertyValue`, `ILegacyPropertyGroup`. |
-| [properties.h](../../im3e/property/lib/include/im3e/property/properties.h)                                      | `PropertyValue<T>`, `createPropertyGroup`, `createReadOnlyPropertyValueProxy`. |
-| [property_change_notifier.h](../../im3e/property/lib/include/im3e/property/property_change_notifier.h)          | `PropertyChangeNotifier`.                                                      |
+| Header                                                                                     | Content                                                     |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| [property_interface.h](../../im3e/property/lib/include/im3e/property/property_interface.h) | Interfaces: `IPropertyNode`, `IProperty`, `IPropertyGroup`. |
+| [property.h](../../im3e/property/lib/include/im3e/property/property.h)                     | `Property<T>`, header-only.                                 |
+| [property_group.h](../../im3e/property/lib/include/im3e/property/property_group.h)         | `PropertyGroup`.                                            |
+
+Change notification relies on `CallbackRegistry` and `CallbackRegistration` from [callback_registry.h](../../im3e/utils/core/callback_registry.h).
 
 ## Interfaces
 
-Defined in [legacy_property_interface.h](../../im3e/property/lib/include/im3e/property/legacy/legacy_property_interface.h).
+Defined in [property_interface.h](../../im3e/property/lib/include/im3e/property/property_interface.h).
 
-| Interface              | Members                                                                                                                                                                      |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ILegacyProperty`      | `getName()`, `registerOnChange(std::weak_ptr<std::function<void()>>) const`.                                                                                                 |
-| `ILegacyPropertyValue` | `getDescription()`, `getType()` (`std::type_index`), `getAnyValue()`, `setAnyValue(std::any)`, `getAnyMinValue()`, `getAnyMaxValue()`, `isReadOnly()` (defaults to `false`). |
-| `ILegacyPropertyGroup` | `getChildren()`, returning a copy of a `std::vector<std::shared_ptr<ILegacyProperty>>`.                                                                                      |
+| Interface        | Members                                                                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `IPropertyNode`  | `getName()`, `getDescription()`, `registerOnChange(std::function<void()>) const`, returning a `CallbackRegistration`.              |
+| `IProperty`      | `getType()` (`std::type_index`), `getAnyValue()`, `setAnyValue(std::any)`, `getAnyMinValue()`, `getAnyMaxValue()`, `isReadOnly()`. |
+| `IPropertyGroup` | `getChildren()`, returning the children still alive as a `std::vector<std::weak_ptr<IPropertyNode>>`.                              |
 
-The interfaces are only type-erased: there is no typed interface (an `ILegacyPropertyValue<T>` with `getValue()`/`setValue()`). Typed access is only available on the concrete classes.
+The interfaces are only type-erased: there is no typed interface (an `IProperty<T>` with `getValue()`/`setValue()`). Typed access is only available on `Property<T>` itself, so to the owner.
 
-`getChildren()` returning `shared_ptr`s means that every node of a tree is a heap-allocated, shared object.
+The interfaces cannot be copied or moved: a node is only ever referenced through a pointer.
 
 ## Implementations
 
-### `PropertyValue<T>`
+### `Property<T>`
 
-The implementation used by all production code. It is configured at run time by a `PropertyValueConfig<T>`, designed for designated initializers:
+[property.h](../../im3e/property/lib/include/im3e/property/property.h). It is configured by a `Property<T>::Config`, designed for designated initializers, and takes an optional `onChange` callback for its owner:
 
 ```cpp
-template <typename T>
-struct PropertyValueConfig
+struct Config
 {
-    const std::string name;
-    const std::string description;
-    T defaultValue{};
-    std::optional<T> minValue{};
-    std::optional<T> maxValue{};
-    std::function<void(T newValue)> onChange{};
+    std::string name;
+    std::string description;
+    T defaultValue;
+    std::optional<T> minValue;
+    std::optional<T> maxValue;
+    bool isReadOnly = false;
 };
+explicit Property(Config config, std::function<void()> onChange = {});
 ```
 
 Behavior:
 
-- The value starts at `defaultValue`, clamped to `[minValue, maxValue]` when `T` has `operator<` (`HasLessThanOperator<T>`).
-- `setValue(T)` clamps the new value, and does nothing if the value did not change (before or after clamping). Otherwise it notifies the listeners registered through `registerOnChange`, then calls `onChange(newValue)`.
-- `setAnyValue(std::any)` does an `std::any_cast<T>` (throws `std::bad_any_cast` on a type mismatch) and forwards to `setValue`.
-- The config is stored as a whole in the property, `onChange` included. The `name`/`description` members are `const`, which makes the config, and so the property, non-assignable.
-
-`onChange` is how owners react to edits made through the type-erased interface (from the GUI). In practice it captures the owner's `this`.
+- The value starts at `defaultValue`, clamped to `[minValue, maxValue]`. Bounds require `T` to have `operator<` (`HasLessThanOperator<T>`): the constructor throws `std::invalid_argument` if they are given for an unordered type, or if `minValue > maxValue`.
+- `setValue(value)` clamps the new value, and does nothing if the value did not change after clamping. Otherwise it notifies the listeners. `update(fct)` does the same with `fct(currentValue)`, so that several changes notify once.
+- `setAnyValue(std::any)`, through the interface, throws `std::logic_error` when `isReadOnly`, `std::bad_any_cast` on a type mismatch, and otherwise behaves like `setValue`. `isReadOnly` only restricts the interface: the owner can still change the value.
+- `Property<T>` cannot be copied or moved. Its state lives in a `std::shared_ptr<Impl>`, and `getInterface()` returns it as a `std::weak_ptr<IProperty>`.
+- The owner's `onChange` is registered at construction, and its registration is kept by the `Property`: it stops being called as soon as the `Property` is destroyed, even if the interface is still locked elsewhere.
 
 ### `PropertyGroup`
 
-Created by `createPropertyGroup(name, children)`, which returns a `std::shared_ptr<ILegacyPropertyGroup>`. The class itself, `LegacyPropertyGroup`, is hidden in [legacy_property_group.cpp](../../im3e/property/lib/src/legacy_property_group.cpp). The children are fixed at creation: there is no way to add or remove one afterwards.
+[property_group.h](../../im3e/property/lib/include/im3e/property/property_group.h). It takes a `Config` (`name`, `description`), its children as `std::weak_ptr<IPropertyNode>`s, and an optional `onChange` callback. The children are fixed at creation: there is no way to add one afterwards.
 
-A group has its own `PropertyChangeNotifier`, but nothing ever triggers it: changes of the children are not forwarded to the group's listeners.
-
-### `ReadOnlyPropertyValueProxy`
-
-Created by `createReadOnlyPropertyValueProxy(pValue)`. It holds a `shared_ptr` to the wrapped value and forwards every getter and `registerOnChange` to it. `setAnyValue` throws, and `isReadOnly()` returns `true`, which the GUI uses to disable the control.
-
-This is how an owner exposes a value it computes itself (`ViewTransform`'s vectors, `PerspectiveProjection`'s aspect ratio) while keeping write access through its own typed pointer.
-
-### `PropertyChangeNotifier`
-
-A helper ([property_change_notifier.h](../../im3e/property/lib/include/im3e/property/property_change_notifier.h)) holding a list of `std::weak_ptr<std::function<void()>>`. `notifyChanged()` calls each callback still alive and drops the expired ones. A listener unsubscribes by destroying the `shared_ptr` holding its callback.
-
-Each property holds it as a `mutable` member, so that `registerOnChange` can be `const`.
+- Children are referenced, not owned. A destroyed child disappears from `getChildren()`, without notification (see [Notify when a child is destroyed](#notify-when-a-child-is-destroyed)).
+- The group registers to each child, and notifies its own listeners whenever one of them changes, so changes propagate up the tree.
+- The constructor ignores expired children, and throws `std::invalid_argument` if the same child is given twice.
 
 ## Usage by owners
 
@@ -203,117 +192,99 @@ class ViewTransform
 {
 public:
     ViewTransform(std::function<void()> onChanged);
-    ViewTransform(const ViewTransform&) = delete;
-    ViewTransform(ViewTransform&&) = delete;
-    ViewTransform& operator=(const ViewTransform&) = delete;
-    ViewTransform& operator=(ViewTransform&&) = delete;
 
-    void setPosition(const glm::vec3& rPosition) { m_pPosition->setValue(rPosition); }
-    [[nodiscard]] auto getPosition() const -> glm::vec3 { return m_pPosition->getValue(); }
-    [[nodiscard]] auto getProperties() const -> std::shared_ptr<ILegacyPropertyGroup> { return m_pPropertyGroup; }
+    void setPosition(const glm::vec3& rPosition) { m_position.setValue(rPosition); }
+    [[nodiscard]] auto getPosition() const -> glm::vec3 { return m_position.getValue(); }
+    [[nodiscard]] auto getProperties() -> std::weak_ptr<IPropertyGroup> { return m_group.getInterface(); }
     // ...
 
 private:
-    std::shared_ptr<PropertyValue<glm::vec3>> m_pPosition;
-    // ... m_pDirection, m_pUp, m_pRight
-    std::shared_ptr<ILegacyPropertyGroup> m_pPropertyGroup;
-};
-```
+    void _onChanged();
 
-And in [view_transform.cpp](../../im3e/scene/lib/src/view_transform.cpp):
+    std::function<void()> m_onChanged;
 
-```cpp
-ViewTransform::ViewTransform(std::function<void()> onChanged)
-  : m_onChanged(std::move(onChanged))
-  , m_pPosition(std::make_shared<decltype(m_pPosition)::element_type>(PropertyValueConfig<glm::vec3>{
+    Property<glm::vec3> m_position{{
         .name = "Position",
         .description = "Camera position in world space",
         .defaultValue = glm::vec3(0.0F, 0.0F, 0.0F),
-        .onChange = [this](auto) { _onChanged(); },
-    }))
-  // ... same for Direction, Up, Right
-  , m_pPropertyGroup(createPropertyGroup(
-        "View Transform",
-        {createReadOnlyPropertyValueProxy(m_pPosition), createReadOnlyPropertyValueProxy(m_pDirection),
-         createReadOnlyPropertyValueProxy(m_pUp), createReadOnlyPropertyValueProxy(m_pRight)}))
-{
-}
+        .isReadOnly = true,
+    }};
+    // ... m_direction, m_up, m_right
+    PropertyGroup m_group{{.name = "View Transform", .description = "..."},
+                          {m_position.getInterface(), m_direction.getInterface(), m_up.getInterface(),
+                           m_right.getInterface()},
+                          [this] { _onChanged(); }};
+};
 ```
 
 The pattern, shared by all these owners:
 
-1. Each property is a `std::shared_ptr<PropertyValue<T>>` member, built with `std::make_shared` from a `PropertyValueConfig<T>`. The `make_shared<decltype(m_pX)::element_type>` idiom avoids repeating the type.
+1. Each property is a `Property<T>` member, initialized in the class with a designated-initializer config.
 2. The property *is* the storage of the value: the owner has no separate `glm::vec3 m_position`. Getters and setters forward to `getValue()`/`setValue()`.
-3. `onChange` captures `this` to invalidate a cache or flag a change (`_onChanged()`, `m_transformChanged = true`).
-4. A `std::shared_ptr<ILegacyPropertyGroup>` member groups the properties, optionally through read-only proxies, and is returned by `getProperties()`.
-5. Copy and move are deleted, explicitly (`ViewTransform`) or implicitly. Copying would share the properties between the two objects, and moving would leave the `onChange` lambdas pointing to the moved-from object.
+3. A `PropertyGroup` member, declared after the properties, lists their interfaces. The owner reacts to changes either through the group's `onChange` (`ViewTransform`, `PerspectiveProjection`, `MapCameraController`) or through each property's `onChange` (`AnariPlane`, `AnariHeightField`). Both capture `this`.
+4. A value computed by the owner is exposed with `isReadOnly = true` (`ViewTransform`'s vectors, `PerspectiveProjection`'s aspect ratio).
+5. `getProperties()` returns the group's interface: non-const as `std::weak_ptr<IPropertyGroup>`, so that a parent can list it, and const as `std::weak_ptr<const IPropertyGroup>`.
+6. The owner cannot be copied or moved, since its members cannot.
 
 ### Dynamic properties: `AnariRenderer`
 
-`AnariRenderer::createProperties()` ([anari_renderer.cpp](../../im3e/anari/src/anari_renderer.cpp)) builds its properties from the parameter list reported by the ANARI device, so the set is only known at run time. It switches on the ANARI type to create a `std::shared_ptr<PropertyValue<T>>`, whose `onChange` calls `anariSetParameter` and flags the renderer for a commit. The renderer keeps no reference to them: the returned group is their only owner, and the values only live in the properties and in ANARI.
+`AnariRenderer` ([anari_renderer.cpp](../../im3e/anari/src/anari_renderer.cpp)) builds its properties at construction from the parameter list reported by the ANARI device, so their number and types are only known at run time. Each parameter gets a heap-allocated `TypedParameterProperty<T>`, which owns a `Property<T>` whose `onChange` calls `anariSetParameter` with the new value and flags the renderer for a commit. The renderer keeps them in a `std::vector<std::unique_ptr<AnariRenderer::ParameterProperty>>`, the type-erased base, and lists their interfaces in its `PropertyGroup`.
 
 ### Composition into trees
 
-Owners that aggregate other owners build a group of their sub-groups:
+Owners that aggregate other owners keep a group of their sub-groups as a member:
 
 ```cpp
-auto Camera::createProperties() -> std::shared_ptr<ILegacyPropertyGroup>
-{
-    return createPropertyGroup("Camera", {m_projection.getProperties(), m_view.getProperties()});
-}
+Camera::Camera(std::function<void()> onChanged)
+  : // ...
+  , m_properties({.name = "Camera", .description = "..."}, {m_projection.getProperties(), m_view.getProperties()})
 ```
 
-`AnariMapCamera` does the same with the controller and the camera, and the viewer application assembles the top-level "Parameters" group from the camera, renderer and world objects.
-
-Some owners keep their group (`getProperties()` returns the same one each time), others build a new one on each call (`createProperties()`).
+`AnariMapCamera` does the same with the controller and the camera, and the viewer application holds the top-level "Parameters" group, from the renderer, camera and world objects. Every owner exposes its group with `getProperties()`.
 
 ## Usage by the GUI
 
 [imgui_property_panel.cpp](../../im3e/guis/src/imgui_property_panel.cpp) and [imgui_property_control.cpp](../../im3e/guis/src/imgui_property_control.cpp):
 
-- `ImguiPropertyPanel` holds the root `std::shared_ptr<ILegacyPropertyGroup>`, and walks it on every frame, telling groups and values apart with `std::dynamic_pointer_cast`.
-- For each value, it creates an `IImguiPropertyControl` on first sight, chosen from a `std::type_index` → factory map (`bool`, `int32_t`, `uint32_t`, `float`, `std::string`, `glm::vec3`, `glm::vec4`, `glm::quat`, `void`). Controls are cached in a map keyed by the property's `shared_ptr`, so the identity of a property is its address.
-- Each control holds a `shared_ptr` to its property and a local copy of the value for ImGui to edit. On each frame, it writes the edited value back with `setAnyValue` when the edit is done, then re-reads it with `getAnyValue`. It disables itself when `isReadOnly()`.
+- `ImguiPropertyPanel` holds the root as a `std::weak_ptr<IPropertyGroup>`, and walks it on every frame. It draws nothing once the root is gone, skips expired children, and tells groups and properties apart with `std::dynamic_pointer_cast`. Descriptions are shown as tooltips.
+- For each property, it creates an `IImguiPropertyControl` on first sight, chosen from a `std::type_index` → factory map (`bool`, `int32_t`, `uint32_t`, `float`, `std::string`, `glm::vec3`, `glm::vec4`, `glm::quat`, `void`). Controls are cached in a `std::map` keyed by the property's `weak_ptr` with `std::owner_less`, and the entries of expired properties are dropped at the start of each frame.
+- A control holds no pointer to its property: it keeps the name, the bounds and a local copy of the value for ImGui to edit, and receives the locked property in `draw(IProperty&)`. It writes the edited value back with `setAnyValue` when the edit is done, then re-reads it with `getAnyValue`. It disables itself when `isReadOnly()`.
 
 The GUI polls: it never calls `registerOnChange`.
 
 ## Ownership and lifetimes
 
-Every property object is shared between:
+Each node is owned by its owner, through the `Property<T>` or `PropertyGroup` member. Everyone else (parent groups, the GUI) holds a `std::weak_ptr` to the interface, and locks it for the time of a call. When an owner is destroyed:
 
-- its owner (the typed `shared_ptr` member),
-- the read-only proxy, if any,
-- the group(s) containing it,
-- the GUI's panel and control caches.
+- its properties' interfaces expire, so parent groups and the GUI stop showing them;
+- the owner's callbacks, which capture `this`, are unregistered at the same time, since their registrations are held by the `Property<T>` or `PropertyGroup`. A consumer that locked the interface just before can still read and write the value, but no longer calls into the destroyed owner.
 
-Shared ownership guarantees that the GUI never holds a dangling *property*. It does not guarantee that the property's `onChange` is safe to call: it captures the owner's `this` as a raw pointer. If the owner is destroyed while the panel is still alive, editing the property calls into a destroyed object. Today this works because the owners outlive the panels in the viewer, not because the design prevents it.
+The only requirement left on the user is to keep the root group alive for as long as it should be shown: the viewer declares it in `main`, for the duration of `run()`.
 
 ## Change notification
 
-There are two independent channels, both fired by `PropertyValue<T>::setValue`, whether the change comes from the owner or from the GUI:
+All notifications go through one channel, `registerOnChange`, whether the change comes from the owner (`setValue`, `update`) or through the interface (`setAnyValue`):
 
-| Channel              | Registered by                     | Signature          | Lifetime                             | Used by                           |
-| -------------------- | --------------------------------- | ------------------ | ------------------------------------ | --------------------------------- |
-| `onChange` in config | the owner, at construction        | `void(T newValue)` | as long as the property              | every owner                       |
-| `registerOnChange`   | anyone, through `ILegacyProperty` | `void()`           | as long as the caller's `shared_ptr` | only the property library's tests |
+| Listener           | Registered by                        | Lifetime                                       |
+| ------------------ | ------------------------------------ | ---------------------------------------------- |
+| owner's `onChange` | the owner, at construction           | as long as the `Property` / `PropertyGroup`    |
+| parent group       | the `PropertyGroup`, at construction | as long as the group                           |
+| anyone else        | `registerOnChange`                   | as long as the returned `CallbackRegistration` |
 
-Changes do not propagate up the tree: a group's listeners are never notified.
+Listeners are called in registration order, so the owner's `onChange` runs first: other listeners see the values the owner derives from the change (e.g. `ViewTransform`'s matrix being invalidated). Callbacks receive no arguments: a listener reads the new value itself.
 
 ## Known problems
 
 Usage:
 
-- **Properties are held in `shared_ptr`**: an owner's properties cannot be plain members. The class cannot have a default copy (it would share state between copies) and in practice deletes copy and move.
-- **Verbose declaration**: each property needs `std::make_shared<decltype(m_pX)::element_type>(PropertyValueConfig<T>{...})`, and exposing it read-only needs an extra `createReadOnlyPropertyValueProxy`.
-- **Owner callbacks capture `this`**: this alone prevents moving or copying an owner, independently of `shared_ptr`, and is a lifetime hazard when the GUI outlives the owner.
+- **Owner callbacks capture `this`**: owners still cannot be copied or moved.
 - **Two groupings to keep in sync**: the owner's typed members and the group listing them are declared separately.
+- **No notification when a child is destroyed**, see [Possible improvements](#possible-improvements).
 
 Implementation:
 
-- **`PropertyValue<T>` constructor reads a moved-from config**: `m_value(config.defaultValue)` is initialized after `m_config(std::move(config))`, so for types with a non-trivial move (`std::string`) the initial value is empty instead of the default.
-- **Observers are notified before the owner**: `setValue` notifies the `registerOnChange` listeners before calling `onChange`, so a listener reading a value derived by the owner (e.g. `ViewTransform`'s matrix) sees the previous one.
-- **Group notifications are never fired**, and `registerOnChange` is unused by the GUI.
-- **`getChildren()` copies** a vector of `shared_ptr`s on every call, so on every frame for every group in the panel.
+- **`getChildren()` copies** a vector of `weak_ptr`s on every call, and the GUI locks each child on every frame.
+- **ANARI renderer parameters are only sent to ANARI when changed**: the defaults reported by the device are assumed to be already applied. String parameters pass a `std::string*` to `anariSetParameter`, which expects a C string.
 
 ## Possible improvements
 

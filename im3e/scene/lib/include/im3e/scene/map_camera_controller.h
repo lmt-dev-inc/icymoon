@@ -1,11 +1,13 @@
 #pragma once
 
+#include <im3e/property/property.h>
+#include <im3e/property/property_group.h>
 #include <im3e/scene/camera.h>
-#include <im3e/property/properties.h>
 
 #include <glm/glm.hpp>
 
 #include <memory>
+#include <numbers>
 
 namespace im3e {
 
@@ -13,10 +15,6 @@ class MapCameraController
 {
 public:
     MapCameraController(std::shared_ptr<ICamera> pCamera);
-    MapCameraController(const MapCameraController&) = delete;
-    MapCameraController(MapCameraController&&) = delete;
-    MapCameraController& operator=(const MapCameraController&) = delete;
-    MapCameraController& operator=(MapCameraController&&) = delete;
 
     /// @brief Pans the view so that the point on the map under rNdcFrom remains under rNdcTo after.
     /// @param rNdcFrom Starting point of the pan in NDC coordinates.
@@ -32,22 +30,58 @@ public:
     /// @param factor Factor to apply to the current distance to the target point. Must be greater than 0.
     void zoom(float factor);
 
-    [[nodiscard]] auto getTargetPoint() const -> glm::vec3 { return m_pTargetPoint->getValue(); }
-    [[nodiscard]] auto getDistanceToTarget() const -> float { return m_pDistanceToTarget->getValue(); }
-    [[nodiscard]] auto getHeading() const -> float { return m_pHeading->getValue(); }
-    [[nodiscard]] auto getTilt() const -> float { return m_pTilt->getValue(); }
-    [[nodiscard]] auto getProperties() const -> std::shared_ptr<ILegacyPropertyGroup> { return m_pPropertyGroup; }
+    [[nodiscard]] auto getTargetPoint() const -> glm::vec3 { return m_targetPoint.getValue(); }
+    [[nodiscard]] auto getDistanceToTarget() const -> float { return m_distanceToTarget.getValue(); }
+    [[nodiscard]] auto getHeading() const -> float { return m_heading.getValue(); }
+    [[nodiscard]] auto getTilt() const -> float { return m_tilt.getValue(); }
+    [[nodiscard]] auto getProperties() -> std::weak_ptr<IPropertyGroup> { return m_group.getInterface(); }
+    [[nodiscard]] auto getProperties() const -> std::weak_ptr<const IPropertyGroup> { return m_group.getInterface(); }
 
 private:
     void _update();
 
     std::shared_ptr<ICamera> m_pCamera;
 
-    std::shared_ptr<PropertyValue<glm::vec3>> m_pTargetPoint;
-    std::shared_ptr<PropertyValue<float>> m_pDistanceToTarget;
-    std::shared_ptr<PropertyValue<float>> m_pHeading;
-    std::shared_ptr<PropertyValue<float>> m_pTilt;
-    std::shared_ptr<ILegacyPropertyGroup> m_pPropertyGroup;
+    Property<glm::vec3> m_targetPoint{{
+        .name = "Target Point",
+        .description = "Point the camera is targetting",
+        .defaultValue = glm::vec3{3700.0F, 0.0F, 4000.0F},
+    }};
+    Property<float> m_distanceToTarget{{
+        .name = "Distance to Target",
+        .description = "Distance between the camera position and the target point",
+        .defaultValue = 5000.0F,
+        .minValue = 0.0F,
+    }};
+    Property<float> m_heading{{
+        .name = "Heading",
+        .description = "Horizontal rotation in radians of the map around the target point."
+                       "0 means the top of the screen is aligned with the north of the map.",
+        .defaultValue = 0.0F,
+        .minValue = -std::numbers::pi_v<float>,
+        .maxValue = std::numbers::pi_v<float>,
+    }};
+    Property<float> m_tilt{{
+        .name = "Tilt",
+        .description = "Vertical angle in radians of the camera relative to the map surface."
+                       "0 means the camera points straight down.",
+        .defaultValue = 0.0F,
+        .minValue = 0.0F,
+        .maxValue = std::numbers::pi_v<float> * 70.0F / 180.0F,
+    }};
+    PropertyGroup m_group{
+        {
+            .name = "Map Camera Controller",
+            .description = "Group of properties controlling a camera over a map",
+        },
+        {
+            m_targetPoint.getInterface(),
+            m_distanceToTarget.getInterface(),
+            m_heading.getInterface(),
+            m_tilt.getInterface(),
+        },
+        [this] { _update(); },
+    };
 };
 
 }  // namespace im3e

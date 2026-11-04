@@ -316,11 +316,51 @@ TEST(PropertyTest, setValue_withReadOnly)
 
 TEST(PropertyTest, interface)
 {
-    Property<int> property{{.name = "Test Property", .defaultValue = 7}};
+    Property<int> property{{
+        .name = "Test Property",
+        .description = "Test Description",
+        .defaultValue = 7,
+    }};
     auto interface = property.getInterface().lock();
     ASSERT_THAT(interface, NotNull());
     EXPECT_THAT(interface->getName(), Eq("Test Property"));
+    EXPECT_THAT(interface->getDescription(), Eq("Test Description"));
+    EXPECT_THAT(interface->getType() == typeid(int), IsTrue());
+    EXPECT_THAT(interface->isReadOnly(), IsFalse());
     EXPECT_THAT(std::any_cast<int>(interface->getAnyValue()), Eq(7));
+    EXPECT_THAT(interface->getAnyMinValue().has_value(), IsFalse());
+    EXPECT_THAT(interface->getAnyMaxValue().has_value(), IsFalse());
+}
+
+TEST(PropertyTest, interface_withMinMax)
+{
+    Property<float> property{{
+        .defaultValue = 0.5F,
+        .minValue = 0.25F,
+        .maxValue = 0.75F,
+    }};
+    auto interface = property.getInterface().lock();
+    ASSERT_THAT(interface, NotNull());
+    EXPECT_THAT(interface->getType() == typeid(float), IsTrue());
+
+    const auto anyMinValueOpt = interface->getAnyMinValue();
+    ASSERT_THAT(anyMinValueOpt.has_value(), IsTrue());
+    EXPECT_THAT(std::any_cast<float>(anyMinValueOpt.value()), FloatEq(0.25F));
+
+    const auto anyMaxValueOpt = interface->getAnyMaxValue();
+    ASSERT_THAT(anyMaxValueOpt.has_value(), IsTrue());
+    EXPECT_THAT(std::any_cast<float>(anyMaxValueOpt.value()), FloatEq(0.75F));
+}
+
+TEST(PropertyTest, interface_withReadOnly)
+{
+    Property<int> property{{
+        .defaultValue = 1,
+        .isReadOnly = true,
+    }};
+    auto interface = property.getInterface().lock();
+    ASSERT_THAT(interface, NotNull());
+    EXPECT_THAT(interface->isReadOnly(), IsTrue());
 }
 
 TEST(PropertyTest, interface_registerOnChange)

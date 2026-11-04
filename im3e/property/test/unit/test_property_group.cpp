@@ -203,11 +203,18 @@ TEST(PropertyGroupTest, getChildren_whenMiddleChildDestroyed)
 TEST(PropertyGroupTest, interface)
 {
     const auto mockChildren = createMockPropertyNodes(3U);
-    PropertyGroup group{{.name = "Test Group"}, toWeakPtrVector(mockChildren)};
+    PropertyGroup group{
+        {
+            .name = "Test Group",
+            .description = "Test Description",
+        },
+        toWeakPtrVector(mockChildren),
+    };
 
     auto interface = group.getInterface().lock();
     ASSERT_THAT(interface, NotNull());
     EXPECT_THAT(interface->getName(), Eq("Test Group"));
+    EXPECT_THAT(interface->getDescription(), Eq("Test Description"));
     EXPECT_THAT(interface->getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
 }
 
