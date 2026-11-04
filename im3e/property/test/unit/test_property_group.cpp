@@ -14,6 +14,20 @@ auto ConfigEq(const PropertyGroup::Config& expected)
                           Field("description", &ConfigT::description, StrEq(expected.description)));
 }
 
+auto LockedElementsAre(const std::vector<std::shared_ptr<MockPropertyNode>>& expected)
+{
+    return ResultOf(
+        "locked children",
+        [](const std::vector<std::weak_ptr<IPropertyNode>>& children) {
+            std::vector<std::shared_ptr<IPropertyNode>> locked;
+            locked.reserve(children.size());
+            std::ranges::transform(children, std::back_inserter(locked),
+                                   [](const auto& child) { return child.lock(); });
+            return locked;
+        },
+        ElementsAreArray(expected));
+}
+
 struct PropertyGroupTest : public Test
 {
 public:
@@ -44,13 +58,6 @@ public:
             }
         }
     }
-
-    void expectChildren(const PropertyGroup& group, const std::vector<std::shared_ptr<MockPropertyNode>>& mockChildren)
-    {
-        EXPECT_THAT(
-            std::ranges::equal(group.getChildren(), mockChildren, [](auto& a, auto& b) { return a.lock() == b; }),
-            IsTrue());
-    }
 };
 
 }  // namespace
@@ -62,7 +69,7 @@ TEST_F(PropertyGroupTest, constructor)
     expectChildrenRegistered(mockChildren);
     PropertyGroup group{config, toWeakPtrVector(mockChildren)};
     EXPECT_THAT(group.getConfig(), ConfigEq(config));
-    expectChildren(group, mockChildren);
+    EXPECT_THAT(group.getChildren(), LockedElementsAre(mockChildren));
 }
 
 TEST_F(PropertyGroupTest, constructor_withNullChildren)
@@ -78,7 +85,7 @@ TEST_F(PropertyGroupTest, constructor_withNullChildren)
     PropertyGroup group{{.name = "Group"}, weakPtrChildren};
 
     // Only 2 mocks are still valid so the group should have cleaned up the given vector:
-    expectChildren(group, {mockChildren[0], mockChildren[2]});
+    EXPECT_THAT(group.getChildren(), LockedElementsAre({mockChildren[0], mockChildren[2]}));
 }
 
 TEST_F(PropertyGroupTest, constructor_withOnChangeCallback)
@@ -131,5 +138,5 @@ TEST_F(PropertyGroupTest, getChildren_whenChildDestroyed)
     PropertyGroup group{{.name = "Group"}, toWeakPtrVector(mockChildren)};
 
     mockChildren.resize(3U);
-    expectChildren(group, mockChildren);
+    EXPECT_THAT(group.getChildren(), LockedElementsAre(mockChildren));
 }

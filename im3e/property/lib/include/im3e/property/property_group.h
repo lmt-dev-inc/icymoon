@@ -39,7 +39,7 @@ public:
     }
 
     [[nodiscard]] auto getConfig() const -> const Config& { return m_impl->getConfig(); }
-    [[nodiscard]] auto getChildren() const -> const std::vector<std::weak_ptr<IPropertyNode>>
+    [[nodiscard]] auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>>
     {
         return m_impl->getChildren();
     }
@@ -55,13 +55,12 @@ private:
           : m_config(std::move(config))
         {
             m_children.reserve(children.size());
-            m_childRegistrations.reserve(children.size());
             for (auto& childWeakPtr : children)
             {
                 if (auto child = childWeakPtr.lock())
                 {
-                    m_childRegistrations.emplace_back(child->registerOnChange([this] { m_callbacks.invokeAll(); }));
-                    m_children.emplace_back(std::move(childWeakPtr));
+                    m_children.emplace_back(Child{.node = std::move(childWeakPtr),
+                                                  .registration = child->registerOnChange([this] { _onChange(); })});
                 }
             }
         }
@@ -73,12 +72,34 @@ private:
 
         auto getConfig() const -> const Config& { return m_config; }
         auto getName() const -> const std::string& override { return m_config.name; }
-        auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>> override { return m_children; }
+        auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>> override
+        {
+            std::vector<std::weak_ptr<IPropertyNode>> children;
+            children.reserve(m_children.size());
+            for (const auto& child : m_children)
+            {
+                if (!child.node.expired())
+                {
+                    children.emplace_back(child.node);
+                }
+            }
+            return children;
+        }
 
     private:
+        void _onChange()
+        {
+            std::erase_if(m_children, [](const Child& child) { return child.node.expired(); });
+            m_callbacks.invokeAll();
+        }
+
         Config m_config;
-        std::vector<std::weak_ptr<IPropertyNode>> m_children;
-        std::vector<CallbackRegistration> m_childRegistrations;
+        struct Child
+        {
+            std::weak_ptr<IPropertyNode> node;
+            CallbackRegistration registration;
+        };
+        std::vector<Child> m_children;
         mutable CallbackRegistry<> m_callbacks;
     };
     std::shared_ptr<Impl> m_impl;
