@@ -22,6 +22,7 @@ This document describes the property system as it is today: the interfaces, the 
 - [Ownership and lifetimes](#ownership-and-lifetimes)
 - [Change notification](#change-notification)
 - [Known problems](#known-problems)
+- [Possible improvements](#possible-improvements)
 
 ## Overview
 
@@ -313,3 +314,19 @@ Implementation:
 - **Observers are notified before the owner**: `setValue` notifies the `registerOnChange` listeners before calling `onChange`, so a listener reading a value derived by the owner (e.g. `ViewTransform`'s matrix) sees the previous one.
 - **Group notifications are never fired**, and `registerOnChange` is unused by the GUI.
 - **`getChildren()` copies** a vector of `shared_ptr`s on every call, so on every frame for every group in the panel.
+
+## Possible improvements
+
+Improvements considered for the new `PropertyGroup` ([property_group.h](../../im3e/property/lib/include/im3e/property/property_group.h)) and deliberately left out until needed.
+
+### Notify when a child is destroyed
+
+A group holds its children as `weak_ptr`s. When a child is destroyed, it disappears from `getChildren()`, but the group's listeners are not notified, so a listener showing the children (a UI, a Python script) does not know it should refresh. The ImGui panel is not affected, as it polls `getChildren()` on every frame.
+
+The code would be small: each node's implementation would call its listeners from its destructor. The child's `weak_ptr`s are already expired at that point, so the group would drop it and then notify its own listeners with the updated list. It was not done because:
+
+- **It changes the contract of every node.** `registerOnChange` would fire on a value change and once on destruction, and the listeners of a destroyed node would receive a call about a node they can no longer lock.
+- **Callbacks would run in destructors.** An exception thrown by a listener would terminate the program. An owner declaring its group before its properties would also have its group callback, which captures `this`, called while it is half-destroyed: this would need a rule on member order, or a separate channel.
+- **It overlaps with trees that change.** Adding and removing children at run time ([requirement 5](#requirements-these-uses-imply)) needs a "children changed" notification too, probably separate from value changes and carrying more information ([requirement 3](#requirements-these-uses-imply)). Both should be designed together.
+
+Revisit when adding and removing children is designed.
