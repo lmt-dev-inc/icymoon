@@ -1,5 +1,10 @@
 #include <im3e/property/property_group.h>
 
+#include <im3e/utils/core/throw_utils.h>
+
+#include <algorithm>
+#include <stdexcept>
+
 using namespace im3e;
 
 class PropertyGroup::Impl : public IPropertyGroup
@@ -14,6 +19,9 @@ public:
         {
             if (auto child = childWeakPtr.lock())
             {
+                throwIfFalse<std::invalid_argument>(
+                    std::ranges::none_of(m_children, [&child](const Child& kept) { return kept.node.lock() == child; }),
+                    "Invalid property group: the same child was given more than once");
                 m_children.emplace_back(Child{.node = std::move(childWeakPtr),
                                               .registration = child->registerOnChange([this] { _onChange(); })});
             }

@@ -140,6 +140,20 @@ TEST(CallbackRegistryTest, callbackThrowing)
     registry.invokeAll();
 }
 
+TEST(CallbackRegistryTest, getCallbackCount)
+{
+    auto registry = CallbackRegistry();
+    EXPECT_THAT(registry.getCallbackCount(), Eq(0U));
+
+    auto firstRegistration = registry.registerCallback([] {});
+    auto secondRegistration = registry.registerCallback([] {});
+    EXPECT_THAT(registry.getCallbackCount(), Eq(2U));
+
+    // Released registrations are not counted, even before the registry removes them:
+    firstRegistration.reset();
+    EXPECT_THAT(registry.getCallbackCount(), Eq(1U));
+}
+
 TEST(CallbackRegistryTest, registrationOutlivesRegistry)
 {
     auto registration = CallbackRegistration();

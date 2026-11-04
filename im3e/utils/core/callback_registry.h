@@ -2,6 +2,8 @@
 
 #include <im3e/utils/core/throw_utils.h>
 
+#include <algorithm>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -58,6 +60,13 @@ public:
             }
         }
         _removeExpired();
+    }
+
+    /// @brief Number of callbacks whose registration is still alive.
+    [[nodiscard]] auto getCallbackCount() const -> size_t
+    {
+        return static_cast<size_t>(
+            std::ranges::count_if(m_callbacks, [](const auto& callback) { return !callback.expired(); }));
     }
 
 private:
