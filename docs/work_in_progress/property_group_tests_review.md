@@ -29,18 +29,18 @@ Files concerned:
 
 ## Summary
 
-| Id  | Kind        | Item                                                                                  | Priority |
-| --- | ----------- | ------------------------------------------------------------------------------------- | -------- |
-| R1  | Refactoring | Mocks register callbacks in a real `CallbackRegistry` and expose `notifyChanged()`.   | Done     |
-| R2  | Refactoring | Replace the loop duplicated in two tests (it also calls `front()` unchecked).         | Done     |
-| R3  | Refactoring | Turn the stateless fixture into free functions and use `TEST`.                        | Done     |
-| R4  | Refactoring | `ConfigEq`: `Eq` instead of `StrEq`, drop `typename`.                                 | Done     |
-| R5  | Refactoring | Rename `constructor_withNullChildren`, also cover an empty `weak_ptr`.                | Done     |
-| R6  | Refactoring | Keep the helpers local for now; move `LockedElementsAre` to `test_utils` when reused. | Done     |
-| —   | Gap         | `getInterface()` is not tested at all (6 tests).                                      | High     |
-| —   | Gap         | Lifetimes: children outliving the group, cancelled registrations (4 tests).           | High     |
-| —   | Gap         | Behavior: no children, callback reading the children (2 tests).                       | Medium   |
-| —   | Change      | The constructor throws on duplicate children, with its test.                          | Medium   |
+| Id  | Kind        | Item                                                                                | Priority |
+| --- | ----------- | ----------------------------------------------------------------------------------- | -------- |
+| R1  | Refactoring | Mocks register callbacks in a real `CallbackRegistry` and expose `notifyChanged()`. | Done     |
+| R2  | Refactoring | Replace the loop duplicated in two tests (it also calls `front()` unchecked).       | Done     |
+| R3  | Refactoring | Turn the stateless fixture into free functions and use `TEST`.                      | Done     |
+| R4  | Refactoring | `ConfigEq`: `Eq` instead of `StrEq`, drop `typename`.                               | Done     |
+| R5  | Refactoring | Rename `constructor_withNullChildren`, also cover an empty `weak_ptr`.              | Done     |
+| R6  | Refactoring | `LockedElementsAre` became the general `WhenLocked(matcher)` in `test_utils.h`.     | Done     |
+| —   | Gap         | `getInterface()` is not tested at all (6 tests).                                    | High     |
+| —   | Gap         | Lifetimes: children outliving the group, cancelled registrations (4 tests).         | High     |
+| —   | Gap         | Behavior: no children, callback reading the children (2 tests).                     | Medium   |
+| —   | Change      | The constructor throws on duplicate children, with its test.                        | Medium   |
 
 ## Refactorings
 
@@ -125,7 +125,7 @@ The children of this test are not null, they are expired: rename it `constructor
 
 ### R6. Where the helpers live
 
-`LockedElementsAre`, `createMockPropertyNodes` and `toWeakPtrVector` are only used in this file, so they can stay there. The code standards say common matchers go in [test_utils.h](../../im3e/test_utils/test_utils.h): move `LockedElementsAre` there when a second test file needs it (for example the tests of the next property-tree consumer), generalized to any element type.
+`createMockPropertyNodes` and `toWeakPtrVector` are only used in this file, so they stay there. `LockedElementsAre` was replaced by `WhenLocked(matcher)` in [test_utils.h](../../im3e/test_utils/test_utils.h), since `std::weak_ptr` will be common: it locks every element of a range of `std::weak_ptr` and applies any matcher to the result, e.g. `WhenLocked(ElementsAreArray(mockChildren))` or `WhenLocked(Each(NotNull()))`. It is modelled on GoogleMock's `WhenSorted()`.
 
 ## Gaps
 
@@ -137,7 +137,7 @@ Test names follow the existing convention, `method_condition`, and mirror the na
 
 | Test                                          | Checks                                                                                                                                                                                                                                                                      |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `interface`                                   | `getInterface().lock()` is not null, `getName()` returns `config.name`, `getChildren()` returns the children (`LockedElementsAre`).                                                                                                                                         |
+| `interface`                                   | `getInterface().lock()` is not null, `getName()` returns `config.name`, `getChildren()` returns the children (`WhenLocked`).                                                                                                                                                |
 | `interface_const`                             | The `const` overload, called through a `const PropertyGroup&`, returns a valid `weak_ptr<const IPropertyGroup>` with the same name and children.                                                                                                                            |
 | `interface_registerOnChange`                  | A callback registered through the interface is called when a child changes.                                                                                                                                                                                                 |
 | `interface_registerOnChange_withNullCallback` | Registering `{}` through the interface throws `std::invalid_argument`.                                                                                                                                                                                                      |

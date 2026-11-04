@@ -14,20 +14,6 @@ auto ConfigEq(const PropertyGroup::Config& expected)
                           Field("description", &ConfigT::description, Eq(expected.description)));
 }
 
-auto LockedElementsAre(const std::vector<std::shared_ptr<MockPropertyNode>>& expected)
-{
-    return ResultOf(
-        "locked children",
-        [](const std::vector<std::weak_ptr<IPropertyNode>>& children) {
-            std::vector<std::shared_ptr<IPropertyNode>> locked;
-            locked.reserve(children.size());
-            std::ranges::transform(children, std::back_inserter(locked),
-                                   [](const auto& child) { return child.lock(); });
-            return locked;
-        },
-        ElementsAreArray(expected));
-}
-
 auto createMockPropertyNodes(size_t count)
 {
     std::vector<std::shared_ptr<MockPropertyNode>> mockPropertyNodes;
@@ -70,7 +56,7 @@ TEST(PropertyGroupTest, constructor)
     expectChildrenRegistered(mockChildren);
     PropertyGroup group{config, toWeakPtrVector(mockChildren)};
     EXPECT_THAT(group.getConfig(), ConfigEq(config));
-    EXPECT_THAT(group.getChildren(), LockedElementsAre(mockChildren));
+    EXPECT_THAT(group.getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
 }
 
 TEST(PropertyGroupTest, constructor_withExpiredChildren)
@@ -89,7 +75,7 @@ TEST(PropertyGroupTest, constructor_withExpiredChildren)
     PropertyGroup group{{.name = "Group"}, weakPtrChildren};
 
     // Only 2 mocks are still valid so the group should have cleaned up the given vector:
-    EXPECT_THAT(group.getChildren(), LockedElementsAre({mockChildren[0], mockChildren[2]}));
+    EXPECT_THAT(group.getChildren(), WhenLocked(ElementsAre(mockChildren[0], mockChildren[2])));
 }
 
 TEST(PropertyGroupTest, constructor_withOnChangeCallback)
@@ -128,5 +114,5 @@ TEST(PropertyGroupTest, getChildren_whenChildDestroyed)
     PropertyGroup group{{.name = "Group"}, toWeakPtrVector(mockChildren)};
 
     mockChildren.resize(3U);
-    EXPECT_THAT(group.getChildren(), LockedElementsAre(mockChildren));
+    EXPECT_THAT(group.getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
 }
