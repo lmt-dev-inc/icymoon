@@ -31,12 +31,12 @@ Files concerned:
 
 | Id  | Kind        | Item                                                                                  | Priority |
 | --- | ----------- | ------------------------------------------------------------------------------------- | -------- |
-| R1  | Refactoring | Mocks register callbacks in a real `CallbackRegistry` and expose `notifyChanged()`.   | High     |
-| R2  | Refactoring | Replace the loop duplicated in two tests (it also calls `front()` unchecked).         | High     |
-| R3  | Refactoring | Turn the stateless fixture into free functions and use `TEST`.                        | Low      |
-| R4  | Refactoring | `ConfigEq`: `Eq` instead of `StrEq`, drop `typename`.                                 | Low      |
-| R5  | Refactoring | Rename `constructor_withNullChildren`, also cover an empty `weak_ptr`.                | Medium   |
-| R6  | Refactoring | Keep the helpers local for now; move `LockedElementsAre` to `test_utils` when reused. | Low      |
+| R1  | Refactoring | Mocks register callbacks in a real `CallbackRegistry` and expose `notifyChanged()`.   | Done     |
+| R2  | Refactoring | Replace the loop duplicated in two tests (it also calls `front()` unchecked).         | Done     |
+| R3  | Refactoring | Turn the stateless fixture into free functions and use `TEST`.                        | Done     |
+| R4  | Refactoring | `ConfigEq`: `Eq` instead of `StrEq`, drop `typename`.                                 | Done     |
+| R5  | Refactoring | Rename `constructor_withNullChildren`, also cover an empty `weak_ptr`.                | Done     |
+| R6  | Refactoring | Keep the helpers local for now; move `LockedElementsAre` to `test_utils` when reused. | Done     |
 | —   | Gap         | `getInterface()` is not tested at all (6 tests).                                      | High     |
 | —   | Gap         | Lifetimes: children outliving the group, cancelled registrations (4 tests).           | High     |
 | —   | Gap         | Behavior: no children, callback reading the children (2 tests).                       | Medium   |
@@ -188,8 +188,8 @@ Decided not to add it now. The analysis is recorded in [properties.md](../archit
 
 ## Order of work
 
-1. R1, the mocks: it is a prerequisite for `childOutlivesGroup` and simplifies R2.
-2. R2 to R5 on the existing tests.
+1. ~~R1, the mocks: it is a prerequisite for `childOutlivesGroup` and simplifies R2.~~ Done.
+2. ~~R2 to R5 on the existing tests.~~ Done.
 3. The gap tests, starting with `childOutlivesGroup` and the interface tests.
 4. The duplicate check in the constructor, with `constructor_withDuplicateChildren`.
 5. Build and run `test_im3e_property` through the build-and-test skill.

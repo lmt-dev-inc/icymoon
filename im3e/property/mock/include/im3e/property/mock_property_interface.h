@@ -5,6 +5,9 @@
 
 namespace im3e {
 
+// The mocks register callbacks in a real CallbackRegistry by default, so that registrations behave as with a real
+// property: a callback stops being called once its registration is released. notifyChanged() simulates a change.
+
 class MockPropertyNode : public IPropertyNode
 {
 public:
@@ -14,11 +17,10 @@ public:
     MOCK_METHOD(CallbackRegistration, registerOnChange, (std::function<void()>), (const, override));
     MOCK_METHOD(const std::string&, getName, (), (const, override));
 
-    auto getRegisteredOnChange() const -> const std::vector<std::function<void()>>& { return m_registeredOnChange; }
+    void notifyChanged() { m_callbacks.invokeAll(); }
 
 private:
-    std::shared_ptr<void> m_token;
-    std::vector<std::function<void()>> m_registeredOnChange;
+    mutable CallbackRegistry<> m_callbacks;
 };
 
 class MockProperty : public IProperty
@@ -33,11 +35,10 @@ public:
     MOCK_METHOD(void, setAnyValue, (std::any), (override));
     MOCK_METHOD(std::any, getAnyValue, (), (const, override));
 
-    auto getRegisteredOnChange() const -> const std::vector<std::function<void()>>& { return m_registeredOnChange; }
+    void notifyChanged() { m_callbacks.invokeAll(); }
 
 private:
-    std::shared_ptr<void> m_token;
-    std::vector<std::function<void()>> m_registeredOnChange;
+    mutable CallbackRegistry<> m_callbacks;
 };
 
 class MockPropertyGroup : public IPropertyGroup
@@ -51,11 +52,10 @@ public:
 
     MOCK_METHOD((std::vector<std::weak_ptr<IPropertyNode>>), getChildren, (), (const, override));
 
-    auto getRegisteredOnChange() const -> const std::vector<std::function<void()>>& { return m_registeredOnChange; }
+    void notifyChanged() { m_callbacks.invokeAll(); }
 
 private:
-    std::shared_ptr<void> m_token;
-    std::vector<std::function<void()>> m_registeredOnChange;
+    mutable CallbackRegistry<> m_callbacks;
 };
 
 }  // namespace im3e

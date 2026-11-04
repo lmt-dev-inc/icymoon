@@ -9,9 +9,9 @@ namespace {
 
 auto ConfigEq(const PropertyGroup::Config& expected)
 {
-    using ConfigT = typename PropertyGroup::Config;
-    return testing::AllOf(Field("name", &ConfigT::name, StrEq(expected.name)),
-                          Field("description", &ConfigT::description, StrEq(expected.description)));
+    using ConfigT = PropertyGroup::Config;
+    return testing::AllOf(Field("name", &ConfigT::name, Eq(expected.name)),
+                          Field("description", &ConfigT::description, Eq(expected.description)));
 }
 
 auto LockedElementsAre(const std::vector<std::shared_ptr<MockPropertyNode>>& expected)
@@ -28,41 +28,42 @@ auto LockedElementsAre(const std::vector<std::shared_ptr<MockPropertyNode>>& exp
         ElementsAreArray(expected));
 }
 
-struct PropertyGroupTest : public Test
+auto createMockPropertyNodes(size_t count)
 {
-public:
-    [[nodiscard]] auto createMockPropertyNodes(size_t count)
-    {
-        std::vector<std::shared_ptr<MockPropertyNode>> mockPropertyNodes;
-        mockPropertyNodes.reserve(count);
-        std::generate_n(std::back_inserter(mockPropertyNodes), count,
-                        [] { return std::make_shared<NiceMock<MockPropertyNode>>(); });
-        return mockPropertyNodes;
-    }
+    std::vector<std::shared_ptr<MockPropertyNode>> mockPropertyNodes;
+    mockPropertyNodes.reserve(count);
+    std::generate_n(std::back_inserter(mockPropertyNodes), count,
+                    [] { return std::make_shared<NiceMock<MockPropertyNode>>(); });
+    return mockPropertyNodes;
+}
 
-    [[nodiscard]] auto toWeakPtrVector(const std::vector<std::shared_ptr<MockPropertyNode>>& properties)
-    {
-        std::vector<std::weak_ptr<IPropertyNode>> result;
-        result.reserve(properties.size());
-        std::ranges::transform(properties, std::back_inserter(result), [](const auto& pointer) { return pointer; });
-        return result;
-    }
+auto toWeakPtrVector(const std::vector<std::shared_ptr<MockPropertyNode>>& properties)
+{
+    std::vector<std::weak_ptr<IPropertyNode>> result;
+    result.reserve(properties.size());
+    std::ranges::transform(properties, std::back_inserter(result), [](const auto& pointer) { return pointer; });
+    return result;
+}
 
-    void expectChildrenRegistered(const std::vector<std::shared_ptr<MockPropertyNode>>& mockChildren)
+void expectChildrenRegistered(const std::vector<std::shared_ptr<MockPropertyNode>>& mockChildren)
+{
+    for (const auto& mockChild : mockChildren)
     {
-        for (auto& mockChild : mockChildren)
+        if (mockChild)
         {
-            if (mockChild)
-            {
-                EXPECT_CALL(*mockChild, registerOnChange(_));
-            }
+            EXPECT_CALL(*mockChild, registerOnChange(_));
         }
     }
-};
+}
+
+void notifyChanged(const std::vector<std::shared_ptr<MockPropertyNode>>& mockChildren)
+{
+    std::ranges::for_each(mockChildren, [](auto& mockChild) { mockChild->notifyChanged(); });
+}
 
 }  // namespace
 
-TEST_F(PropertyGroupTest, constructor)
+TEST(PropertyGroupTest, constructor)
 {
     const PropertyGroup::Config config{.name = "Test Group", .description = "Description"};
     const auto mockChildren = createMockPropertyNodes(5U);
@@ -72,12 +73,15 @@ TEST_F(PropertyGroupTest, constructor)
     EXPECT_THAT(group.getChildren(), LockedElementsAre(mockChildren));
 }
 
-TEST_F(PropertyGroupTest, constructor_withNullChildren)
+TEST(PropertyGroupTest, constructor_withExpiredChildren)
 {
     auto mockChildren = createMockPropertyNodes(4U);
     auto weakPtrChildren = toWeakPtrVector(mockChildren);
 
-    // Delete children so that some of the weak_ptr are empty:
+    // Add a weak_ptr that never pointed to anything:
+    weakPtrChildren.emplace_back();
+
+    // Delete children so that some of the weak_ptr are expired:
     mockChildren[1].reset();
     mockChildren[3].reset();
 
@@ -88,7 +92,7 @@ TEST_F(PropertyGroupTest, constructor_withNullChildren)
     EXPECT_THAT(group.getChildren(), LockedElementsAre({mockChildren[0], mockChildren[2]}));
 }
 
-TEST_F(PropertyGroupTest, constructor_withOnChangeCallback)
+TEST(PropertyGroupTest, constructor_withOnChangeCallback)
 {
     auto mockChildren = createMockPropertyNodes(3U);
 
@@ -96,17 +100,10 @@ TEST_F(PropertyGroupTest, constructor_withOnChangeCallback)
     PropertyGroup group{{.name = "with onChange"}, toWeakPtrVector(mockChildren), mockOnChange.AsStdFunction()};
 
     EXPECT_CALL(mockOnChange, Call()).Times(mockChildren.size());
-    for (auto& mockChild : mockChildren)
-    {
-        const auto& registeredCallbacks = mockChild->getRegisteredOnChange();
-        EXPECT_THAT(registeredCallbacks.size(), Eq(1U));
-        const auto& onChange = registeredCallbacks.front();
-        EXPECT_THAT(!!onChange, IsTrue());
-        onChange();
-    }
+    notifyChanged(mockChildren);
 }
 
-TEST_F(PropertyGroupTest, registerOnChange)
+TEST(PropertyGroupTest, registerOnChange)
 {
     auto mockChildren = createMockPropertyNodes(6U);
 
@@ -116,23 +113,16 @@ TEST_F(PropertyGroupTest, registerOnChange)
     const auto groupRegistration = group.registerOnChange(mockOnChange.AsStdFunction());
 
     EXPECT_CALL(mockOnChange, Call()).Times(mockChildren.size());
-    for (auto& mockChild : mockChildren)
-    {
-        const auto& registeredCallbacks = mockChild->getRegisteredOnChange();
-        EXPECT_THAT(registeredCallbacks.size(), Eq(1U));
-        const auto& onChange = registeredCallbacks.front();
-        EXPECT_THAT(!!onChange, IsTrue());
-        onChange();
-    }
+    notifyChanged(mockChildren);
 }
 
-TEST_F(PropertyGroupTest, registerOnChange_withNullCallback)
+TEST(PropertyGroupTest, registerOnChange_withNullCallback)
 {
     PropertyGroup group{{.name = "Test Group"}, {}};
     EXPECT_THROW(auto registration = group.registerOnChange({}), std::invalid_argument);
 }
 
-TEST_F(PropertyGroupTest, getChildren_whenChildDestroyed)
+TEST(PropertyGroupTest, getChildren_whenChildDestroyed)
 {
     auto mockChildren = createMockPropertyNodes(5U);
     PropertyGroup group{{.name = "Group"}, toWeakPtrVector(mockChildren)};
