@@ -16,7 +16,7 @@ auto getPropertyControl(const std::shared_ptr<IProperty>& pProperty,
     auto itFind = rPropertyControlMap.find(pProperty);
     if (itFind == rPropertyControlMap.end())
     {
-        itFind = rPropertyControlMap.emplace(pProperty, createImguiPropertyControl(*pProperty)).first;
+        itFind = rPropertyControlMap.emplace(pProperty, createImguiPropertyControl(pProperty)).first;
     }
     return *itFind->second;
 }
@@ -66,7 +66,7 @@ void drawProperty(const std::shared_ptr<IPropertyNode>& pNode,
         ImGui::TableSetColumnIndex(1);
 
         ImGui::PushItemWidth(-FLT_MIN);
-        rPropertyControl.draw(*pProperty);
+        rPropertyControl.draw();
     }
 }
 
