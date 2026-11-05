@@ -47,4 +47,32 @@ public:
     virtual auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>> = 0;
 };
 
+class IPropertyWrapper
+{
+public:
+    IPropertyWrapper() = default;
+    IPropertyWrapper(const IPropertyWrapper&) = delete;
+    IPropertyWrapper(IPropertyWrapper&&) = delete;
+    IPropertyWrapper& operator=(const IPropertyWrapper&) = delete;
+    IPropertyWrapper& operator=(IPropertyWrapper&&) = delete;
+    virtual ~IPropertyWrapper() = default;
+
+    [[nodiscard]] virtual auto getInterface() -> std::weak_ptr<IProperty> = 0;
+    [[nodiscard]] virtual auto getInterface() const -> std::weak_ptr<const IProperty> = 0;
+};
+
+class IPropertyGroupWrapper
+{
+public:
+    IPropertyGroupWrapper() = default;
+    IPropertyGroupWrapper(const IPropertyGroupWrapper&) = delete;
+    IPropertyGroupWrapper(IPropertyGroupWrapper&&) = delete;
+    IPropertyGroupWrapper& operator=(const IPropertyGroupWrapper&) = delete;
+    IPropertyGroupWrapper& operator=(IPropertyGroupWrapper&&) = delete;
+    virtual ~IPropertyGroupWrapper() = default;
+
+    [[nodiscard]] virtual auto getInterface() -> std::weak_ptr<IPropertyGroup> = 0;
+    [[nodiscard]] virtual auto getInterface() const -> std::weak_ptr<const IPropertyGroup> = 0;
+};
+
 }  // namespace im3e

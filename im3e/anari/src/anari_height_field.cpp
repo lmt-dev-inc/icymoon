@@ -36,7 +36,7 @@ AnariHeightField::AnariHeightField(std::shared_ptr<AnariDevice> pAnDevice, Anari
             .minValue = 0U,
             .maxValue = m_pHeightMap->getLodCount() - 1U,
         },
-        [this] { m_lodChanged = true; },
+        [this](const uint32_t&) { m_lodChanged = true; },
     }
   , m_properties{
         {

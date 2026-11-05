@@ -46,8 +46,8 @@ private:
             .description = "Applies a scale to the plane",
             .defaultValue = m_transform.getScale(),
         },
-        [this] {
-            m_transform.setScale(m_scale.getValue());
+        [this](const glm::vec3& scale) {
+            m_transform.setScale(scale);
             m_transformChanged = true;
         },
     };

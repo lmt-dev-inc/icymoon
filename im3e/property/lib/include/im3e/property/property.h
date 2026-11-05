@@ -15,15 +15,9 @@
 namespace im3e {
 
 template <typename T>
-class Property
+class Property : public IPropertyWrapper
 {
 public:
-    Property() = delete;
-    Property(const Property&) = delete;
-    Property(Property&&) = delete;
-    Property& operator=(const Property&) = delete;
-    Property& operator=(Property&&) = delete;
-
     struct Config
     {
         std::string name;
@@ -36,7 +30,7 @@ public:
         // Changes through Property (setValue and update) are still allowed.
         bool isReadOnly = false;
     };
-    explicit Property(Config config, std::function<void()> onChange = {})
+    explicit Property(Config config, std::function<void(const T&)> onChange = {})
       : m_impl(std::make_shared<Impl>(std::move(config)))
     {
         if (onChange)
@@ -49,7 +43,7 @@ public:
     /// The given function keeps receiving change notifications while the returned registration object remains alive.
     /// @param onChange Callback function.
     /// @return Registration object. It keeps the registration active until destroyed.
-    [[nodiscard]] auto registerOnChange(std::function<void()> onChange) const -> CallbackRegistration
+    [[nodiscard]] auto registerOnChange(std::function<void(const T&)> onChange) const -> CallbackRegistration
     {
         return m_impl->registerOnChange(std::move(onChange));
     }
@@ -67,8 +61,8 @@ public:
     void setValue(const T& value) { m_impl->setValue(value); }
     void setValue(T&& value) { m_impl->setValue(std::move(value)); }
 
-    [[nodiscard]] auto getInterface() -> std::weak_ptr<IProperty> { return m_impl; }
-    [[nodiscard]] auto getInterface() const -> std::weak_ptr<const IProperty> { return m_impl; }
+    [[nodiscard]] auto getInterface() -> std::weak_ptr<IProperty> override { return m_impl; }
+    [[nodiscard]] auto getInterface() const -> std::weak_ptr<const IProperty> override { return m_impl; }
     [[nodiscard]] auto getConfig() const -> const Config& { return m_impl->getConfig(); }
     [[nodiscard]] auto getValue() const -> const T& { return m_impl->getValue(); }
 
@@ -99,6 +93,12 @@ private:
         }
 
         auto registerOnChange(std::function<void()> onChange) const -> CallbackRegistration override
+        {
+            throwIfArgNull(onChange, "Cannot register empty callback with property.");
+            return m_callbacks.registerCallback([onChange = std::move(onChange)](const T&) { onChange(); });
+        }
+
+        auto registerOnChange(std::function<void(const T&)> onChange) const -> CallbackRegistration
         {
             return m_callbacks.registerCallback(std::move(onChange));
         }
@@ -140,7 +140,7 @@ private:
             {
                 m_value = clamped;
             }
-            m_callbacks.invokeAll();
+            m_callbacks.invokeAll(m_value);
         }
 
         auto _clamp(const T& value) const -> const T&
@@ -170,7 +170,7 @@ private:
 
         Config m_config;
         T m_value;
-        mutable CallbackRegistry<> m_callbacks;
+        mutable CallbackRegistry<const T&> m_callbacks;
     };
     std::shared_ptr<Impl> m_impl;
     CallbackRegistration m_onChangeRegistration;

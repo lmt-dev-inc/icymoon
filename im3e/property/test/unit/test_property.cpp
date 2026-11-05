@@ -38,6 +38,9 @@ TEST(PropertyTest, constructor)
     EXPECT_THAT(property.getConfig(), ConfigEq<int>(config));
     EXPECT_THAT(property.getValue(), Eq(42));
     EXPECT_THAT(property.getInterface().expired(), IsFalse());
+
+    const auto& constProperty = property;
+    EXPECT_THAT(constProperty.getInterface().expired(), IsFalse());
 }
 
 TEST(PropertyTest, constructor_withMinMax)
@@ -107,10 +110,10 @@ TEST(PropertyTest, constructor_keepsDefaultValueInConfig)
 TEST(PropertyTest, registerOnChange)
 {
     Property<uint32_t> property{{.defaultValue = 2U}};
-    MockFunction<void()> onChange;
+    MockFunction<void(const uint32_t&)> onChange;
     auto onChangeRegistration = property.registerOnChange(onChange.AsStdFunction());
 
-    EXPECT_CALL(onChange, Call());
+    EXPECT_CALL(onChange, Call(3U));
     property.setValue(3U);
 }
 
@@ -123,31 +126,31 @@ TEST(PropertyTest, registerOnChange_withNullFunction)
 TEST(PropertyTest, registerOnChange_canBeCancelled)
 {
     Property<uint32_t> property{{.defaultValue = 2U}};
-    MockFunction<void()> onChange;
+    MockFunction<void(const uint32_t&)> onChange;
     auto onChangeRegistration = property.registerOnChange(onChange.AsStdFunction());
     onChangeRegistration.reset();
 
-    EXPECT_CALL(onChange, Call()).Times(0);
+    EXPECT_CALL(onChange, Call(_)).Times(0);
     property.setValue(3U);
 }
 
 TEST(PropertyTest, registerOnChange_callbackSeesNewValue)
 {
     Property<int> property{{.defaultValue = 2}};
-    MockFunction<void()> onChange;
+    MockFunction<void(const int&)> onChange;
     auto onChangeRegistration = property.registerOnChange(onChange.AsStdFunction());
 
-    EXPECT_CALL(onChange, Call()).WillOnce([&] { EXPECT_THAT(property.getValue(), Eq(3)); });
+    EXPECT_CALL(onChange, Call(3)).WillOnce([&] { EXPECT_THAT(property.getValue(), Eq(3)); });
     property.setValue(3);
 }
 
 TEST(PropertyTest, update)
 {
     Property<int> property{{.defaultValue = 212}};
-    MockFunction<void()> onChange;
+    MockFunction<void(const int&)> onChange;
     auto onChangeRegistration = property.registerOnChange(onChange.AsStdFunction());
 
-    EXPECT_CALL(onChange, Call());
+    EXPECT_CALL(onChange, Call(222));
     property.update([](int value) {
         value += 10;
         return value;
@@ -158,10 +161,10 @@ TEST(PropertyTest, update)
 TEST(PropertyTest, update_withNoChange)
 {
     Property<int> property{{.defaultValue = 543}};
-    MockFunction<void()> onChange;
+    MockFunction<void(const int&)> onChange;
     auto onChangeRegistration = property.registerOnChange(onChange.AsStdFunction());
 
-    EXPECT_CALL(onChange, Call()).Times(0);
+    EXPECT_CALL(onChange, Call(_)).Times(0);
     property.update([](int value) { return value; });
     EXPECT_THAT(property.getValue(), Eq(543));
 }
@@ -169,10 +172,10 @@ TEST(PropertyTest, update_withNoChange)
 TEST(PropertyTest, update_withMinValue)
 {
     Property<int> property{{.defaultValue = 543, .minValue = 10}};
-    MockFunction<void()> onChange;
+    MockFunction<void(const int&)> onChange;
     auto onChangeRegistration = property.registerOnChange(onChange.AsStdFunction());
 
-    EXPECT_CALL(onChange, Call());
+    EXPECT_CALL(onChange, Call(10));
     property.update([](int) { return 2; });
     EXPECT_THAT(property.getValue(), Eq(10));
 }
@@ -180,10 +183,10 @@ TEST(PropertyTest, update_withMinValue)
 TEST(PropertyTest, update_withMinValueAndNoChange)
 {
     Property<int> property{{.defaultValue = 10, .minValue = 10}};
-    MockFunction<void()> onChange;
+    MockFunction<void(const int&)> onChange;
     auto onChangeRegistration = property.registerOnChange(onChange.AsStdFunction());
 
-    EXPECT_CALL(onChange, Call()).Times(0);
+    EXPECT_CALL(onChange, Call(_)).Times(0);
     property.update([](int) { return 2; });
     EXPECT_THAT(property.getValue(), Eq(10));
 }
@@ -191,10 +194,10 @@ TEST(PropertyTest, update_withMinValueAndNoChange)
 TEST(PropertyTest, update_withMaxValue)
 {
     Property<int> property{{.defaultValue = 25, .maxValue = 100}};
-    MockFunction<void()> onChange;
+    MockFunction<void(const int&)> onChange;
     auto onChangeRegistration = property.registerOnChange(onChange.AsStdFunction());
 
-    EXPECT_CALL(onChange, Call());
+    EXPECT_CALL(onChange, Call(100));
     property.update([](int) { return 125; });
     EXPECT_THAT(property.getValue(), Eq(100));
 }
@@ -202,114 +205,114 @@ TEST(PropertyTest, update_withMaxValue)
 TEST(PropertyTest, update_withMaxValueAndNoChange)
 {
     Property<int> property{{.defaultValue = 100, .maxValue = 100}};
-    MockFunction<void()> onChange;
+    MockFunction<void(const int&)> onChange;
     auto onChangeRegistration = property.registerOnChange(onChange.AsStdFunction());
 
-    EXPECT_CALL(onChange, Call()).Times(0);
+    EXPECT_CALL(onChange, Call(_)).Times(0);
     property.update([](int) { return 125; });
     EXPECT_THAT(property.getValue(), Eq(100));
 }
 
 TEST(PropertyTest, update_withReadOnly)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 1, .isReadOnly = true}, mockOnChange.AsStdFunction()};
 
     // Read-only only prevents changes via the interface, the owner can still change the value:
-    EXPECT_CALL(mockOnChange, Call());
+    EXPECT_CALL(mockOnChange, Call(2));
     property.update([](int value) { return value + 1; });
     EXPECT_THAT(property.getValue(), Eq(2));
 }
 
 TEST(PropertyTest, setValue)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 12}, mockOnChange.AsStdFunction()};
 
-    EXPECT_CALL(mockOnChange, Call());
+    EXPECT_CALL(mockOnChange, Call(24));
     property.setValue(24);
     EXPECT_THAT(property.getValue(), Eq(24));
 }
 
 TEST(PropertyTest, setValue_withNoChange)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 12}, mockOnChange.AsStdFunction()};
 
-    EXPECT_CALL(mockOnChange, Call()).Times(0);
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
     property.setValue(12);
     EXPECT_THAT(property.getValue(), Eq(12));
 }
 
 TEST(PropertyTest, setValue_withMin)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 12, .minValue = 10}, mockOnChange.AsStdFunction()};
 
-    EXPECT_CALL(mockOnChange, Call());
+    EXPECT_CALL(mockOnChange, Call(10));
     property.setValue(8);
     EXPECT_THAT(property.getValue(), Eq(10));
 }
 
 TEST(PropertyTest, setValue_withMinAndNoChange)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 5, .minValue = 5}, mockOnChange.AsStdFunction()};
 
     // We should not receive a notification as the input value is below min and the current value is already min:
-    EXPECT_CALL(mockOnChange, Call()).Times(0);
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
     property.setValue(3);
     EXPECT_THAT(property.getValue(), Eq(5));
 }
 
 TEST(PropertyTest, setValue_withMax)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 10, .maxValue = 12}, mockOnChange.AsStdFunction()};
 
-    EXPECT_CALL(mockOnChange, Call());
+    EXPECT_CALL(mockOnChange, Call(12));
     property.setValue(14);
     EXPECT_THAT(property.getValue(), Eq(12));
 }
 
 TEST(PropertyTest, setValue_withMaxAndNoChange)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 25, .maxValue = 25}, mockOnChange.AsStdFunction()};
 
     // We should not receive a notification as the input value is above max and the current value is already max:
-    EXPECT_CALL(mockOnChange, Call()).Times(0);
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
     property.setValue(32);
     EXPECT_THAT(property.getValue(), Eq(25));
 }
 
 TEST(PropertyTest, setValue_withUnorderedType)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const Unordered&)> mockOnChange;
     Property<Unordered> property{{.defaultValue = {1}}, mockOnChange.AsStdFunction()};
 
-    EXPECT_CALL(mockOnChange, Call());
+    EXPECT_CALL(mockOnChange, Call(Unordered{2}));
     property.setValue({2});
     EXPECT_THAT(property.getValue().value, Eq(2));
 }
 
 TEST(PropertyTest, setValue_withUnorderedTypeAndNoChange)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const Unordered&)> mockOnChange;
     Property<Unordered> property{{.defaultValue = {1}}, mockOnChange.AsStdFunction()};
 
-    EXPECT_CALL(mockOnChange, Call()).Times(0);
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
     property.setValue({1});
     EXPECT_THAT(property.getValue().value, Eq(1));
 }
 
 TEST(PropertyTest, setValue_withReadOnly)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 1, .isReadOnly = true}, mockOnChange.AsStdFunction()};
 
     // Read-only only prevents changes via the interface, the owner can still change the value:
-    EXPECT_CALL(mockOnChange, Call());
+    EXPECT_CALL(mockOnChange, Call(2));
     property.setValue(2);
     EXPECT_THAT(property.getValue(), Eq(2));
 }
@@ -376,67 +379,67 @@ TEST(PropertyTest, interface_registerOnChange)
 
 TEST(PropertyTest, setAnyValue)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 7}, mockOnChange.AsStdFunction()};
     auto interface = property.getInterface().lock();
 
-    EXPECT_CALL(mockOnChange, Call());
+    EXPECT_CALL(mockOnChange, Call(8));
     interface->setAnyValue(8);
     EXPECT_THAT(property.getValue(), Eq(8));
 }
 
 TEST(PropertyTest, setAnyValue_withNoChange)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 4}, mockOnChange.AsStdFunction()};
     auto interface = property.getInterface().lock();
 
-    EXPECT_CALL(mockOnChange, Call()).Times(0);
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
     interface->setAnyValue(4);
     EXPECT_THAT(property.getValue(), Eq(4));
 }
 
 TEST(PropertyTest, setAnyValue_withMin)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 12, .minValue = 10}, mockOnChange.AsStdFunction()};
     auto interface = property.getInterface().lock();
 
-    EXPECT_CALL(mockOnChange, Call());
+    EXPECT_CALL(mockOnChange, Call(10));
     interface->setAnyValue(8);
     EXPECT_THAT(property.getValue(), Eq(10));
 }
 
 TEST(PropertyTest, setAnyValue_withMax)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 10, .maxValue = 12}, mockOnChange.AsStdFunction()};
     auto interface = property.getInterface().lock();
 
-    EXPECT_CALL(mockOnChange, Call());
+    EXPECT_CALL(mockOnChange, Call(12));
     interface->setAnyValue(14);
     EXPECT_THAT(property.getValue(), Eq(12));
 }
 
 TEST(PropertyTest, setAnyValue_withWrongType)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const float&)> mockOnChange;
     Property<float> property{{.defaultValue = 0.5F}, mockOnChange.AsStdFunction()};
     auto interface = property.getInterface().lock();
 
     // A double is not implicitly converted to float when stored in std::any:
-    EXPECT_CALL(mockOnChange, Call()).Times(0);
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
     EXPECT_THROW(interface->setAnyValue(1.2), std::bad_any_cast);
     EXPECT_THAT(property.getValue(), FloatEq(0.5F));
 }
 
 TEST(PropertyTest, setAnyValue_withReadOnly)
 {
-    MockFunction<void()> mockOnChange;
+    MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 1, .isReadOnly = true}, mockOnChange.AsStdFunction()};
     auto interface = property.getInterface().lock();
 
-    EXPECT_CALL(mockOnChange, Call()).Times(0);
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
     EXPECT_THROW(interface->setAnyValue(2), std::logic_error);
     EXPECT_THAT(property.getValue(), Eq(1));
 }
@@ -454,8 +457,8 @@ TEST(PropertyTest, interfaceExpiresWithProperty)
 
 TEST(PropertyTest, interfaceOutlivesProperty)
 {
-    MockFunction<void()> mockOnChange;
-    MockFunction<void()> registeredOnChange;
+    MockFunction<void(const float&)> mockOnChange;
+    MockFunction<void(const float&)> registeredOnChange;
     CallbackRegistration onChangeRegistration;
 
     std::shared_ptr<IProperty> interface;
@@ -469,8 +472,8 @@ TEST(PropertyTest, interfaceOutlivesProperty)
     // Callbacks fire for as long as their registration is alive. mockOnChange's registration was owned by Property,
     // so it no longer fires. registeredOnChange's registration is owned by this test, so it keeps firing: the
     // interface keeps working as a standalone value while it is referenced.
-    EXPECT_CALL(mockOnChange, Call()).Times(0);
-    EXPECT_CALL(registeredOnChange, Call());
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
+    EXPECT_CALL(registeredOnChange, Call(1.2F));
     interface->setAnyValue(1.2F);
     EXPECT_THAT(std::any_cast<float>(interface->getAnyValue()), FloatEq(1.2F));
 }

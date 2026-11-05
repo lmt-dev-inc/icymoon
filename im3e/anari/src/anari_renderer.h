@@ -2,13 +2,15 @@
 
 #include "anari_device.h"
 
-#include <im3e/utils/core/types.h>
+#include <im3e/property/property_group.h>
+#include <im3e/property/property_interface.h>
 #include <im3e/utils/loggers.h>
 
 #include <anari/anari.h>
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace im3e {
 
@@ -18,8 +20,8 @@ public:
     AnariRenderer(std::shared_ptr<AnariDevice> pAnDevice);
 
     void commitChanges();
-    auto createProperties() -> std::shared_ptr<ILegacyPropertyGroup>;
 
+    auto getProperties() -> std::weak_ptr<IPropertyGroup> { return m_propertyGroup.getInterface(); }
     auto getHandle() const -> ANARIRenderer { return m_pAnRenderer.get(); }
 
 private:
@@ -30,6 +32,9 @@ private:
     std::shared_ptr<anari::api::Renderer> m_pAnRenderer;
 
     bool m_parametersChanged{};
+
+    std::vector<std::unique_ptr<IPropertyWrapper>> m_properties;
+    PropertyGroup m_propertyGroup;
 };
 
 }  // namespace im3e
