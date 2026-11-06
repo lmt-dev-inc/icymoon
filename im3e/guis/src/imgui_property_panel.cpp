@@ -6,6 +6,8 @@
 #include <fmt/format.h>
 #include <imgui.h>
 
+#include <stdexcept>
+
 using namespace im3e;
 
 namespace {
@@ -67,6 +69,11 @@ void drawProperty(const std::shared_ptr<IPropertyNode>& pNode,
 
         ImGui::PushItemWidth(-FLT_MIN);
         rPropertyControl.draw();
+    }
+    else
+    {
+        throw std::logic_error(
+            fmt::format("Cannot draw property node \"{}\": unsupported node type", pNode->getName()));
     }
 }
 

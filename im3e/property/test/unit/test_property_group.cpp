@@ -3,9 +3,21 @@
 #include <im3e/property/mock_property_interface.h>
 #include <im3e/test_utils/test_utils.h>
 
+#include <type_traits>
+#include <utility>
+
 using namespace im3e;
 
 namespace {
+
+using ChildrenT = std::vector<std::weak_ptr<IPropertyNode>>;
+using ConstChildrenT = std::vector<std::weak_ptr<const IPropertyNode>>;
+
+// A const group or accessor must not give write access to its children:
+static_assert(std::is_same_v<decltype(std::declval<PropertyGroup&>().getChildren()), ChildrenT>);
+static_assert(std::is_same_v<decltype(std::declval<const PropertyGroup&>().getChildren()), ConstChildrenT>);
+static_assert(std::is_same_v<decltype(std::declval<IPropertyGroupAccessor&>().getChildren()), ChildrenT>);
+static_assert(std::is_same_v<decltype(std::declval<const IPropertyGroupAccessor&>().getChildren()), ConstChildrenT>);
 
 auto ConfigEq(const PropertyGroup::Config& expected)
 {
@@ -180,6 +192,27 @@ TEST(PropertyGroupTest, registerOnChange_afterChildDestroyed)
     });
     mockChildren.front()->notifyChanged();
     EXPECT_THAT(group.getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
+}
+
+TEST(PropertyGroupTest, registerOnChange_callbackDestroysGroup)
+{
+    auto mockChildren = createMockPropertyNodes(2U);
+    std::unique_ptr<PropertyGroup> group;
+    group = std::make_unique<PropertyGroup>(
+        PropertyGroup::Config{
+            .name = "Group",
+        },
+        toWeakPtrVector(mockChildren), [&] { group.reset(); });
+    const auto accessor = group->getAccessor();
+
+    // This registration is owned by the test so it still fires:
+    MockFunction<void()> mockOnChange;
+    const auto registration = group->registerOnChange(mockOnChange.AsStdFunction());
+
+    EXPECT_CALL(mockOnChange, Call());
+    mockChildren.front()->notifyChanged();
+    EXPECT_THAT(accessor.expired(), IsTrue());
+    expectCallbackCount(mockChildren, 0U);
 }
 
 TEST(PropertyGroupTest, getChildren_whenChildDestroyed)

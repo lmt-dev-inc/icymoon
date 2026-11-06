@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 
 #include <functional>
+#include <limits>
 #include <memory>
 #include <numbers>
 

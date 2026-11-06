@@ -44,7 +44,8 @@ public:
 class IPropertyGroupAccessor : public IPropertyNode
 {
 public:
-    virtual auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>> = 0;
+    virtual auto getChildren() -> std::vector<std::weak_ptr<IPropertyNode>> = 0;
+    virtual auto getChildren() const -> std::vector<std::weak_ptr<const IPropertyNode>> = 0;
 };
 
 class IProperty

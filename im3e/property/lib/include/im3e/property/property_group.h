@@ -33,7 +33,8 @@ public:
     [[nodiscard]] auto registerOnChange(std::function<void()> onChange) const -> CallbackRegistration;
 
     [[nodiscard]] auto getConfig() const -> const Config&;
-    [[nodiscard]] auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>>;
+    [[nodiscard]] auto getChildren() -> std::vector<std::weak_ptr<IPropertyNode>>;
+    [[nodiscard]] auto getChildren() const -> std::vector<std::weak_ptr<const IPropertyNode>>;
     [[nodiscard]] auto getAccessor() -> std::weak_ptr<IPropertyGroupAccessor> override;
     [[nodiscard]] auto getAccessor() const -> std::weak_ptr<const IPropertyGroupAccessor> override;
 

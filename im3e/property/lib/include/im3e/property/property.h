@@ -5,6 +5,7 @@
 #include <im3e/utils/core/types.h>
 
 #include <any>
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -53,7 +54,7 @@ public:
     /// This allows to perform multiple value changes while only notifying once for change.
     /// @param updateFct Function to execute to perform changes on the property.
     template <typename Fct>
-        requires std::is_invocable_r_v<T, Fct, T>
+        requires std::is_invocable_r_v<T, Fct, const T&>
     void update(Fct&& updateFct)
     {
         m_impl->setValue(updateFct(m_impl->getValue()));
@@ -68,7 +69,7 @@ public:
     [[nodiscard]] auto getValue() const -> const T& { return m_impl->getValue(); }
 
 private:
-    class Impl : public IPropertyAccessor
+    class Impl : public IPropertyAccessor, public std::enable_shared_from_this<Impl>
     {
     public:
         Impl() = delete;
@@ -127,6 +128,15 @@ private:
         template <typename U>
         void _setValue(U&& value)
         {
+            // NaN is not a meaningful value and never compares equal, so it is ignored:
+            if constexpr (std::is_floating_point_v<T>)
+            {
+                if (std::isnan(value))
+                {
+                    return;
+                }
+            }
+
             const T& clamped = _clamp(value);
             if (m_value == clamped)
             {
@@ -141,6 +151,9 @@ private:
             {
                 m_value = clamped;
             }
+
+            // Stay alive until the end of the notification in case a callback destroys the owning property:
+            const auto keepAlive = this->shared_from_this();
             m_callbacks.invokeAll(m_value);
         }
 

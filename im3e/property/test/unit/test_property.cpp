@@ -2,9 +2,23 @@
 
 #include <im3e/test_utils/test_utils.h>
 
+#include <limits>
+#include <memory>
+
 using namespace im3e;
 
 namespace {
+
+constexpr auto NaN = std::numeric_limits<float>::quiet_NaN();
+
+template <typename T, typename Fct>
+concept CanUpdate = requires(Property<T>& rProperty, Fct fct) { rProperty.update(fct); };
+
+// The update function receives the current value as a const reference:
+static_assert(CanUpdate<float, float (*)(float)>);
+static_assert(CanUpdate<float, float (*)(const float&)>);
+static_assert(!CanUpdate<float, float (*)(float&)>);
+static_assert(!CanUpdate<float, float (*)(float&&)>);
 
 template <typename T>
 auto ConfigEq(const typename Property<T>::Config& expected)
@@ -224,6 +238,16 @@ TEST(PropertyTest, update_withReadOnly)
     EXPECT_THAT(property.getValue(), Eq(2));
 }
 
+TEST(PropertyTest, update_withNaN)
+{
+    MockFunction<void(const float&)> mockOnChange;
+    Property<float> property{{.defaultValue = 0.5F}, mockOnChange.AsStdFunction()};
+
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
+    property.update([](float) { return NaN; });
+    EXPECT_THAT(property.getValue(), FloatEq(0.5F));
+}
+
 TEST(PropertyTest, setValue)
 {
     MockFunction<void(const int&)> mockOnChange;
@@ -315,6 +339,52 @@ TEST(PropertyTest, setValue_withReadOnly)
     EXPECT_CALL(mockOnChange, Call(2));
     property.setValue(2);
     EXPECT_THAT(property.getValue(), Eq(2));
+}
+
+TEST(PropertyTest, setValue_withNaN)
+{
+    MockFunction<void(const float&)> mockOnChange;
+    Property<float> property{{.defaultValue = 0.5F}, mockOnChange.AsStdFunction()};
+
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
+    property.setValue(NaN);
+    EXPECT_THAT(property.getValue(), FloatEq(0.5F));
+}
+
+TEST(PropertyTest, setValue_withNaNAndMinMax)
+{
+    MockFunction<void(const float&)> mockOnChange;
+    Property<float> property{
+        {
+            .defaultValue = 0.5F,
+            .minValue = 0.0F,
+            .maxValue = 1.0F,
+        },
+        mockOnChange.AsStdFunction(),
+    };
+
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
+    property.setValue(NaN);
+    EXPECT_THAT(property.getValue(), FloatEq(0.5F));
+}
+
+TEST(PropertyTest, setValue_callbackDestroysProperty)
+{
+    std::unique_ptr<Property<int>> property;
+    property = std::make_unique<Property<int>>(
+        Property<int>::Config{
+            .defaultValue = 1,
+        },
+        [&](const int&) { property.reset(); });
+    const auto accessor = property->getAccessor();
+
+    // This registration is owned by the test so it still fires, and its value must still be valid:
+    MockFunction<void(const int&)> mockOnChange;
+    const auto registration = property->registerOnChange(mockOnChange.AsStdFunction());
+
+    EXPECT_CALL(mockOnChange, Call(2));
+    property->setValue(2);
+    EXPECT_THAT(accessor.expired(), IsTrue());
 }
 
 TEST(PropertyTest, accessor)
@@ -419,6 +489,22 @@ TEST(PropertyTest, setAnyValue_withMax)
     EXPECT_CALL(mockOnChange, Call(12));
     accessor->setAnyValue(14);
     EXPECT_THAT(property.getValue(), Eq(12));
+}
+
+TEST(PropertyTest, setAnyValue_withNaN)
+{
+    MockFunction<void(const float&)> mockOnChange;
+    Property<float> property{
+        {
+            .defaultValue = 0.5F,
+        },
+        mockOnChange.AsStdFunction(),
+    };
+    auto accessor = property.getAccessor().lock();
+
+    EXPECT_CALL(mockOnChange, Call(_)).Times(0);
+    accessor->setAnyValue(NaN);
+    EXPECT_THAT(property.getValue(), FloatEq(0.5F));
 }
 
 TEST(PropertyTest, setAnyValue_withWrongType)

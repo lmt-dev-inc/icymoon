@@ -71,10 +71,8 @@ struct PropertyFactory
             case ANARI_FLOAT32_VEC3: return _create<glm::vec3>(anParam);
             case ANARI_FLOAT32_VEC4: return _create<glm::vec4>(anParam);
             case ANARI_ARRAY2D: return _create<void*>(anParam);
-            case ANARI_UNKNOWN: throw std::runtime_error(fmt::format("Unsupported UNKNOWN ANARI data type"));
-            default: break;
+            default: return nullptr;
         }
-        throw std::runtime_error(fmt::format("Unsupported ANARI data type: {}", static_cast<int>(anParam->type)));
     }
 
     ANARIDevice anDevice;
@@ -122,11 +120,16 @@ private:
     }
 };
 
-auto createProperties(const AnariDevice& rAnDevice, ANARIRenderer anRenderer, std::string_view anRendererSubtype)
-    -> std::vector<std::unique_ptr<IProperty>>
+auto createProperties(const ILogger& rLogger, const AnariDevice& rAnDevice, ANARIRenderer anRenderer,
+                      std::string_view anRendererSubtype) -> std::vector<std::unique_ptr<IProperty>>
 {
     const auto* anParams = static_cast<const ANARIParameter*>(anariGetObjectInfo(
         rAnDevice.getHandle(), ANARI_RENDERER, anRendererSubtype.data(), "parameter", ANARI_PARAMETER_LIST));
+    if (!anParams)
+    {
+        rLogger.warning(fmt::format("Renderer subtype {} does not list its parameters", anRendererSubtype));
+        return {};
+    }
 
     PropertyFactory propertyFactory{
         .anDevice = rAnDevice.getHandle(),
@@ -136,7 +139,15 @@ auto createProperties(const AnariDevice& rAnDevice, ANARIRenderer anRenderer, st
     std::vector<std::unique_ptr<IProperty>> properties;
     for (const auto* anParam = anParams; anParam->name != nullptr; anParam++)
     {
-        properties.emplace_back(propertyFactory.create(anParam));
+        if (auto property = propertyFactory.create(anParam))
+        {
+            properties.emplace_back(std::move(property));
+        }
+        else
+        {
+            rLogger.warning(fmt::format("Ignoring renderer parameter \"{}\": unsupported ANARI data type {}",
+                                        anParam->name, static_cast<int>(anParam->type)));
+        }
     }
     return properties;
 }
@@ -160,7 +171,7 @@ AnariRenderer::AnariRenderer(std::shared_ptr<AnariDevice> pAnDevice)
   , m_pLogger(m_pAnDevice->createLogger("ANARI Renderer"))
   , m_anRendererSubtype(chooseAnRendererSubtype(*m_pLogger, m_pAnDevice->getHandle()))
   , m_pAnRenderer(createAnRenderer(*m_pLogger, m_pAnDevice->getHandle(), m_anRendererSubtype))
-  , m_properties(createProperties(*m_pAnDevice, m_pAnRenderer.get(), m_anRendererSubtype))
+  , m_properties(createProperties(*m_pLogger, *m_pAnDevice, m_pAnRenderer.get(), m_anRendererSubtype))
   , m_propertyGroup{
         {
             .name = fmt::format("Renderer: \"{}\"", m_anRendererSubtype),

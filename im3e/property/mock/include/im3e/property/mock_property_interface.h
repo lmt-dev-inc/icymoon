@@ -59,7 +59,8 @@ public:
     MOCK_METHOD(const std::string&, getName, (), (const, override));
     MOCK_METHOD(const std::string&, getDescription, (), (const, override));
 
-    MOCK_METHOD((std::vector<std::weak_ptr<IPropertyNode>>), getChildren, (), (const, override));
+    MOCK_METHOD((std::vector<std::weak_ptr<IPropertyNode>>), getChildren, (), (override));
+    MOCK_METHOD((std::vector<std::weak_ptr<const IPropertyNode>>), getChildren, (), (const, override));
 
     void notifyChanged() { m_callbacks.invokeAll(); }
     [[nodiscard]] auto getCallbackCount() const -> size_t { return m_callbacks.getCallbackCount(); }

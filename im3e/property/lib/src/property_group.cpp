@@ -4,10 +4,11 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 using namespace im3e;
 
-class PropertyGroup::Impl : public IPropertyGroupAccessor
+class PropertyGroup::Impl : public IPropertyGroupAccessor, public std::enable_shared_from_this<PropertyGroup::Impl>
 {
 public:
     Impl() = delete;
@@ -36,9 +37,20 @@ public:
     auto getConfig() const -> const Config& { return m_config; }
     auto getName() const -> const std::string& override { return m_config.name; }
     auto getDescription() const -> const std::string& override { return m_config.description; }
-    auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>> override
+    auto getChildren() -> std::vector<std::weak_ptr<IPropertyNode>> override
     {
-        std::vector<std::weak_ptr<IPropertyNode>> children;
+        return _getChildren<IPropertyNode>();
+    }
+    auto getChildren() const -> std::vector<std::weak_ptr<const IPropertyNode>> override
+    {
+        return _getChildren<const IPropertyNode>();
+    }
+
+private:
+    template <typename NodeT>
+    auto _getChildren() const -> std::vector<std::weak_ptr<NodeT>>
+    {
+        std::vector<std::weak_ptr<NodeT>> children;
         children.reserve(m_children.size());
         for (const auto& child : m_children)
         {
@@ -50,10 +62,12 @@ public:
         return children;
     }
 
-private:
     void _onChange()
     {
         std::erase_if(m_children, [](const Child& child) { return child.node.expired(); });
+
+        // Stay alive until the end of the notification in case a callback destroys the owning group:
+        const auto keepAlive = shared_from_this();
         m_callbacks.invokeAll();
     }
 
@@ -87,9 +101,14 @@ auto PropertyGroup::getConfig() const -> const Config&
     return m_impl->getConfig();
 }
 
-auto PropertyGroup::getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>>
+auto PropertyGroup::getChildren() -> std::vector<std::weak_ptr<IPropertyNode>>
 {
     return m_impl->getChildren();
+}
+
+auto PropertyGroup::getChildren() const -> std::vector<std::weak_ptr<const IPropertyNode>>
+{
+    return std::as_const(*m_impl).getChildren();
 }
 
 auto PropertyGroup::getAccessor() -> std::weak_ptr<IPropertyGroupAccessor>
