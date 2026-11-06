@@ -10,6 +10,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <typeindex>
 
 namespace im3e {
@@ -159,11 +160,11 @@ private:
             return value;
         }
 
-        static auto _toAny(const std::optional<T>& rValueOpt) -> std::optional<std::any>
+        static auto _toAny(const std::optional<T>& valueOpt) -> std::optional<std::any>
         {
-            if (rValueOpt.has_value())
+            if (valueOpt.has_value())
             {
-                return rValueOpt.value();
+                return valueOpt.value();
             }
             return std::nullopt;
         }
