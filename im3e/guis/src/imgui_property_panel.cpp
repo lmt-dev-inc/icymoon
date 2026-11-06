@@ -6,45 +6,41 @@
 #include <fmt/format.h>
 #include <imgui.h>
 
+#include <stdexcept>
+
 using namespace im3e;
 
 namespace {
 
-auto getPropertyControl(
-    const std::shared_ptr<IProperty>& pProperty,
-    std::unordered_map<std::shared_ptr<IProperty>, std::shared_ptr<IImguiPropertyControl>>& rPropertyControlMap)
+auto getPropertyControl(const std::shared_ptr<IPropertyAccessor>& pProperty,
+                        ImguiPropertyPanel::PropertyControlMap& rPropertyControlMap) -> IImguiPropertyControl&
 {
-    std::shared_ptr<IImguiPropertyControl> pPropertyControl;
-    if (auto itFind = rPropertyControlMap.find(pProperty); itFind != rPropertyControlMap.end())
+    auto itFind = rPropertyControlMap.find(pProperty);
+    if (itFind == rPropertyControlMap.end())
     {
-        pPropertyControl = itFind->second;
+        itFind = rPropertyControlMap.emplace(pProperty, createImguiPropertyControl(pProperty)).first;
     }
-    else
-    {
-        pPropertyControl = createImguiPropertyControl(pProperty);
-        rPropertyControlMap.emplace(pProperty, pPropertyControl);
-    }
-    return pPropertyControl;
+    return *itFind->second;
 }
 
-void drawProperty(
-    const std::shared_ptr<IProperty>& pProperty,
-    std::unordered_map<std::shared_ptr<IProperty>, std::shared_ptr<IImguiPropertyControl>>& pPropertyControlMap)
+void drawProperty(const std::shared_ptr<IPropertyNode>& pNode,
+                  ImguiPropertyPanel::PropertyControlMap& rPropertyControlMap)
 {
-    ImGui::PushID(static_cast<int>(reinterpret_cast<intptr_t>(pProperty.get())));
+    ImGui::PushID(static_cast<int>(reinterpret_cast<intptr_t>(pNode.get())));
     ImguiScope idScope(&ImGui::PopID);
 
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::AlignTextToFramePadding();
 
-    if (auto pPropertyGroup = std::dynamic_pointer_cast<IPropertyGroup>(pProperty))
+    if (auto pPropertyGroup = std::dynamic_pointer_cast<IPropertyGroupAccessor>(pNode))
     {
         const auto treeNodeId = fmt::format("{}##header", pPropertyGroup->getName());
         const auto treeNodeFlags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen;
         ImguiScope treeNode(
             ImGui::TreeNodeEx(treeNodeId.c_str(), treeNodeFlags, "%s", pPropertyGroup->getName().c_str()),
             &ImGui::TreePop);
+        ImGui::SetItemTooltip("%s", pPropertyGroup->getDescription().c_str());
 
         ImGui::TableSetColumnIndex(1);
 
@@ -54,38 +50,59 @@ void drawProperty(
 
         if (treeNode.isOpen())
         {
-            for (auto& rChildProperty : pPropertyGroup->getChildren())
+            for (const auto& rpChild : pPropertyGroup->getChildren())
             {
-                drawProperty(rChildProperty, pPropertyControlMap);
+                if (auto pChild = rpChild.lock())
+                {
+                    drawProperty(pChild, rPropertyControlMap);
+                }
             }
         }
     }
-    else
+    else if (auto pProperty = std::dynamic_pointer_cast<IPropertyAccessor>(pNode))
     {
-        auto pPropertyControl = getPropertyControl(pProperty, pPropertyControlMap);
-        ImGui::Text("%s", pPropertyControl->getName().c_str());
-
-        if (auto pValueProperty = std::dynamic_pointer_cast<IPropertyValue>(pProperty))
-        {
-            ImGui::SetItemTooltip("%s", pValueProperty->getDescription().c_str());
-        }
+        auto& rPropertyControl = getPropertyControl(pProperty, rPropertyControlMap);
+        ImGui::Text("%s", rPropertyControl.getName().c_str());
+        ImGui::SetItemTooltip("%s", pProperty->getDescription().c_str());
 
         ImGui::TableSetColumnIndex(1);
 
         ImGui::PushItemWidth(-FLT_MIN);
-        pPropertyControl->draw();
+        rPropertyControl.draw();
     }
+    else
+    {
+        throw std::logic_error(
+            fmt::format("Cannot draw property node \"{}\": unsupported node type", pNode->getName()));
+    }
+}
+
+auto getGroupName(const std::weak_ptr<IPropertyGroupAccessor>& rpPropertyGroup) -> std::string
+{
+    auto pPropertyGroup = rpPropertyGroup.lock();
+    throwIfArgNull(pPropertyGroup, "ImguiPropertyPanel requires a PropertyGroup");
+    return pPropertyGroup->getName();
 }
 
 }  // namespace
 
-ImguiPropertyPanel::ImguiPropertyPanel(std::shared_ptr<IPropertyGroup> pPropertyGroup)
-  : m_pPropertyGroup(throwIfArgNull(std::move(pPropertyGroup), "ImguiPropertyPanel requires a PropertyGroup"))
+ImguiPropertyPanel::ImguiPropertyPanel(std::weak_ptr<IPropertyGroupAccessor> pPropertyGroup)
+  : m_pPropertyGroup(std::move(pPropertyGroup))
+  , m_name(getGroupName(m_pPropertyGroup))
 {
 }
 
 void ImguiPropertyPanel::draw(const ICommandBuffer&)
 {
+    // Controls of destroyed properties are no longer needed:
+    std::erase_if(m_pPropertyControlMap, [](const auto& rEntry) { return rEntry.first.expired(); });
+
+    auto pPropertyGroup = m_pPropertyGroup.lock();
+    if (!pPropertyGroup)
+    {
+        return;
+    }
+
     constexpr auto ColumnCount = 2;
     constexpr auto TableFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame;
 
@@ -97,14 +114,17 @@ void ImguiPropertyPanel::draw(const ICommandBuffer&)
         ImGui::TableSetupColumn("Name", 0, 0.8840F);
         ImGui::TableSetupColumn("Value", 0, 1.1160F);
 
-        for (auto& pProperty : m_pPropertyGroup->getChildren())
+        for (const auto& rpChild : pPropertyGroup->getChildren())
         {
-            drawProperty(pProperty, m_pPropertyControlMap);
+            if (auto pChild = rpChild.lock())
+            {
+                drawProperty(pChild, m_pPropertyControlMap);
+            }
         }
     }
 }
 
-auto im3e::createImguiPropertyPanel(std::shared_ptr<IPropertyGroup> pPropertyGroup) -> std::shared_ptr<IGuiPanel>
+auto im3e::createImguiPropertyPanel(std::weak_ptr<IPropertyGroupAccessor> pPropertyGroup) -> std::shared_ptr<IGuiPanel>
 {
     return std::make_shared<ImguiPropertyPanel>(std::move(pPropertyGroup));
 }

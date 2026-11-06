@@ -4,8 +4,8 @@
 #include <im3e/api/frame_pipeline.h>
 #include <im3e/api/gui.h>
 #include <im3e/api/height_map.h>
+#include <im3e/property/property_interface.h>
 #include <im3e/utils/loggers.h>
-#include <im3e/utils/properties/properties.h>
 
 #include <anari/anari.h>
 
@@ -19,7 +19,7 @@ class IAnariObject
 public:
     virtual ~IAnariObject() = default;
 
-    virtual auto getProperties() -> std::shared_ptr<IPropertyGroup> = 0;
+    virtual auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> = 0;
 };
 
 class IAnariWorld
@@ -36,8 +36,8 @@ class IAnariFramePipeline : public IFramePipeline
 public:
     virtual ~IAnariFramePipeline() = default;
 
-    virtual auto createCameraProperties() -> std::shared_ptr<IPropertyGroup> = 0;
-    virtual auto createRendererProperties() -> std::shared_ptr<IPropertyGroup> = 0;
+    virtual auto getCameraProperties() -> std::weak_ptr<IPropertyGroupAccessor> = 0;
+    virtual auto getRendererProperties() -> std::weak_ptr<IPropertyGroupAccessor> = 0;
 
     virtual auto getCameraListener() -> std::shared_ptr<IGuiEventListener> = 0;
     virtual auto getWorld() -> std::shared_ptr<IAnariWorld> = 0;

@@ -1,4 +1,5 @@
 add_library(im3e_utils STATIC
+    src/path.cpp
     src/ray.cpp
     src/stats_provider.cpp
     src/stream_logger.cpp
@@ -8,6 +9,7 @@ add_library(im3e_utils STATIC
     imgui_utils.h
     loggers.h
     math_utils.h
+    path.h
     ray.h
     stats.h
     transform.h
@@ -36,5 +38,4 @@ target_link_libraries(im3e_utils
 
 add_subdirectory(core)
 add_subdirectory(mock)
-add_subdirectory(properties)
 add_subdirectory(test)

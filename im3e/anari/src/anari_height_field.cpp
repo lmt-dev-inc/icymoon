@@ -28,24 +28,32 @@ AnariHeightField::AnariHeightField(std::shared_ptr<AnariDevice> pAnDevice, Anari
   , m_pLogger(m_pAnDevice->createLogger(fmt::format("ANARI Height Field - {}", m_pHeightMap->getName())))
   , m_pQuadTreeRoot(generateHeightMapQuadTree(*m_pHeightMap))
 
-  , m_pLodProp(std::make_shared<PropertyValue<uint32_t>>(PropertyValueConfig<uint32_t>{
-        .name = "Level of Details",
-        .description = "Determines level of details of the height field where 0 is highest details.",
-        .defaultValue = 5U,
-        .minValue = 0U,
-        .maxValue = m_pHeightMap->getLodCount() - 1U,
-        .onChange = [this](auto) { m_lodChanged = true; },
-    }))
-  , m_pProperties(createPropertyGroup(m_pHeightMap->getName(), {m_pLodProp}))
+  , m_lod{
+        {
+            .name = "Level of Details",
+            .description = "Determines level of details of the height field where 0 is highest details.",
+            .defaultValue = 5U,
+            .minValue = 0U,
+            .maxValue = m_pHeightMap->getLodCount() - 1U,
+        },
+        [this](const uint32_t&) { m_lodChanged = true; },
+    }
+  , m_properties{
+        {
+            .name = m_pHeightMap->getName(),
+            .description = fmt::format("Group of properties for the height map \"{}\"", m_pHeightMap->getName()),
+        },
+        { m_lod.getAccessor() },
+    }
 
   , m_pTiles(initializeTiles(m_pAnDevice, m_pHeightMap->getTileSize(), 100U))
   , m_pAvailableTilesQueue([this] {
-      std::deque<AnariHeightFieldTile*> pAvailableTilesQueue;
-      for (auto& rpTile : m_pTiles)
-      {
-          pAvailableTilesQueue.emplace_back(rpTile.get());
-      }
-      return pAvailableTilesQueue;
+    std::deque<AnariHeightFieldTile*> pAvailableTilesQueue;
+    for (auto& rpTile : m_pTiles)
+    {
+        pAvailableTilesQueue.emplace_back(rpTile.get());
+    }
+    return pAvailableTilesQueue;
   }())
 {
 }
@@ -54,7 +62,7 @@ void AnariHeightField::updateAsync([[maybe_unused]] const AnariMapCamera& rCamer
 {
     // TODO: frustum culling not fully working.
     // When zoomed out and switching between levels of details, some tiles that should be visible are not
-    auto visibleTileIDs = m_pQuadTreeRoot->findVisible(rCamera.getViewFrustum(), m_pLodProp->getValue());
+    auto visibleTileIDs = m_pQuadTreeRoot->findVisible(rCamera.getViewFrustum(), m_lod.getValue());
     // m_pLogger->debug(fmt::format("Found {} visible tiles", visibleTileIDs.size()));
 
     // Removed no longer visible tiles

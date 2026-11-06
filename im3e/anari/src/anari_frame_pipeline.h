@@ -26,8 +26,8 @@ public:
 
     void resize(const VkExtent2D& rWindowSize, uint32_t frameInFlightCount) override;
 
-    auto createCameraProperties() -> std::shared_ptr<IPropertyGroup> override;
-    auto createRendererProperties() -> std::shared_ptr<IPropertyGroup> override;
+    auto getCameraProperties() -> std::weak_ptr<IPropertyGroupAccessor> override;
+    auto getRendererProperties() -> std::weak_ptr<IPropertyGroupAccessor> override;
 
     auto getCameraListener() -> std::shared_ptr<IGuiEventListener> override { return m_pCamera; }
     auto getWorld() -> std::shared_ptr<IAnariWorld> override { return m_pAnWorld; }

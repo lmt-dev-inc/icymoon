@@ -4,8 +4,9 @@
 #include "anari_device.h"
 #include "anari_instance_set.h"
 
+#include <im3e/property/property.h>
+#include <im3e/property/property_group.h>
 #include <im3e/utils/core/types.h>
-#include <im3e/utils/properties/properties.h>
 #include <im3e/utils/transform.h>
 
 #include <string>
@@ -20,7 +21,7 @@ public:
 
     void commitChanges();
 
-    auto getProperties() -> std::shared_ptr<IPropertyGroup> override { return m_pProperties; }
+    auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> override { return m_properties.getAccessor(); }
     auto getInstance() const -> ANARIInstance { return m_pAnInstance.get(); }
 
 private:
@@ -39,8 +40,18 @@ private:
     UniquePtrWithDeleter<anari::api::Group> m_pAnGroup;
     UniquePtrWithDeleter<anari::api::Instance> m_pAnInstance;
 
-    std::shared_ptr<PropertyValue<glm::vec3>> m_pScaleProp;
-    std::shared_ptr<IPropertyGroup> m_pProperties;
+    Property<glm::vec3> m_scale{
+        {
+            .name = "Scale",
+            .description = "Applies a scale to the plane",
+            .defaultValue = m_transform.getScale(),
+        },
+        [this](const glm::vec3& scale) {
+            m_transform.setScale(scale);
+            m_transformChanged = true;
+        },
+    };
+    PropertyGroup m_properties;
 };
 
 }  // namespace im3e

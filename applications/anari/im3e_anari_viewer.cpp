@@ -4,10 +4,10 @@
 #include <im3e/devices/devices.h>
 #include <im3e/geo/geo.h>
 #include <im3e/guis/guis.h>
+#include <im3e/property/property_group.h>
 #include <im3e/utils/core/throw_utils.h>
 #include <im3e/utils/core/types.h>
 #include <im3e/utils/loggers.h>
-#include <im3e/utils/properties/properties.h>
 
 #include <anari/anari.h>
 #include <fmt/format.h>
@@ -97,14 +97,21 @@ int main()
     auto pGuiWorkspace = createImguiWorkspace("ANARI");
 
     // Properties Panel
+    // The panel only references the properties: they must outlive it until the application stops running.
+    PropertyGroup parameters{
+        {
+            .name = "Parameters",
+            .description = "Parameters of the ANARI viewer",
+        },
+        {
+            pFramePipeline->getRendererProperties(),
+            pFramePipeline->getCameraProperties(),
+            // pPlane->getProperties(),
+            pHeightField->getProperties(),
+        },
+    };
     {
-        auto pPropertyGroup = createPropertyGroup("Parameters", {
-                                                                    pFramePipeline->createRendererProperties(),
-                                                                    pFramePipeline->createCameraProperties(),
-                                                                    // pPlane->getProperties(),
-                                                                    pHeightField->getProperties(),
-                                                                });
-        auto pParametersPanel = createImguiPropertyPanel(pPropertyGroup);
+        auto pParametersPanel = createImguiPropertyPanel(parameters.getAccessor());
         pGuiWorkspace->addPanel(IGuiWorkspace::Location::Left, pParametersPanel);
     }
 

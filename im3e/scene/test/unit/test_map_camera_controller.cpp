@@ -43,7 +43,7 @@ TEST_F(MapCameraControllerTest, constructor)
     EXPECT_THAT(controller.getDistanceToTarget(), FloatEq(5000.0F));
     EXPECT_THAT(controller.getHeading(), FloatEq(0.0F));
     EXPECT_THAT(controller.getTilt(), FloatEq(0.0F));
-    EXPECT_THAT(controller.getProperties(), NotNull());
+    EXPECT_THAT(controller.getProperties().expired(), IsFalse());
 
     auto& rView = m_pMockCamera->getMockView();
     EXPECT_THAT(rView.getPosition(), FloatEq(glm::vec3{3700.0F, 5000.0F, 4000.0F}));

@@ -2,8 +2,6 @@
 
 #include "anari_utils.h"
 
-#include <im3e/utils/properties/properties.h>
-
 #include <fmt/format.h>
 
 using namespace im3e;
@@ -112,17 +110,13 @@ AnariPlane::AnariPlane(std::string_view name, std::shared_ptr<AnariDevice> pAnDe
   , m_pAnGroup(m_pAnDevice->createGroup({m_pAnSurface.get()}))
   , m_pAnInstance(m_pAnDevice->createInstance(m_pAnGroup.get()))
 
-  , m_pScaleProp(std::make_shared<PropertyValue<glm::vec3>>(PropertyValueConfig<glm::vec3>{
-        .name = "Scale",
-        .description = "Applies a scale to the plane",
-        .defaultValue = m_transform.getScale(),
-        .onChange =
-            [this](auto scale) {
-                m_transform.setScale(scale);
-                m_transformChanged = true;
-            },
-    }))
-  , m_pProperties(createPropertyGroup(m_name, {m_pScaleProp}))
+  , m_properties{
+        {
+            .name = m_name,
+            .description = fmt::format("Group of properties for plane {}", m_name),
+        },
+        {m_scale.getAccessor()},
+    }
 {
     m_transformChanged = true;
     m_rInstanceSet.insert(m_pAnInstance.get());

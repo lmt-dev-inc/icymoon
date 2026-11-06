@@ -1,5 +1,6 @@
 #include "imgui_property_control.h"
 
+#include <im3e/utils/core/throw_utils.h>
 #include <im3e/utils/core/types.h>
 #include <im3e/utils/imgui_utils.h>
 
@@ -18,12 +19,12 @@ auto typeIndex()
     return std::type_index(typeid(T));
 }
 
-auto createReadOnlyScope(const IPropertyValue& rProperty) -> UniquePtrWithDeleter<const void>
+auto createReadOnlyScope(const IPropertyAccessor& property) -> UniquePtrWithDeleter<const void>
 {
-    if (rProperty.isReadOnly())
+    if (property.isReadOnly())
     {
         ImGui::BeginDisabled();
-        return {&rProperty, [](auto*) { ImGui::EndDisabled(); }};
+        return {&property, [](auto*) { ImGui::EndDisabled(); }};
     }
     return {};
 }
@@ -31,58 +32,78 @@ auto createReadOnlyScope(const IPropertyValue& rProperty) -> UniquePtrWithDelete
 class ImguiBasePropertyControl : public IImguiPropertyControl
 {
 public:
-    ImguiBasePropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : m_pProperty(std::move(pProperty))
+    ImguiBasePropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : m_name(property->getName())
+      , m_inputId(fmt::format("##{}", m_name))
+      , m_property(property)
     {
     }
 
-    auto getName() const -> std::string override { return std::string{m_pProperty->getName()}; }
+    void draw() final
+    {
+        if (auto property = m_property.lock())
+        {
+            drawControl(*property);
+        }
+    }
+
+    auto getName() const -> std::string override { return m_name; }
 
 protected:
-    std::shared_ptr<IPropertyValue> m_pProperty;
+    /// @brief Draw the control for the property, only called while the property is alive.
+    virtual void drawControl(IPropertyAccessor& property) = 0;
+
+    const std::string m_name;
+    const std::string m_inputId;
+
+private:
+    std::weak_ptr<IPropertyAccessor> m_property;
 };
 
 struct ImguiVoidPropertyControl : public ImguiBasePropertyControl
 {
-    ImguiVoidPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(std::move(pProperty))
+    ImguiVoidPropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : ImguiBasePropertyControl(property)
     {
     }
 
-    void draw() override {}
+    void drawControl(IPropertyAccessor&) override {}
 };
 
 struct ImguiUnknownPropertyControl : public ImguiBasePropertyControl
 {
-    ImguiUnknownPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(std::move(pProperty))
+    ImguiUnknownPropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : ImguiBasePropertyControl(property)
+      , m_typeName(property->getType().name())
     {
     }
 
-    void draw() override
+    void drawControl(IPropertyAccessor&) override
     {
-        ImGui::TextColored(ImVec4(1.0F, 0.0F, 0.0F, 1.0F), "Unknown property type: %s", m_pProperty->getType().name());
+        ImGui::TextColored(ImVec4(1.0F, 0.0F, 0.0F, 1.0F), "Unknown property type: %s", m_typeName.c_str());
     }
+
+    const std::string m_typeName;
 };
 
 class ImguiStringPropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiStringPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(std::move(pProperty))
-      , m_value(any_cast<std::string>(m_pProperty->getAnyValue()))
+    ImguiStringPropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : ImguiBasePropertyControl(property)
+      , m_value(any_cast<std::string>(property->getAnyValue()))
     {
     }
 
-    void draw() override
+    void drawControl(IPropertyAccessor& property) override
     {
-        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
-        if (ImGui::InputText(fmt::format("##{}", m_pProperty->getName()).c_str(), &m_value);
+        auto readOnlyScope = createReadOnlyScope(property);
+        if (ImGui::InputText(m_inputId.c_str(), &m_value);
             ImGui::IsItemDeactivatedAfterEdit())
         {
-            m_pProperty->setAnyValue(m_value);
+            property.setAnyValue(m_value);
         }
-        m_value = any_cast<std::string>(m_pProperty->getAnyValue());
+        m_value = any_cast<std::string>(property.getAnyValue());
     }
 
 private:
@@ -92,20 +113,20 @@ private:
 class ImguiBoolPropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiBoolPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(std::move(pProperty))
-      , m_value(any_cast<bool>(m_pProperty->getAnyValue()))
+    ImguiBoolPropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : ImguiBasePropertyControl(property)
+      , m_value(any_cast<bool>(property->getAnyValue()))
     {
     }
 
-    void draw() override
+    void drawControl(IPropertyAccessor& property) override
     {
-        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
-        if (ImGui::Checkbox(fmt::format("##{}", m_pProperty->getName()).c_str(), &m_value))
+        auto readOnlyScope = createReadOnlyScope(property);
+        if (ImGui::Checkbox(m_inputId.c_str(), &m_value))
         {
-            m_pProperty->setAnyValue(m_value);
+            property.setAnyValue(m_value);
         }
-        m_value = any_cast<bool>(m_pProperty->getAnyValue());
+        m_value = any_cast<bool>(property.getAnyValue());
     }
 
 private:
@@ -115,40 +136,38 @@ private:
 class ImguiInt32PropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiInt32PropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(std::move(pProperty))
-      , m_value(any_cast<int32_t>(m_pProperty->getAnyValue()))
+    ImguiInt32PropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : ImguiBasePropertyControl(property)
+      , m_value(any_cast<int32_t>(property->getAnyValue()))
     {
-        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
-        if (auto anyMinValueOpt = m_pProperty->getAnyMinValue(); anyMinValueOpt.has_value())
+        if (auto anyMinValueOpt = property->getAnyMinValue(); anyMinValueOpt.has_value())
         {
             m_minValue = std::any_cast<int32_t>(anyMinValueOpt.value());
         }
-        if (auto anyMaxValueOpt = m_pProperty->getAnyMaxValue(); anyMaxValueOpt.has_value())
+        if (auto anyMaxValueOpt = property->getAnyMaxValue(); anyMaxValueOpt.has_value())
         {
             m_maxValue = std::any_cast<int32_t>(anyMaxValueOpt.value());
         }
     }
 
-    void draw() override
+    void drawControl(IPropertyAccessor& property) override
     {
-        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
-        const auto inputId = fmt::format("##{}", m_pProperty->getName());
+        auto readOnlyScope = createReadOnlyScope(property);
         if (m_minValue.has_value() && m_maxValue.has_value())
         {
-            if (ImGui::SliderInt(inputId.c_str(), &m_value, m_minValue.value(), m_maxValue.value()))
+            if (ImGui::SliderInt(m_inputId.c_str(), &m_value, m_minValue.value(), m_maxValue.value()))
             {
-                m_pProperty->setAnyValue(static_cast<int32_t>(m_value));
+                property.setAnyValue(static_cast<int32_t>(m_value));
             }
         }
         else
         {
-            if (ImGui::InputInt(inputId.c_str(), &m_value); ImGui::IsItemDeactivatedAfterEdit())
+            if (ImGui::InputInt(m_inputId.c_str(), &m_value); ImGui::IsItemDeactivatedAfterEdit())
             {
-                m_pProperty->setAnyValue(static_cast<int32_t>(m_value));
+                property.setAnyValue(static_cast<int32_t>(m_value));
             }
         }
-        m_value = any_cast<int32_t>(m_pProperty->getAnyValue());
+        m_value = any_cast<int32_t>(property.getAnyValue());
     }
 
 private:
@@ -160,40 +179,39 @@ private:
 class ImguiUint32PropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiUint32PropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(std::move(pProperty))
-      , m_value(any_cast<uint32_t>(m_pProperty->getAnyValue()))
+    ImguiUint32PropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : ImguiBasePropertyControl(property)
+      , m_value(any_cast<uint32_t>(property->getAnyValue()))
     {
-        if (auto anyMinValueOpt = m_pProperty->getAnyMinValue(); anyMinValueOpt.has_value())
+        if (auto anyMinValueOpt = property->getAnyMinValue(); anyMinValueOpt.has_value())
         {
             m_minValue = std::any_cast<uint32_t>(anyMinValueOpt.value());
         }
-        if (auto anyMaxValueOpt = m_pProperty->getAnyMaxValue(); anyMaxValueOpt.has_value())
+        if (auto anyMaxValueOpt = property->getAnyMaxValue(); anyMaxValueOpt.has_value())
         {
             m_maxValue = std::any_cast<uint32_t>(anyMaxValueOpt.value());
         }
     }
 
-    void draw() override
+    void drawControl(IPropertyAccessor& property) override
     {
-        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
-        const auto inputId = fmt::format("##{}", m_pProperty->getName());
+        auto readOnlyScope = createReadOnlyScope(property);
         if (m_minValue.has_value() && m_maxValue.has_value())
         {
-            if (ImGui::SliderInt(inputId.c_str(), &m_value, m_minValue.value(), m_maxValue.value()))
+            if (ImGui::SliderInt(m_inputId.c_str(), &m_value, m_minValue.value(), m_maxValue.value()))
             {
-                m_pProperty->setAnyValue(static_cast<uint32_t>(m_value));
+                property.setAnyValue(static_cast<uint32_t>(m_value));
             }
         }
         else
         {
-            if (ImGui::InputInt(inputId.c_str(), &m_value); ImGui::IsItemDeactivatedAfterEdit())
+            if (ImGui::InputInt(m_inputId.c_str(), &m_value); ImGui::IsItemDeactivatedAfterEdit())
             {
                 m_value = std::max(m_value, 0);
-                m_pProperty->setAnyValue(static_cast<uint32_t>(m_value));
+                property.setAnyValue(static_cast<uint32_t>(m_value));
             }
         }
-        m_value = any_cast<uint32_t>(m_pProperty->getAnyValue());
+        m_value = any_cast<uint32_t>(property.getAnyValue());
     }
 
 private:
@@ -205,39 +223,38 @@ private:
 class ImguiFloatPropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiFloatPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(std::move(pProperty))
-      , m_value(any_cast<float>(m_pProperty->getAnyValue()))
+    ImguiFloatPropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : ImguiBasePropertyControl(property)
+      , m_value(any_cast<float>(property->getAnyValue()))
     {
-        if (auto anyMinValueOpt = m_pProperty->getAnyMinValue(); anyMinValueOpt.has_value())
+        if (auto anyMinValueOpt = property->getAnyMinValue(); anyMinValueOpt.has_value())
         {
             m_minValue = std::any_cast<float>(anyMinValueOpt.value());
         }
-        if (auto anyMaxValueOpt = m_pProperty->getAnyMaxValue(); anyMaxValueOpt.has_value())
+        if (auto anyMaxValueOpt = property->getAnyMaxValue(); anyMaxValueOpt.has_value())
         {
             m_maxValue = std::any_cast<float>(anyMaxValueOpt.value());
         }
     }
 
-    void draw() override
+    void drawControl(IPropertyAccessor& property) override
     {
-        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
-        const auto inputId = fmt::format("##{}", m_pProperty->getName());
+        auto readOnlyScope = createReadOnlyScope(property);
         if (m_minValue.has_value() && m_maxValue.has_value())
         {
-            if (ImGui::SliderFloat(inputId.c_str(), &m_value, m_minValue.value(), m_maxValue.value()))
+            if (ImGui::SliderFloat(m_inputId.c_str(), &m_value, m_minValue.value(), m_maxValue.value()))
             {
-                m_pProperty->setAnyValue(m_value);
+                property.setAnyValue(m_value);
             }
         }
         else
         {
-            if (ImGui::InputFloat(inputId.c_str(), &m_value, 0.0F, 0.0F, "%.3f"); ImGui::IsItemDeactivatedAfterEdit())
+            if (ImGui::InputFloat(m_inputId.c_str(), &m_value, 0.0F, 0.0F, "%.3f"); ImGui::IsItemDeactivatedAfterEdit())
             {
-                m_pProperty->setAnyValue(m_value);
+                property.setAnyValue(m_value);
             }
         }
-        m_value = any_cast<float>(m_pProperty->getAnyValue());
+        m_value = any_cast<float>(property.getAnyValue());
     }
 
 private:
@@ -249,21 +266,21 @@ private:
 class ImguiVec3PropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiVec3PropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(std::move(pProperty))
-      , m_value(any_cast<glm::vec3>(m_pProperty->getAnyValue()))
+    ImguiVec3PropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : ImguiBasePropertyControl(property)
+      , m_value(any_cast<glm::vec3>(property->getAnyValue()))
     {
     }
 
-    void draw() override
+    void drawControl(IPropertyAccessor& property) override
     {
-        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
-        if (ImGui::InputFloat3(fmt::format("##{}", m_pProperty->getName()).c_str(), glm::value_ptr(m_value));
+        auto readOnlyScope = createReadOnlyScope(property);
+        if (ImGui::InputFloat3(m_inputId.c_str(), glm::value_ptr(m_value));
             ImGui::IsItemDeactivatedAfterEdit())
         {
-            m_pProperty->setAnyValue(m_value);
+            property.setAnyValue(m_value);
         }
-        m_value = any_cast<glm::vec3>(m_pProperty->getAnyValue());
+        m_value = any_cast<glm::vec3>(property.getAnyValue());
     }
 
 private:
@@ -273,21 +290,21 @@ private:
 class ImguiVec4PropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiVec4PropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(std::move(pProperty))
-      , m_value(any_cast<glm::vec4>(m_pProperty->getAnyValue()))
+    ImguiVec4PropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : ImguiBasePropertyControl(property)
+      , m_value(any_cast<glm::vec4>(property->getAnyValue()))
     {
     }
 
-    void draw() override
+    void drawControl(IPropertyAccessor& property) override
     {
-        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
-        if (ImGui::InputFloat4(fmt::format("##{}", m_pProperty->getName()).c_str(), glm::value_ptr(m_value));
+        auto readOnlyScope = createReadOnlyScope(property);
+        if (ImGui::InputFloat4(m_inputId.c_str(), glm::value_ptr(m_value));
             ImGui::IsItemDeactivatedAfterEdit())
         {
-            m_pProperty->setAnyValue(m_value);
+            property.setAnyValue(m_value);
         }
-        m_value = any_cast<glm::vec4>(m_pProperty->getAnyValue());
+        m_value = any_cast<glm::vec4>(property.getAnyValue());
     }
 
 private:
@@ -297,43 +314,47 @@ private:
 class ImguiQuatPropertyControl : public ImguiBasePropertyControl
 {
 public:
-    ImguiQuatPropertyControl(std::shared_ptr<IPropertyValue> pProperty)
-      : ImguiBasePropertyControl(std::move(pProperty))
-      , m_value(any_cast<glm::quat>(m_pProperty->getAnyValue()))
+    ImguiQuatPropertyControl(const std::shared_ptr<IPropertyAccessor>& property)
+      : ImguiBasePropertyControl(property)
+      , m_value(any_cast<glm::quat>(property->getAnyValue()))
     {
     }
 
-    void draw() override
+    void drawControl(IPropertyAccessor& property) override
     {
         std::vector<float> value{m_value.w, m_value.x, m_value.y, m_value.z};
 
-        auto readOnlyScope = createReadOnlyScope(*m_pProperty);
-        if (ImGui::InputFloat4(fmt::format("##{}", m_pProperty->getName()).c_str(), value.data());
+        auto readOnlyScope = createReadOnlyScope(property);
+        if (ImGui::InputFloat4(m_inputId.c_str(), value.data());
             ImGui::IsItemDeactivatedAfterEdit())
         {
-            m_pProperty->setAnyValue(glm::quat(value[0], value[1], value[2], value[3]));
+            property.setAnyValue(glm::quat(value[0], value[1], value[2], value[3]));
         }
-        m_value = any_cast<glm::quat>(m_pProperty->getAnyValue());
+        m_value = any_cast<glm::quat>(property.getAnyValue());
     }
 
-    auto getName() const -> std::string override { return fmt::format("{} [w, x, y, z]", m_pProperty->getName()); }
+    auto getName() const -> std::string override { return fmt::format("{} [w, x, y, z]", m_name); }
 
 private:
     glm::quat m_value;
 };
 
-using ControlFactoryFct = std::function<std::unique_ptr<IImguiPropertyControl>(std::shared_ptr<IPropertyValue>)>;
+using ControlFactoryFct =
+    std::function<std::unique_ptr<IImguiPropertyControl>(const std::shared_ptr<IPropertyAccessor>&)>;
 
 template <typename T, typename ControlType>
 auto createControlFactory() -> std::pair<std::type_index, ControlFactoryFct>
 {
-    return {typeIndex<T>(), [](auto pProperty) { return std::make_unique<ControlType>(std::move(pProperty)); }};
+    return {typeIndex<T>(), [](const auto& property) { return std::make_unique<ControlType>(property); }};
 }
 
 }  // namespace
 
-auto im3e::createImguiPropertyControl(std::shared_ptr<IProperty> pProperty) -> std::unique_ptr<IImguiPropertyControl>
+auto im3e::createImguiPropertyControl(std::weak_ptr<IPropertyAccessor> property)
+    -> std::unique_ptr<IImguiPropertyControl>
 {
+    const auto lockedProperty = throwIfArgNull(property.lock(), "Cannot create a control for an expired property");
+
     static const std::unordered_map<std::type_index, ControlFactoryFct> typeToValueControlFactory{
         createControlFactory<void, ImguiVoidPropertyControl>(),
         createControlFactory<std::string, ImguiStringPropertyControl>(),
@@ -346,15 +367,10 @@ auto im3e::createImguiPropertyControl(std::shared_ptr<IProperty> pProperty) -> s
         createControlFactory<glm::quat, ImguiQuatPropertyControl>(),
     };
 
-    if (auto pValueProperty = std::dynamic_pointer_cast<IPropertyValue>(pProperty))
+    auto itFind = typeToValueControlFactory.find(lockedProperty->getType());
+    if (itFind != typeToValueControlFactory.end())
     {
-        auto itFind = typeToValueControlFactory.find(pValueProperty->getType());
-        if (itFind != typeToValueControlFactory.end())
-        {
-            return itFind->second(std::move(pValueProperty));
-        }
-        return std::make_unique<ImguiUnknownPropertyControl>(std::move(pValueProperty));
+        return itFind->second(lockedProperty);
     }
-
-    throw std::runtime_error("createImguiPropertyControl only supports IPropertyValue at the moment");
+    return std::make_unique<ImguiUnknownPropertyControl>(lockedProperty);
 }

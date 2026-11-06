@@ -3,6 +3,7 @@
 #include "anari_device.h"
 
 #include <im3e/api/gui.h>
+#include <im3e/property/property_group.h>
 #include <im3e/scene/camera.h>
 #include <im3e/scene/map_camera_controller.h>
 #include <im3e/utils/loggers.h>
@@ -22,7 +23,7 @@ public:
 
     void commitChanges();
 
-    auto createProperties() -> std::shared_ptr<IPropertyGroup>;
+    auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> { return m_properties.getAccessor(); }
 
     void onMouseMove(const MouseMoveEvent& rEvent) override;
     void onMouseWheel(float scrollSteps) override;
@@ -41,6 +42,7 @@ private:
 
     std::shared_ptr<ICamera> m_pCamera;
     MapCameraController m_cameraController;
+    PropertyGroup m_properties;
 };
 
 }  // namespace im3e

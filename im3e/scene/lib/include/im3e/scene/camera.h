@@ -1,5 +1,6 @@
 #pragma once
 
+#include <im3e/property/property_interface.h>
 #include <im3e/scene/perspective_projection.h>
 #include <im3e/scene/view_transform.h>
 #include <im3e/utils/ray.h>
@@ -22,7 +23,7 @@ public:
     /// @return A view ray going from the origin of the camera to the given rNdcPos in scene coordinates.
     virtual auto createViewRayFromNdc(const glm::vec2& rNdcPos) const -> Ray = 0;
 
-    virtual auto createProperties() -> std::shared_ptr<IPropertyGroup> = 0;
+    virtual auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> = 0;
 
     virtual auto getProjection() -> PerspectiveProjection& = 0;
     virtual auto getProjection() const -> const PerspectiveProjection& = 0;
