@@ -80,16 +80,18 @@ struct PropertyFactory
     ANARIDevice anDevice;
     ANARIRenderer anRenderer;
     std::string_view anRendererSubtype;
-    std::function<void()> onParameterChanged;
 
 private:
     template <typename T>
     auto _create(const ANARIParameter* anParam) -> std::unique_ptr<IPropertyWrapper>
     {
+        constexpr auto IsString = std::is_same_v<T, std::string>;
+        using ParamType = std::conditional_t<IsString, char, T>;
+
         const auto* description = getRenderParamInfo<char>(anDevice, anRendererSubtype, anParam, "description",
                                                            ANARI_STRING);
-        const auto* defaultValue = getRenderParamInfo<T>(anDevice, anRendererSubtype, anParam, "default",
-                                                         anParam->type);
+        const auto* defaultValue = getRenderParamInfo<ParamType>(anDevice, anRendererSubtype, anParam, "default",
+                                                                 anParam->type);
 
         typename Property<T>::Config config{
             .name = anParam->name,
@@ -97,11 +99,25 @@ private:
         };
         if (defaultValue)
         {
-            config.defaultValue = *defaultValue;
+            if constexpr (IsString)
+            {
+                config.defaultValue = defaultValue;
+            }
+            else
+            {
+                config.defaultValue = *defaultValue;
+            }
         }
         return std::make_unique<Property<T>>(
             std::move(config), [anDevice = anDevice, anRenderer = anRenderer, anParam](const T& value) {
-                anariSetParameter(anDevice, anRenderer, anParam->name, anParam->type, &value);
+                if constexpr (IsString)
+                {
+                    anariSetParameter(anDevice, anRenderer, anParam->name, anParam->type, value.c_str());
+                }
+                else
+                {
+                    anariSetParameter(anDevice, anRenderer, anParam->name, anParam->type, &value);
+                }
             });
     }
 };
@@ -120,15 +136,6 @@ auto createProperties(const AnariDevice& rAnDevice, ANARIRenderer anRenderer, st
     std::vector<std::unique_ptr<IPropertyWrapper>> properties;
     for (const auto* anParam = anParams; anParam->name != nullptr; anParam++)
     {
-        // TODO: cleanup this workaround to fix crash with helide device and file ticket with ANARI SDK
-        if (rAnDevice.getLibraryName() == "visgl" && anParam->name == std::string{"occlusionMode"})
-        {
-            continue;
-        }
-        if (rAnDevice.getLibraryName() == "helide" && anParam->name == std::string{"mode"})
-        {
-            continue;
-        }
         properties.emplace_back(propertyFactory.create(anParam));
     }
     return properties;
