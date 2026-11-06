@@ -20,7 +20,7 @@ public:
     /// @return A view ray going from the origin of the camera to the given rNdcPos in scene coordinates.
     auto createViewRayFromNdc(const glm::vec2& rNdcPos) const -> Ray override;
 
-    auto getProperties() -> std::weak_ptr<IPropertyGroup> override { return m_properties.getInterface(); }
+    auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> override { return m_properties.getAccessor(); }
 
     auto getProjection() -> PerspectiveProjection& override { return m_projection; }
     auto getProjection() const -> const PerspectiveProjection& override { return m_projection; }

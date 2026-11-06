@@ -21,7 +21,7 @@ auto createImguiRenderPanel(std::string_view name, std::unique_ptr<IFramePipelin
 auto createImguiStatsPanel(std::string_view name, std::shared_ptr<IStatsProvider> pStatsProvider)
     -> std::shared_ptr<IGuiPanel>;
 
-auto createImguiPropertyPanel(std::weak_ptr<IPropertyGroup> pPropertyGroup) -> std::shared_ptr<IGuiPanel>;
+auto createImguiPropertyPanel(std::weak_ptr<IPropertyGroupAccessor> pPropertyGroup) -> std::shared_ptr<IGuiPanel>;
 
 auto createImguiWorkspace(std::string_view name) -> std::shared_ptr<IGuiWorkspace>;
 

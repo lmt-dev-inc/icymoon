@@ -21,7 +21,7 @@ public:
 
     void commitChanges();
 
-    auto getProperties() -> std::weak_ptr<IPropertyGroup> override { return m_properties.getInterface(); }
+    auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> override { return m_properties.getAccessor(); }
     auto getInstance() const -> ANARIInstance { return m_pAnInstance.get(); }
 
 private:

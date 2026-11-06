@@ -111,7 +111,7 @@ int main()
         },
     };
     {
-        auto pParametersPanel = createImguiPropertyPanel(parameters.getInterface());
+        auto pParametersPanel = createImguiPropertyPanel(parameters.getAccessor());
         pGuiWorkspace->addPanel(IGuiWorkspace::Location::Left, pParametersPanel);
     }
 

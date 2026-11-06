@@ -15,14 +15,14 @@ public:
     using PropertyControlMap =
         std::map<std::weak_ptr<IPropertyNode>, std::unique_ptr<IImguiPropertyControl>, std::owner_less<>>;
 
-    ImguiPropertyPanel(std::weak_ptr<IPropertyGroup> pPropertyGroup);
+    ImguiPropertyPanel(std::weak_ptr<IPropertyGroupAccessor> pPropertyGroup);
 
     void draw(const ICommandBuffer& rCommandBuffer) override;
 
     auto getName() const -> std::string override { return m_name; }
 
 private:
-    std::weak_ptr<IPropertyGroup> m_pPropertyGroup;
+    std::weak_ptr<IPropertyGroupAccessor> m_pPropertyGroup;
     const std::string m_name;
     PropertyControlMap m_pPropertyControlMap;
 };

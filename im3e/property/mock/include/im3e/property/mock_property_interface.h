@@ -25,11 +25,11 @@ private:
     mutable CallbackRegistry<> m_callbacks;
 };
 
-class MockProperty : public IProperty
+class MockPropertyAccessor : public IPropertyAccessor
 {
 public:
-    MockProperty();
-    ~MockProperty() override;
+    MockPropertyAccessor();
+    ~MockPropertyAccessor() override;
 
     MOCK_METHOD(CallbackRegistration, registerOnChange, (std::function<void()>), (const, override));
     MOCK_METHOD(const std::string&, getName, (), (const, override));
@@ -49,11 +49,11 @@ private:
     mutable CallbackRegistry<> m_callbacks;
 };
 
-class MockPropertyGroup : public IPropertyGroup
+class MockPropertyGroupAccessor : public IPropertyGroupAccessor
 {
 public:
-    MockPropertyGroup();
-    ~MockPropertyGroup() override;
+    MockPropertyGroupAccessor();
+    ~MockPropertyGroupAccessor() override;
 
     MOCK_METHOD(CallbackRegistration, registerOnChange, (std::function<void()>), (const, override));
     MOCK_METHOD(const std::string&, getName, (), (const, override));

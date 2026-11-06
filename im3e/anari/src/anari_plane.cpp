@@ -115,7 +115,7 @@ AnariPlane::AnariPlane(std::string_view name, std::shared_ptr<AnariDevice> pAnDe
             .name = m_name,
             .description = fmt::format("Group of properties for plane {}", m_name),
         },
-        {m_scale.getInterface()},
+        {m_scale.getAccessor()},
     }
 {
     m_transformChanged = true;

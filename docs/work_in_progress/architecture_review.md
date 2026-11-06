@@ -35,7 +35,7 @@ The last point is what matters most for the plan to replace ANARI: today, a new 
 - **Interfaces and factory functions.** Clients, tests and future language bindings depend only on abstract interfaces.
 - **RAII everywhere.** C handles are owned by `UniquePtrWithDeleter`, `VkUniquePtr` or `VkSharedPtr`; commands, barriers and stats spans are scoped objects.
 - **Automatic image barriers.** Images track their layout and last access, so callers only state the destination.
-- **Properties.** Objects publish `IPropertyGroup`s and the GUI generates controls for them; rendering code never includes ImGui.
+- **Properties.** Objects publish `IPropertyGroupAccessor`s and the GUI generates controls for them; rendering code never includes ImGui.
 - **`IFramePipeline` as a composition point.** The GUI renders any pipeline into a panel, including nested ones.
 - **Input in NDC.** `IGuiEventListener` is independent of the GUI library, panel size and display scaling.
 - **Dynamic Vulkan loading** (`VK_NO_PROTOTYPES`), which makes every Vulkan call mockable.

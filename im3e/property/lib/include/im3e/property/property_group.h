@@ -9,7 +9,7 @@
 
 namespace im3e {
 
-class PropertyGroup : public IPropertyGroupWrapper
+class PropertyGroup : public IPropertyGroup
 {
 public:
     struct Config
@@ -34,8 +34,8 @@ public:
 
     [[nodiscard]] auto getConfig() const -> const Config&;
     [[nodiscard]] auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>>;
-    [[nodiscard]] auto getInterface() -> std::weak_ptr<IPropertyGroup> override;
-    [[nodiscard]] auto getInterface() const -> std::weak_ptr<const IPropertyGroup> override;
+    [[nodiscard]] auto getAccessor() -> std::weak_ptr<IPropertyGroupAccessor> override;
+    [[nodiscard]] auto getAccessor() const -> std::weak_ptr<const IPropertyGroupAccessor> override;
 
 private:
     class Impl;

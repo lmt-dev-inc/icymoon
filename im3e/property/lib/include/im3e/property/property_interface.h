@@ -28,7 +28,7 @@ public:
     virtual auto getDescription() const -> const std::string& = 0;
 };
 
-class IProperty : public IPropertyNode
+class IPropertyAccessor : public IPropertyNode
 {
 public:
     virtual void setAnyValue(std::any value) = 0;
@@ -41,38 +41,38 @@ public:
     virtual auto getAnyMaxValue() const -> std::optional<std::any> = 0;
 };
 
-class IPropertyGroup : public IPropertyNode
+class IPropertyGroupAccessor : public IPropertyNode
 {
 public:
     virtual auto getChildren() const -> std::vector<std::weak_ptr<IPropertyNode>> = 0;
 };
 
-class IPropertyWrapper
+class IProperty
 {
 public:
-    IPropertyWrapper() = default;
-    IPropertyWrapper(const IPropertyWrapper&) = delete;
-    IPropertyWrapper(IPropertyWrapper&&) = delete;
-    IPropertyWrapper& operator=(const IPropertyWrapper&) = delete;
-    IPropertyWrapper& operator=(IPropertyWrapper&&) = delete;
-    virtual ~IPropertyWrapper() = default;
+    IProperty() = default;
+    IProperty(const IProperty&) = delete;
+    IProperty(IProperty&&) = delete;
+    IProperty& operator=(const IProperty&) = delete;
+    IProperty& operator=(IProperty&&) = delete;
+    virtual ~IProperty() = default;
 
-    [[nodiscard]] virtual auto getInterface() -> std::weak_ptr<IProperty> = 0;
-    [[nodiscard]] virtual auto getInterface() const -> std::weak_ptr<const IProperty> = 0;
+    [[nodiscard]] virtual auto getAccessor() -> std::weak_ptr<IPropertyAccessor> = 0;
+    [[nodiscard]] virtual auto getAccessor() const -> std::weak_ptr<const IPropertyAccessor> = 0;
 };
 
-class IPropertyGroupWrapper
+class IPropertyGroup
 {
 public:
-    IPropertyGroupWrapper() = default;
-    IPropertyGroupWrapper(const IPropertyGroupWrapper&) = delete;
-    IPropertyGroupWrapper(IPropertyGroupWrapper&&) = delete;
-    IPropertyGroupWrapper& operator=(const IPropertyGroupWrapper&) = delete;
-    IPropertyGroupWrapper& operator=(IPropertyGroupWrapper&&) = delete;
-    virtual ~IPropertyGroupWrapper() = default;
+    IPropertyGroup() = default;
+    IPropertyGroup(const IPropertyGroup&) = delete;
+    IPropertyGroup(IPropertyGroup&&) = delete;
+    IPropertyGroup& operator=(const IPropertyGroup&) = delete;
+    IPropertyGroup& operator=(IPropertyGroup&&) = delete;
+    virtual ~IPropertyGroup() = default;
 
-    [[nodiscard]] virtual auto getInterface() -> std::weak_ptr<IPropertyGroup> = 0;
-    [[nodiscard]] virtual auto getInterface() const -> std::weak_ptr<const IPropertyGroup> = 0;
+    [[nodiscard]] virtual auto getAccessor() -> std::weak_ptr<IPropertyGroupAccessor> = 0;
+    [[nodiscard]] virtual auto getAccessor() const -> std::weak_ptr<const IPropertyGroupAccessor> = 0;
 };
 
 }  // namespace im3e

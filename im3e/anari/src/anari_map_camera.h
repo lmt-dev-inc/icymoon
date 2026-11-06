@@ -23,7 +23,7 @@ public:
 
     void commitChanges();
 
-    auto getProperties() -> std::weak_ptr<IPropertyGroup> { return m_properties.getInterface(); }
+    auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> { return m_properties.getAccessor(); }
 
     void onMouseMove(const MouseMoveEvent& rEvent) override;
     void onMouseWheel(float scrollSteps) override;

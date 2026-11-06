@@ -43,7 +43,7 @@ AnariHeightField::AnariHeightField(std::shared_ptr<AnariDevice> pAnDevice, Anari
             .name = m_pHeightMap->getName(),
             .description = fmt::format("Group of properties for the height map \"{}\"", m_pHeightMap->getName()),
         },
-        { m_lod.getInterface() },
+        { m_lod.getAccessor() },
     }
 
   , m_pTiles(initializeTiles(m_pAnDevice, m_pHeightMap->getTileSize(), 100U))

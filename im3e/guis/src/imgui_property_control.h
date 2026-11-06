@@ -21,6 +21,6 @@ public:
 
 /// @brief Create the control matching the type of a property.
 /// @throws std::invalid_argument if the property is expired.
-auto createImguiPropertyControl(std::weak_ptr<IProperty> property) -> std::unique_ptr<IImguiPropertyControl>;
+auto createImguiPropertyControl(std::weak_ptr<IPropertyAccessor> property) -> std::unique_ptr<IImguiPropertyControl>;
 
 }  // namespace im3e

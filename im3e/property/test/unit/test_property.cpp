@@ -37,10 +37,10 @@ TEST(PropertyTest, constructor)
     auto property = Property<int>{config};
     EXPECT_THAT(property.getConfig(), ConfigEq<int>(config));
     EXPECT_THAT(property.getValue(), Eq(42));
-    EXPECT_THAT(property.getInterface().expired(), IsFalse());
+    EXPECT_THAT(property.getAccessor().expired(), IsFalse());
 
     const auto& constProperty = property;
-    EXPECT_THAT(constProperty.getInterface().expired(), IsFalse());
+    EXPECT_THAT(constProperty.getAccessor().expired(), IsFalse());
 }
 
 TEST(PropertyTest, constructor_withMinMax)
@@ -55,7 +55,7 @@ TEST(PropertyTest, constructor_withMinMax)
     auto property = Property<float>(config);
     EXPECT_THAT(property.getConfig(), ConfigEq<float>(config));
     EXPECT_THAT(property.getValue(), FloatEq(0.5F));
-    EXPECT_THAT(property.getInterface().expired(), IsFalse());
+    EXPECT_THAT(property.getAccessor().expired(), IsFalse());
 }
 
 TEST(PropertyTest, constructor_withMin)
@@ -218,7 +218,7 @@ TEST(PropertyTest, update_withReadOnly)
     MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 1, .isReadOnly = true}, mockOnChange.AsStdFunction()};
 
-    // Read-only only prevents changes via the interface, the owner can still change the value:
+    // Read-only only prevents changes via the accessor, the owner can still change the value:
     EXPECT_CALL(mockOnChange, Call(2));
     property.update([](int value) { return value + 1; });
     EXPECT_THAT(property.getValue(), Eq(2));
@@ -311,67 +311,67 @@ TEST(PropertyTest, setValue_withReadOnly)
     MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 1, .isReadOnly = true}, mockOnChange.AsStdFunction()};
 
-    // Read-only only prevents changes via the interface, the owner can still change the value:
+    // Read-only only prevents changes via the accessor, the owner can still change the value:
     EXPECT_CALL(mockOnChange, Call(2));
     property.setValue(2);
     EXPECT_THAT(property.getValue(), Eq(2));
 }
 
-TEST(PropertyTest, interface)
+TEST(PropertyTest, accessor)
 {
     Property<int> property{{
         .name = "Test Property",
         .description = "Test Description",
         .defaultValue = 7,
     }};
-    auto interface = property.getInterface().lock();
-    ASSERT_THAT(interface, NotNull());
-    EXPECT_THAT(interface->getName(), Eq("Test Property"));
-    EXPECT_THAT(interface->getDescription(), Eq("Test Description"));
-    EXPECT_THAT(interface->getType() == typeid(int), IsTrue());
-    EXPECT_THAT(interface->isReadOnly(), IsFalse());
-    EXPECT_THAT(std::any_cast<int>(interface->getAnyValue()), Eq(7));
-    EXPECT_THAT(interface->getAnyMinValue().has_value(), IsFalse());
-    EXPECT_THAT(interface->getAnyMaxValue().has_value(), IsFalse());
+    auto accessor = property.getAccessor().lock();
+    ASSERT_THAT(accessor, NotNull());
+    EXPECT_THAT(accessor->getName(), Eq("Test Property"));
+    EXPECT_THAT(accessor->getDescription(), Eq("Test Description"));
+    EXPECT_THAT(accessor->getType() == typeid(int), IsTrue());
+    EXPECT_THAT(accessor->isReadOnly(), IsFalse());
+    EXPECT_THAT(std::any_cast<int>(accessor->getAnyValue()), Eq(7));
+    EXPECT_THAT(accessor->getAnyMinValue().has_value(), IsFalse());
+    EXPECT_THAT(accessor->getAnyMaxValue().has_value(), IsFalse());
 }
 
-TEST(PropertyTest, interface_withMinMax)
+TEST(PropertyTest, accessor_withMinMax)
 {
     Property<float> property{{
         .defaultValue = 0.5F,
         .minValue = 0.25F,
         .maxValue = 0.75F,
     }};
-    auto interface = property.getInterface().lock();
-    ASSERT_THAT(interface, NotNull());
-    EXPECT_THAT(interface->getType() == typeid(float), IsTrue());
+    auto accessor = property.getAccessor().lock();
+    ASSERT_THAT(accessor, NotNull());
+    EXPECT_THAT(accessor->getType() == typeid(float), IsTrue());
 
-    const auto anyMinValueOpt = interface->getAnyMinValue();
+    const auto anyMinValueOpt = accessor->getAnyMinValue();
     ASSERT_THAT(anyMinValueOpt.has_value(), IsTrue());
     EXPECT_THAT(std::any_cast<float>(anyMinValueOpt.value()), FloatEq(0.25F));
 
-    const auto anyMaxValueOpt = interface->getAnyMaxValue();
+    const auto anyMaxValueOpt = accessor->getAnyMaxValue();
     ASSERT_THAT(anyMaxValueOpt.has_value(), IsTrue());
     EXPECT_THAT(std::any_cast<float>(anyMaxValueOpt.value()), FloatEq(0.75F));
 }
 
-TEST(PropertyTest, interface_withReadOnly)
+TEST(PropertyTest, accessor_withReadOnly)
 {
     Property<int> property{{
         .defaultValue = 1,
         .isReadOnly = true,
     }};
-    auto interface = property.getInterface().lock();
-    ASSERT_THAT(interface, NotNull());
-    EXPECT_THAT(interface->isReadOnly(), IsTrue());
+    auto accessor = property.getAccessor().lock();
+    ASSERT_THAT(accessor, NotNull());
+    EXPECT_THAT(accessor->isReadOnly(), IsTrue());
 }
 
-TEST(PropertyTest, interface_registerOnChange)
+TEST(PropertyTest, accessor_registerOnChange)
 {
     Property<int> property{{.defaultValue = 7}};
-    auto interface = property.getInterface().lock();
+    auto accessor = property.getAccessor().lock();
     MockFunction<void()> onChange;
-    auto onChangeRegistration = interface->registerOnChange(onChange.AsStdFunction());
+    auto onChangeRegistration = accessor->registerOnChange(onChange.AsStdFunction());
 
     EXPECT_CALL(onChange, Call());
     property.setValue(8);
@@ -381,10 +381,10 @@ TEST(PropertyTest, setAnyValue)
 {
     MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 7}, mockOnChange.AsStdFunction()};
-    auto interface = property.getInterface().lock();
+    auto accessor = property.getAccessor().lock();
 
     EXPECT_CALL(mockOnChange, Call(8));
-    interface->setAnyValue(8);
+    accessor->setAnyValue(8);
     EXPECT_THAT(property.getValue(), Eq(8));
 }
 
@@ -392,10 +392,10 @@ TEST(PropertyTest, setAnyValue_withNoChange)
 {
     MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 4}, mockOnChange.AsStdFunction()};
-    auto interface = property.getInterface().lock();
+    auto accessor = property.getAccessor().lock();
 
     EXPECT_CALL(mockOnChange, Call(_)).Times(0);
-    interface->setAnyValue(4);
+    accessor->setAnyValue(4);
     EXPECT_THAT(property.getValue(), Eq(4));
 }
 
@@ -403,10 +403,10 @@ TEST(PropertyTest, setAnyValue_withMin)
 {
     MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 12, .minValue = 10}, mockOnChange.AsStdFunction()};
-    auto interface = property.getInterface().lock();
+    auto accessor = property.getAccessor().lock();
 
     EXPECT_CALL(mockOnChange, Call(10));
-    interface->setAnyValue(8);
+    accessor->setAnyValue(8);
     EXPECT_THAT(property.getValue(), Eq(10));
 }
 
@@ -414,10 +414,10 @@ TEST(PropertyTest, setAnyValue_withMax)
 {
     MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 10, .maxValue = 12}, mockOnChange.AsStdFunction()};
-    auto interface = property.getInterface().lock();
+    auto accessor = property.getAccessor().lock();
 
     EXPECT_CALL(mockOnChange, Call(12));
-    interface->setAnyValue(14);
+    accessor->setAnyValue(14);
     EXPECT_THAT(property.getValue(), Eq(12));
 }
 
@@ -425,11 +425,11 @@ TEST(PropertyTest, setAnyValue_withWrongType)
 {
     MockFunction<void(const float&)> mockOnChange;
     Property<float> property{{.defaultValue = 0.5F}, mockOnChange.AsStdFunction()};
-    auto interface = property.getInterface().lock();
+    auto accessor = property.getAccessor().lock();
 
     // A double is not implicitly converted to float when stored in std::any:
     EXPECT_CALL(mockOnChange, Call(_)).Times(0);
-    EXPECT_THROW(interface->setAnyValue(1.2), std::bad_any_cast);
+    EXPECT_THROW(accessor->setAnyValue(1.2), std::bad_any_cast);
     EXPECT_THAT(property.getValue(), FloatEq(0.5F));
 }
 
@@ -437,43 +437,43 @@ TEST(PropertyTest, setAnyValue_withReadOnly)
 {
     MockFunction<void(const int&)> mockOnChange;
     Property<int> property{{.defaultValue = 1, .isReadOnly = true}, mockOnChange.AsStdFunction()};
-    auto interface = property.getInterface().lock();
+    auto accessor = property.getAccessor().lock();
 
     EXPECT_CALL(mockOnChange, Call(_)).Times(0);
-    EXPECT_THROW(interface->setAnyValue(2), std::logic_error);
+    EXPECT_THROW(accessor->setAnyValue(2), std::logic_error);
     EXPECT_THAT(property.getValue(), Eq(1));
 }
 
-TEST(PropertyTest, interfaceExpiresWithProperty)
+TEST(PropertyTest, accessorExpiresWithProperty)
 {
-    std::weak_ptr<IProperty> interface;
+    std::weak_ptr<IPropertyAccessor> accessor;
     {
         Property<int> property{{.defaultValue = 1}};
-        interface = property.getInterface();
-        EXPECT_THAT(interface.expired(), IsFalse());
+        accessor = property.getAccessor();
+        EXPECT_THAT(accessor.expired(), IsFalse());
     }
-    EXPECT_THAT(interface.expired(), IsTrue());
+    EXPECT_THAT(accessor.expired(), IsTrue());
 }
 
-TEST(PropertyTest, interfaceOutlivesProperty)
+TEST(PropertyTest, accessorOutlivesProperty)
 {
     MockFunction<void(const float&)> mockOnChange;
     MockFunction<void(const float&)> registeredOnChange;
     CallbackRegistration onChangeRegistration;
 
-    std::shared_ptr<IProperty> interface;
+    std::shared_ptr<IPropertyAccessor> accessor;
     {
         Property<float> property{{.defaultValue = 0.5F}, mockOnChange.AsStdFunction()};
         onChangeRegistration = property.registerOnChange(registeredOnChange.AsStdFunction());
-        interface = property.getInterface().lock();
-        EXPECT_THAT(interface, NotNull());
+        accessor = property.getAccessor().lock();
+        EXPECT_THAT(accessor, NotNull());
     }
 
     // Callbacks fire for as long as their registration is alive. mockOnChange's registration was owned by Property,
     // so it no longer fires. registeredOnChange's registration is owned by this test, so it keeps firing: the
-    // interface keeps working as a standalone value while it is referenced.
+    // accessor keeps working as a standalone value while it is referenced.
     EXPECT_CALL(mockOnChange, Call(_)).Times(0);
     EXPECT_CALL(registeredOnChange, Call(1.2F));
-    interface->setAnyValue(1.2F);
-    EXPECT_THAT(std::any_cast<float>(interface->getAnyValue()), FloatEq(1.2F));
+    accessor->setAnyValue(1.2F);
+    EXPECT_THAT(std::any_cast<float>(accessor->getAnyValue()), FloatEq(1.2F));
 }

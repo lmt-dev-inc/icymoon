@@ -7,7 +7,7 @@
 
 using namespace im3e;
 
-class PropertyGroup::Impl : public IPropertyGroup
+class PropertyGroup::Impl : public IPropertyGroupAccessor
 {
 public:
     Impl() = delete;
@@ -92,12 +92,12 @@ auto PropertyGroup::getChildren() const -> std::vector<std::weak_ptr<IPropertyNo
     return m_impl->getChildren();
 }
 
-auto PropertyGroup::getInterface() -> std::weak_ptr<IPropertyGroup>
+auto PropertyGroup::getAccessor() -> std::weak_ptr<IPropertyGroupAccessor>
 {
     return m_impl;
 }
 
-auto PropertyGroup::getInterface() const -> std::weak_ptr<const IPropertyGroup>
+auto PropertyGroup::getAccessor() const -> std::weak_ptr<const IPropertyGroupAccessor>
 {
     return m_impl;
 }

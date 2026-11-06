@@ -25,8 +25,11 @@ public:
     [[nodiscard]] auto getAspectRatio() const -> float { return m_aspectRatio.getValue(); }
     [[nodiscard]] auto getNear() const -> float { return m_near.getValue(); }
     [[nodiscard]] auto getFar() const -> float { return m_far.getValue(); }
-    [[nodiscard]] auto getProperties() -> std::weak_ptr<IPropertyGroup> { return m_group.getInterface(); }
-    [[nodiscard]] auto getProperties() const -> std::weak_ptr<const IPropertyGroup> { return m_group.getInterface(); }
+    [[nodiscard]] auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> { return m_group.getAccessor(); }
+    [[nodiscard]] auto getProperties() const -> std::weak_ptr<const IPropertyGroupAccessor>
+    {
+        return m_group.getAccessor();
+    }
     [[nodiscard]] auto getMatrix() const -> const glm::mat4&;
 
 private:
@@ -65,10 +68,10 @@ private:
                               .description = "Group of properties representing a perspective projection",
                           },
                           {
-                              m_fovY.getInterface(),
-                              m_aspectRatio.getInterface(),
-                              m_near.getInterface(),
-                              m_far.getInterface(),
+                              m_fovY.getAccessor(),
+                              m_aspectRatio.getAccessor(),
+                              m_near.getAccessor(),
+                              m_far.getAccessor(),
                           },
                           [this] { _onChanged(); }};
 

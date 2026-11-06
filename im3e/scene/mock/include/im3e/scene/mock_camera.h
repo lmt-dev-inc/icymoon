@@ -15,7 +15,7 @@ public:
 
     MOCK_METHOD(Ray, createViewRayFromNdc, (const glm::vec2&), (const, override));
 
-    MOCK_METHOD(std::weak_ptr<IPropertyGroup>, getProperties, (), (override));
+    MOCK_METHOD(std::weak_ptr<IPropertyGroupAccessor>, getProperties, (), (override));
 
     MOCK_METHOD(PerspectiveProjection&, getProjection, (), (override));
     MOCK_METHOD(const PerspectiveProjection&, getProjection, (), (const, override));

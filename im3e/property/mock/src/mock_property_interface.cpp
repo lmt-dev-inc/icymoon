@@ -10,18 +10,18 @@ MockPropertyNode::MockPropertyNode()
 }
 MockPropertyNode::~MockPropertyNode() = default;
 
-MockProperty::MockProperty()
+MockPropertyAccessor::MockPropertyAccessor()
 {
     ON_CALL(*this, registerOnChange(_)).WillByDefault(Invoke([this](auto onChange) {
         return m_callbacks.registerCallback(std::move(onChange));
     }));
 }
-MockProperty::~MockProperty() = default;
+MockPropertyAccessor::~MockPropertyAccessor() = default;
 
-MockPropertyGroup::MockPropertyGroup()
+MockPropertyGroupAccessor::MockPropertyGroupAccessor()
 {
     ON_CALL(*this, registerOnChange(_)).WillByDefault(Invoke([this](auto onChange) {
         return m_callbacks.registerCallback(std::move(onChange));
     }));
 }
-MockPropertyGroup::~MockPropertyGroup() = default;
+MockPropertyGroupAccessor::~MockPropertyGroupAccessor() = default;

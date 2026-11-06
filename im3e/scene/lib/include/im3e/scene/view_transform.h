@@ -22,8 +22,11 @@ public:
     [[nodiscard]] auto getDirection() const -> glm::vec3 { return m_direction.getValue(); }
     [[nodiscard]] auto getUp() const -> glm::vec3 { return m_up.getValue(); }
     [[nodiscard]] auto getRight() const -> glm::vec3 { return m_right.getValue(); }
-    [[nodiscard]] auto getProperties() -> std::weak_ptr<IPropertyGroup> { return m_group.getInterface(); }
-    [[nodiscard]] auto getProperties() const -> std::weak_ptr<const IPropertyGroup> { return m_group.getInterface(); }
+    [[nodiscard]] auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> { return m_group.getAccessor(); }
+    [[nodiscard]] auto getProperties() const -> std::weak_ptr<const IPropertyGroupAccessor>
+    {
+        return m_group.getAccessor();
+    }
     [[nodiscard]] auto getMatrix() const -> const glm::mat4&;
 
 private:
@@ -61,10 +64,10 @@ private:
             .description = "Group of properties representing a view transform",
         },
         {
-            m_position.getInterface(),
-            m_direction.getInterface(),
-            m_up.getInterface(),
-            m_right.getInterface(),
+            m_position.getAccessor(),
+            m_direction.getAccessor(),
+            m_up.getAccessor(),
+            m_right.getAccessor(),
         },
         [this] { _onChanged(); },
     };

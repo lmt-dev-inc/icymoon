@@ -19,7 +19,7 @@ class IAnariObject
 public:
     virtual ~IAnariObject() = default;
 
-    virtual auto getProperties() -> std::weak_ptr<IPropertyGroup> = 0;
+    virtual auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> = 0;
 };
 
 class IAnariWorld
@@ -36,8 +36,8 @@ class IAnariFramePipeline : public IFramePipeline
 public:
     virtual ~IAnariFramePipeline() = default;
 
-    virtual auto getCameraProperties() -> std::weak_ptr<IPropertyGroup> = 0;
-    virtual auto getRendererProperties() -> std::weak_ptr<IPropertyGroup> = 0;
+    virtual auto getCameraProperties() -> std::weak_ptr<IPropertyGroupAccessor> = 0;
+    virtual auto getRendererProperties() -> std::weak_ptr<IPropertyGroupAccessor> = 0;
 
     virtual auto getCameraListener() -> std::shared_ptr<IGuiEventListener> = 0;
     virtual auto getWorld() -> std::shared_ptr<IAnariWorld> = 0;

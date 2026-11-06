@@ -91,9 +91,9 @@ TEST(PropertyGroupTest, constructor_withNoChildren)
     PropertyGroup group{{.name = "Empty"}, {}};
     EXPECT_THAT(group.getChildren(), IsEmpty());
 
-    auto interface = group.getInterface().lock();
-    ASSERT_THAT(interface, NotNull());
-    EXPECT_THAT(interface->getChildren(), IsEmpty());
+    auto accessor = group.getAccessor().lock();
+    ASSERT_THAT(accessor, NotNull());
+    EXPECT_THAT(accessor->getChildren(), IsEmpty());
 }
 
 TEST(PropertyGroupTest, constructor_withDuplicateChildren)
@@ -200,7 +200,7 @@ TEST(PropertyGroupTest, getChildren_whenMiddleChildDestroyed)
     EXPECT_THAT(group.getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
 }
 
-TEST(PropertyGroupTest, interface)
+TEST(PropertyGroupTest, accessor)
 {
     const auto mockChildren = createMockPropertyNodes(3U);
     PropertyGroup group{
@@ -211,79 +211,79 @@ TEST(PropertyGroupTest, interface)
         toWeakPtrVector(mockChildren),
     };
 
-    auto interface = group.getInterface().lock();
-    ASSERT_THAT(interface, NotNull());
-    EXPECT_THAT(interface->getName(), Eq("Test Group"));
-    EXPECT_THAT(interface->getDescription(), Eq("Test Description"));
-    EXPECT_THAT(interface->getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
+    auto accessor = group.getAccessor().lock();
+    ASSERT_THAT(accessor, NotNull());
+    EXPECT_THAT(accessor->getName(), Eq("Test Group"));
+    EXPECT_THAT(accessor->getDescription(), Eq("Test Description"));
+    EXPECT_THAT(accessor->getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
 }
 
-TEST(PropertyGroupTest, interface_const)
+TEST(PropertyGroupTest, accessor_const)
 {
     const auto mockChildren = createMockPropertyNodes(3U);
     const PropertyGroup group{{.name = "Test Group"}, toWeakPtrVector(mockChildren)};
 
-    std::shared_ptr<const IPropertyGroup> interface = group.getInterface().lock();
-    ASSERT_THAT(interface, NotNull());
-    EXPECT_THAT(interface->getName(), Eq("Test Group"));
-    EXPECT_THAT(interface->getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
+    std::shared_ptr<const IPropertyGroupAccessor> accessor = group.getAccessor().lock();
+    ASSERT_THAT(accessor, NotNull());
+    EXPECT_THAT(accessor->getName(), Eq("Test Group"));
+    EXPECT_THAT(accessor->getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
 }
 
-TEST(PropertyGroupTest, interface_registerOnChange)
+TEST(PropertyGroupTest, accessor_registerOnChange)
 {
     const auto mockChildren = createMockPropertyNodes(3U);
     PropertyGroup group{{.name = "Group"}, toWeakPtrVector(mockChildren)};
 
-    auto interface = group.getInterface().lock();
-    ASSERT_THAT(interface, NotNull());
+    auto accessor = group.getAccessor().lock();
+    ASSERT_THAT(accessor, NotNull());
     StrictMock<MockFunction<void()>> mockOnChange;
-    const auto registration = interface->registerOnChange(mockOnChange.AsStdFunction());
+    const auto registration = accessor->registerOnChange(mockOnChange.AsStdFunction());
 
     EXPECT_CALL(mockOnChange, Call()).Times(mockChildren.size());
     notifyChanged(mockChildren);
 }
 
-TEST(PropertyGroupTest, interface_registerOnChange_withNullCallback)
+TEST(PropertyGroupTest, accessor_registerOnChange_withNullCallback)
 {
     PropertyGroup group{{.name = "Group"}, {}};
-    auto interface = group.getInterface().lock();
-    ASSERT_THAT(interface, NotNull());
-    EXPECT_THROW(auto registration = interface->registerOnChange({}), std::invalid_argument);
+    auto accessor = group.getAccessor().lock();
+    ASSERT_THAT(accessor, NotNull());
+    EXPECT_THROW(auto registration = accessor->registerOnChange({}), std::invalid_argument);
 }
 
-TEST(PropertyGroupTest, interfaceExpiresWithGroup)
+TEST(PropertyGroupTest, accessorExpiresWithGroup)
 {
-    std::weak_ptr<IPropertyGroup> interface;
+    std::weak_ptr<IPropertyGroupAccessor> accessor;
     {
         PropertyGroup group{{.name = "Group"}, {}};
-        interface = group.getInterface();
-        EXPECT_THAT(interface.expired(), IsFalse());
+        accessor = group.getAccessor();
+        EXPECT_THAT(accessor.expired(), IsFalse());
     }
-    EXPECT_THAT(interface.expired(), IsTrue());
+    EXPECT_THAT(accessor.expired(), IsTrue());
 }
 
-TEST(PropertyGroupTest, interfaceOutlivesGroup)
+TEST(PropertyGroupTest, accessorOutlivesGroup)
 {
     const auto mockChildren = createMockPropertyNodes(3U);
     MockFunction<void()> mockOnChange;
     MockFunction<void()> registeredOnChange;
     CallbackRegistration onChangeRegistration;
 
-    std::shared_ptr<IPropertyGroup> interface;
+    std::shared_ptr<IPropertyGroupAccessor> accessor;
     {
         PropertyGroup group{{.name = "Group"}, toWeakPtrVector(mockChildren), mockOnChange.AsStdFunction()};
         onChangeRegistration = group.registerOnChange(registeredOnChange.AsStdFunction());
-        interface = group.getInterface().lock();
-        ASSERT_THAT(interface, NotNull());
+        accessor = group.getAccessor().lock();
+        ASSERT_THAT(accessor, NotNull());
     }
 
     // Callbacks fire for as long as their registration is alive. mockOnChange's registration was owned by the group,
     // so it no longer fires. registeredOnChange's registration is owned by this test, so it keeps firing: the
-    // interface keeps working while it is referenced.
+    // accessor keeps working while it is referenced.
     EXPECT_CALL(mockOnChange, Call()).Times(0);
     EXPECT_CALL(registeredOnChange, Call()).Times(mockChildren.size());
     notifyChanged(mockChildren);
-    EXPECT_THAT(interface->getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
+    EXPECT_THAT(accessor->getChildren(), WhenLocked(ElementsAreArray(mockChildren)));
 }
 
 TEST(PropertyGroupTest, childOutlivesGroup)

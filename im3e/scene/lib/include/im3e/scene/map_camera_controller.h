@@ -34,8 +34,11 @@ public:
     [[nodiscard]] auto getDistanceToTarget() const -> float { return m_distanceToTarget.getValue(); }
     [[nodiscard]] auto getHeading() const -> float { return m_heading.getValue(); }
     [[nodiscard]] auto getTilt() const -> float { return m_tilt.getValue(); }
-    [[nodiscard]] auto getProperties() -> std::weak_ptr<IPropertyGroup> { return m_group.getInterface(); }
-    [[nodiscard]] auto getProperties() const -> std::weak_ptr<const IPropertyGroup> { return m_group.getInterface(); }
+    [[nodiscard]] auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> { return m_group.getAccessor(); }
+    [[nodiscard]] auto getProperties() const -> std::weak_ptr<const IPropertyGroupAccessor>
+    {
+        return m_group.getAccessor();
+    }
 
 private:
     void _update();
@@ -75,10 +78,10 @@ private:
             .description = "Group of properties controlling a camera over a map",
         },
         {
-            m_targetPoint.getInterface(),
-            m_distanceToTarget.getInterface(),
-            m_heading.getInterface(),
-            m_tilt.getInterface(),
+            m_targetPoint.getAccessor(),
+            m_distanceToTarget.getAccessor(),
+            m_heading.getAccessor(),
+            m_tilt.getAccessor(),
         },
         [this] { _update(); },
     };

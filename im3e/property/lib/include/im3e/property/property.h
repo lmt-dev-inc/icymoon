@@ -16,7 +16,7 @@
 namespace im3e {
 
 template <typename T>
-class Property : public IPropertyWrapper
+class Property : public IProperty
 {
 public:
     struct Config
@@ -27,7 +27,7 @@ public:
         std::optional<T> minValue;
         std::optional<T> maxValue;
 
-        // When set to true, changes through the interface to the property are not allowed.
+        // When set to true, changes through the accessor to the property are not allowed.
         // Changes through Property (setValue and update) are still allowed.
         bool isReadOnly = false;
     };
@@ -62,13 +62,13 @@ public:
     void setValue(const T& value) { m_impl->setValue(value); }
     void setValue(T&& value) { m_impl->setValue(std::move(value)); }
 
-    [[nodiscard]] auto getInterface() -> std::weak_ptr<IProperty> override { return m_impl; }
-    [[nodiscard]] auto getInterface() const -> std::weak_ptr<const IProperty> override { return m_impl; }
+    [[nodiscard]] auto getAccessor() -> std::weak_ptr<IPropertyAccessor> override { return m_impl; }
+    [[nodiscard]] auto getAccessor() const -> std::weak_ptr<const IPropertyAccessor> override { return m_impl; }
     [[nodiscard]] auto getConfig() const -> const Config& { return m_impl->getConfig(); }
     [[nodiscard]] auto getValue() const -> const T& { return m_impl->getValue(); }
 
 private:
-    class Impl : public IProperty
+    class Impl : public IPropertyAccessor
     {
     public:
         Impl() = delete;

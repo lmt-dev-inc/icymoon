@@ -215,12 +215,12 @@ void AnariFramePipeline::resize(const VkExtent2D& rVkExtent, uint32_t)
     m_currentViewportSize = {};
 }
 
-auto AnariFramePipeline::getCameraProperties() -> std::weak_ptr<IPropertyGroup>
+auto AnariFramePipeline::getCameraProperties() -> std::weak_ptr<IPropertyGroupAccessor>
 {
     return m_pCamera->getProperties();
 }
 
-auto AnariFramePipeline::getRendererProperties() -> std::weak_ptr<IPropertyGroup>
+auto AnariFramePipeline::getRendererProperties() -> std::weak_ptr<IPropertyGroupAccessor>
 {
     return m_pAnRenderer->getProperties();
 }

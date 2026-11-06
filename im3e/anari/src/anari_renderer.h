@@ -21,7 +21,7 @@ public:
 
     void commitChanges();
 
-    auto getProperties() -> std::weak_ptr<IPropertyGroup> { return m_propertyGroup.getInterface(); }
+    auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> { return m_propertyGroup.getAccessor(); }
     auto getHandle() const -> ANARIRenderer { return m_pAnRenderer.get(); }
 
 private:
@@ -33,7 +33,7 @@ private:
 
     bool m_parametersChanged{};
 
-    std::vector<std::unique_ptr<IPropertyWrapper>> m_properties;
+    std::vector<std::unique_ptr<IProperty>> m_properties;
     PropertyGroup m_propertyGroup;
 };
 

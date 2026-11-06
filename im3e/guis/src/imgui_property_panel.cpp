@@ -10,7 +10,7 @@ using namespace im3e;
 
 namespace {
 
-auto getPropertyControl(const std::shared_ptr<IProperty>& pProperty,
+auto getPropertyControl(const std::shared_ptr<IPropertyAccessor>& pProperty,
                         ImguiPropertyPanel::PropertyControlMap& rPropertyControlMap) -> IImguiPropertyControl&
 {
     auto itFind = rPropertyControlMap.find(pProperty);
@@ -31,7 +31,7 @@ void drawProperty(const std::shared_ptr<IPropertyNode>& pNode,
     ImGui::TableSetColumnIndex(0);
     ImGui::AlignTextToFramePadding();
 
-    if (auto pPropertyGroup = std::dynamic_pointer_cast<IPropertyGroup>(pNode))
+    if (auto pPropertyGroup = std::dynamic_pointer_cast<IPropertyGroupAccessor>(pNode))
     {
         const auto treeNodeId = fmt::format("{}##header", pPropertyGroup->getName());
         const auto treeNodeFlags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen;
@@ -57,7 +57,7 @@ void drawProperty(const std::shared_ptr<IPropertyNode>& pNode,
             }
         }
     }
-    else if (auto pProperty = std::dynamic_pointer_cast<IProperty>(pNode))
+    else if (auto pProperty = std::dynamic_pointer_cast<IPropertyAccessor>(pNode))
     {
         auto& rPropertyControl = getPropertyControl(pProperty, rPropertyControlMap);
         ImGui::Text("%s", rPropertyControl.getName().c_str());
@@ -70,7 +70,7 @@ void drawProperty(const std::shared_ptr<IPropertyNode>& pNode,
     }
 }
 
-auto getGroupName(const std::weak_ptr<IPropertyGroup>& rpPropertyGroup) -> std::string
+auto getGroupName(const std::weak_ptr<IPropertyGroupAccessor>& rpPropertyGroup) -> std::string
 {
     auto pPropertyGroup = rpPropertyGroup.lock();
     throwIfArgNull(pPropertyGroup, "ImguiPropertyPanel requires a PropertyGroup");
@@ -79,7 +79,7 @@ auto getGroupName(const std::weak_ptr<IPropertyGroup>& rpPropertyGroup) -> std::
 
 }  // namespace
 
-ImguiPropertyPanel::ImguiPropertyPanel(std::weak_ptr<IPropertyGroup> pPropertyGroup)
+ImguiPropertyPanel::ImguiPropertyPanel(std::weak_ptr<IPropertyGroupAccessor> pPropertyGroup)
   : m_pPropertyGroup(std::move(pPropertyGroup))
   , m_name(getGroupName(m_pPropertyGroup))
 {
@@ -117,7 +117,7 @@ void ImguiPropertyPanel::draw(const ICommandBuffer&)
     }
 }
 
-auto im3e::createImguiPropertyPanel(std::weak_ptr<IPropertyGroup> pPropertyGroup) -> std::shared_ptr<IGuiPanel>
+auto im3e::createImguiPropertyPanel(std::weak_ptr<IPropertyGroupAccessor> pPropertyGroup) -> std::shared_ptr<IGuiPanel>
 {
     return std::make_shared<ImguiPropertyPanel>(std::move(pPropertyGroup));
 }

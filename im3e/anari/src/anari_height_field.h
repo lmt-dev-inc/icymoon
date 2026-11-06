@@ -31,7 +31,7 @@ public:
     void updateAsync(const AnariMapCamera& rCamera);
     void commitChanges();
 
-    auto getProperties() -> std::weak_ptr<IPropertyGroup> override { return m_properties.getInterface(); }
+    auto getProperties() -> std::weak_ptr<IPropertyGroupAccessor> override { return m_properties.getAccessor(); }
 
 private:
     std::shared_ptr<AnariDevice> m_pAnDevice;

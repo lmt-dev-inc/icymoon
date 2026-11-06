@@ -154,11 +154,12 @@ There are no cycles. `im3e_api` is the hub: modules talk to each other through i
 
 **`im3e_property`** ([im3e/property/](../../im3e/property/)) is a small reflection system that lets objects expose editable parameters without knowing the GUI:
 
-- `IProperty` exposes a value as `std::any`, with its type, name, description, optional min/max and a read-only flag. `IPropertyGroup` is a named tree of properties.
-- `Property<T>` and `PropertyGroup` implement them as plain members of their owner, and expose the interfaces as `weak_ptr`s. Listeners subscribe through `registerOnChange`, and stay subscribed as long as they keep the returned `CallbackRegistration`.
-- A read-only property (`isReadOnly`) can only be changed by its owner, not through `IProperty`.
+- `Property<T>` and `PropertyGroup` are the real objects, held as plain members by their owner. `Property<T>` gives typed access to a value, and `IProperty` and `IPropertyGroup` are their common bases, for holding them in a collection.
+- `IPropertyAccessor` gives untyped access to a property through `std::any`, with its type, name, description, optional min/max and a read-only flag. `IPropertyGroupAccessor` gives access to a named tree of properties. Accessors are handed out as `weak_ptr`s, so they don't keep the properties alive.
+- Listeners subscribe through `registerOnChange`, and stay subscribed as long as they keep the returned `CallbackRegistration`.
+- A read-only property (`isReadOnly`) can only be changed by its owner, not through its accessor.
 
-`im3e_guis` draws any property group (`ImguiPropertyPanel`, `ImguiPropertyControl`) through the interfaces only. ANARI objects (camera, renderer, height fields, planes) publish their parameters this way. See [Properties](properties.md) for the details.
+`im3e_guis` draws any property group (`ImguiPropertyPanel`, `ImguiPropertyControl`) through the accessors only. ANARI objects (camera, renderer, height fields, planes) publish their parameters this way. See [Properties](properties.md) for the details.
 
 ### Interfaces: `im3e_api`
 
@@ -220,7 +221,7 @@ For now it contains the camera:
 | `createGlfwWindowApplication` | `GlfwWindowApplication`: initializes GLFW, creates the `IDevice`, owns windows and runs the loop.                                                  |
 | `createImguiWorkspace`        | `ImguiWorkspace`: a dock space with a center panel and panels docked top/bottom/left/right.                                                        |
 | `createImguiRenderPanel`      | `ImguiRenderPanel`: runs any `IFramePipeline` into an offscreen image shown as an ImGui image, and forwards mouse input to an `IGuiEventListener`. |
-| `createImguiPropertyPanel`    | `ImguiPropertyPanel`: draws and edits an `IPropertyGroup`.                                                                                         |
+| `createImguiPropertyPanel`    | `ImguiPropertyPanel`: draws and edits an `IPropertyGroupAccessor`.                                                                                 |
 | `createImguiStatsPanel`       | `ImguiStatsPanel`: shows timing spans from an `IStatsProvider`.                                                                                    |
 | `createImguiPipeline`         | `ImguiPipeline`: the `IFramePipeline` that renders a workspace.                                                                                    |
 
@@ -283,7 +284,7 @@ auto pHeightField = pFramePipeline->getWorld()->addHeightField(loadHeightMapFrom
 
 auto pWorkspace = createImguiWorkspace("ANARI");
 PropertyGroup parameters{{.name = "Parameters"}, {pFramePipeline->getRendererProperties(), ...}};
-pWorkspace->addPanel(Location::Left, createImguiPropertyPanel(parameters.getInterface()));
+pWorkspace->addPanel(Location::Left, createImguiPropertyPanel(parameters.getAccessor()));
 pWorkspace->addPanel(Location::Center, createImguiRenderPanel("Renderer", std::move(pFramePipeline), pCameraListener));
 pWorkspace->addPanel(Location::Bottom, createImguiStatsPanel("Stats", pDevice->getStatsProvider()));
 
@@ -298,7 +299,7 @@ pApp->run();
 - **Constructor argument checks.** Constructors validate their dependencies with `throwIfArgNull` in the member initializer list, so an object is either fully built or not built.
 - **Child loggers.** Each object creates a named child logger from its parent (`createChild`, `IDevice::createLogger`), giving messages a hierarchical origin.
 - **Scoped operations.** Command recording, barriers and stats spans are RAII objects: submission, barrier emission and span end happen in their destructor.
-- **Properties instead of GUI code.** Objects expose `IPropertyGroup`s; the GUI generates controls for them. Rendering code never includes ImGui.
+- **Properties instead of GUI code.** Objects expose `IPropertyGroupAccessor`s; the GUI generates controls for them. Rendering code never includes ImGui.
 - **Commit model.** ANARI objects accumulate parameter changes and apply them in `commitChanges()`, called by the frame pipeline between frames, never while ANARI is rendering.
 
 The rules these patterns follow (naming, includes, error handling...) are in [Code Standards](../development/code_standards.md).

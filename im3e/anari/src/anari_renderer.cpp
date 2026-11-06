@@ -60,7 +60,7 @@ auto getRenderParamInfo(ANARIDevice anDevice, std::string_view rendererSubtype, 
 
 struct PropertyFactory
 {
-    auto create(const ANARIParameter* anParam) -> std::unique_ptr<IPropertyWrapper>
+    auto create(const ANARIParameter* anParam) -> std::unique_ptr<IProperty>
     {
         switch (static_cast<int>(anParam->type))
         {
@@ -83,7 +83,7 @@ struct PropertyFactory
 
 private:
     template <typename T>
-    auto _create(const ANARIParameter* anParam) -> std::unique_ptr<IPropertyWrapper>
+    auto _create(const ANARIParameter* anParam) -> std::unique_ptr<IProperty>
     {
         constexpr auto IsString = std::is_same_v<T, std::string>;
         using ParamType = std::conditional_t<IsString, char, T>;
@@ -123,7 +123,7 @@ private:
 };
 
 auto createProperties(const AnariDevice& rAnDevice, ANARIRenderer anRenderer, std::string_view anRendererSubtype)
-    -> std::vector<std::unique_ptr<IPropertyWrapper>>
+    -> std::vector<std::unique_ptr<IProperty>>
 {
     const auto* anParams = static_cast<const ANARIParameter*>(anariGetObjectInfo(
         rAnDevice.getHandle(), ANARI_RENDERER, anRendererSubtype.data(), "parameter", ANARI_PARAMETER_LIST));
@@ -133,7 +133,7 @@ auto createProperties(const AnariDevice& rAnDevice, ANARIRenderer anRenderer, st
         .anRenderer = anRenderer,
         .anRendererSubtype = anRendererSubtype,
     };
-    std::vector<std::unique_ptr<IPropertyWrapper>> properties;
+    std::vector<std::unique_ptr<IProperty>> properties;
     for (const auto* anParam = anParams; anParam->name != nullptr; anParam++)
     {
         properties.emplace_back(propertyFactory.create(anParam));
@@ -141,16 +141,16 @@ auto createProperties(const AnariDevice& rAnDevice, ANARIRenderer anRenderer, st
     return properties;
 }
 
-auto getInterfaces(const std::vector<std::unique_ptr<IPropertyWrapper>>& properties)
+auto getAccessors(const std::vector<std::unique_ptr<IProperty>>& properties)
     -> std::vector<std::weak_ptr<IPropertyNode>>
 {
-    std::vector<std::weak_ptr<IPropertyNode>> interfaces;
-    interfaces.reserve(properties.size());
+    std::vector<std::weak_ptr<IPropertyNode>> accessors;
+    accessors.reserve(properties.size());
     for (const auto& property : properties)
     {
-        interfaces.emplace_back(property->getInterface());
+        accessors.emplace_back(property->getAccessor());
     }
-    return interfaces;
+    return accessors;
 }
 
 }  // namespace
@@ -166,7 +166,7 @@ AnariRenderer::AnariRenderer(std::shared_ptr<AnariDevice> pAnDevice)
             .name = fmt::format("Renderer: \"{}\"", m_anRendererSubtype),
             .description = "Parameters of the ANARI renderer",
         },
-        getInterfaces(m_properties),
+        getAccessors(m_properties),
         [this] { m_parametersChanged = true; },
     }
 {
