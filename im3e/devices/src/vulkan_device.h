@@ -7,7 +7,7 @@
 
 #include <im3e/api/device.h>
 #include <im3e/api/image.h>
-#include <im3e/devices/vulkan_loaders/vulkan_loaders.h>
+#include <im3e/vulkan/internal/loader/vulkan_loaders.h>
 #include <im3e/utils/loggers.h>
 
 namespace im3e {

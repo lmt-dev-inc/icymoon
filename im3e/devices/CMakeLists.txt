@@ -34,8 +34,6 @@ target_link_libraries(im3e_devices
   PRIVATE
     cimg::cimg
     im3e_utils
-    im3e_vulkan_loaders
 )
 
-add_subdirectory(vulkan_loaders)
 add_subdirectory(test)

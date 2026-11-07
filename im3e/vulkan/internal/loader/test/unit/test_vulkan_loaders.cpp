@@ -1,4 +1,4 @@
-#include "src/vulkan_loader.h"
+#include "vulkan_loader.h"
 
 #include <im3e/test_utils/test_utils.h>
 #include <im3e/utils/core/throw_utils.h>

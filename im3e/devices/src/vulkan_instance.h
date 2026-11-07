@@ -4,7 +4,7 @@
 #include "vulkan_extensions.h"
 #include "vulkan_physical_devices.h"
 
-#include <im3e/devices/vulkan_loaders/vulkan_loaders.h>
+#include <im3e/vulkan/internal/loader/vulkan_loaders.h>
 #include <im3e/utils/core/types.h>
 #include <im3e/utils/loggers.h>
 
