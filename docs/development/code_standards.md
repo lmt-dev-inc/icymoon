@@ -6,20 +6,29 @@ The project follows the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGu
 
 Each rule says whether it is checked automatically today. Rules without automation are enforced in code review; [Enforcement](#enforcement) explores how to automate them later.
 
-- [Formatting](#formatting)
-- [Compiler warnings](#compiler-warnings)
-- [Namespaces](#namespaces)
-- [Naming](#naming)
-- [Functions](#functions)
-- [Initialization](#initialization)
-- [Library folders](#library-folders)
-- [Files and includes](#files-and-includes)
-- [Error handling](#error-handling)
-- [Text encoding and paths](#text-encoding-and-paths)
-- [Library code](#library-code)
-- [Tests](#tests)
-- [CMake scripts](#cmake-scripts)
-- [Enforcement](#enforcement)
+- [Code Standards](#code-standards)
+  - [Formatting](#formatting)
+  - [Compiler warnings](#compiler-warnings)
+  - [Namespaces](#namespaces)
+  - [Naming](#naming)
+  - [Functions](#functions)
+  - [Initialization](#initialization)
+  - [Library folders](#library-folders)
+    - [Targets and groups](#targets-and-groups)
+    - [Libraries](#libraries)
+    - [Families of libraries](#families-of-libraries)
+    - [Internal libraries](#internal-libraries)
+    - [Include directories](#include-directories)
+    - [Public headers](#public-headers)
+  - [Files and includes](#files-and-includes)
+  - [Error handling](#error-handling)
+  - [Text encoding and paths](#text-encoding-and-paths)
+  - [Library code](#library-code)
+  - [Tests](#tests)
+  - [CMake scripts](#cmake-scripts)
+  - [Enforcement](#enforcement)
+    - [Where checks could run](#where-checks-could-run)
+    - [Tools per rule](#tools-per-rule)
 
 ## Formatting
 
@@ -174,15 +183,47 @@ im3e/
     glfw/       library  im3e_gui_glfw
 ```
 
+### Internal libraries
+
+Library targets are `STATIC`. A part of a library that needs its own dependencies, tests or mocks, but has no user outside the library, is an **internal library**: an `OBJECT` library whose object files are archived into its owner's library. It keeps the part isolated, as a separate library would, without a separate library file to install and link.
+
+Internal libraries live in the `internal/` group of their owner, and are laid out like any library. Their names come from their paths, so `internal` appears in their target names and include paths:
+
+```
+im3e/vulkan/                                   group
+  lib/                                         im3e_vulkan
+  internal/                                    group, only internal libraries of im3e_vulkan
+    loader/                                    group
+      lib/                                     im3e_vulkan_internal_loader
+        CMakeLists.txt
+        include/im3e/vulkan/internal/loader/vulkan_loader.h
+        src/vulkan_loader.cpp
+      mock/                                    mock_im3e_vulkan_internal_loader
+        include/im3e/vulkan/internal/loader/mock_vulkan_loader.h
+        src/mock_vulkan_loader.cpp
+      test/
+        unit/                                  test_im3e_vulkan_internal_loader
+  mock/                                        mock_im3e_vulkan
+  test/
+```
+
+- **Created with `im3e_add_internal_library`** (`cmake/im3e_libraries.cmake`), which links the internal library privately into its owner. The owner's `lib/` folder is added before `internal/`, as the owner must exist.
+- **Only the owner uses it:** the owner's `src/` and tests, and the internal library's own mocks and tests. The owner's public headers never include it, and no other library links it. The owner links it privately, so its headers can't be found by the users of the owner.
+- **A target links either the owner or the internal library, never both.** Both contain the same object files. The internal library's tests link the internal library only.
+- **The owner links the compiled third-party libraries that the internal library uses.** The internal library is left out of the owner's exported package, and so are its dependencies.
+- **No umbrella header**, and it is never installed.
+- When a second library needs it, it becomes a library of its own: move it out of `internal/`, and make it `STATIC`.
+
 ### Include directories
 
 Each target only exposes its own `include/` folder, so a target can only include the headers of the targets it links. The repository root is not an include directory.
 
-| Target          | Public include directory | Private include directory                                           |
-| --------------- | ------------------------ | ------------------------------------------------------------------- |
-| Library         | `lib/include/`           | `lib/src/`                                                          |
-| Mock            | `mock/include/`          | `mock/src/`                                                         |
-| Test executable |                          | `lib/src/`, only when the tests need the library's internal classes |
+| Target           | Public include directory | Private include directory                                           |
+| ---------------- | ------------------------ | ------------------------------------------------------------------- |
+| Library          | `lib/include/`           | `lib/src/`                                                          |
+| Internal library | `lib/include/`           | `lib/src/`                                                          |
+| Mock             | `mock/include/`          | `mock/src/`                                                         |
+| Test executable  |                          | `lib/src/`, only when the tests need the library's internal classes |
 
 ### Public headers
 
@@ -300,6 +341,7 @@ Nothing below is set up yet. This section lists the options for automating the r
 | No `this->` unless required                | Script (regular expression) in `dev.py lint`                                        | No clang-tidy check removes it. A script can flag every `this->` outside templates for review.                                                                                                                                                                                      |
 | Trailing return types                      | clang-tidy `modernize-use-trailing-return-type`                                     | Also rewrites `void` functions, unlike our convention. Either adopt `auto f() -> void` or skip this check.                                                                                                                                                                          |
 | Library folders                            | Script in `dev.py lint`                                                             | Walk `im3e/`: a folder that defines a target may only contain `CMakeLists.txt`, `include/`, `src/`, `data/` and, for executables, `.cpp` files; any other folder may only contain folders and `CMakeLists.txt`. Can also check target names and include paths against folder paths. |
+| Internal libraries                         | `im3e_add_internal_library`, and a script in `dev.py lint`                          | The function checks that the owner is a `STATIC` library defined beforehand, and scopes the include directories. A script can flag `im3e_*_internal_*` targets linked from outside their owner's folder, and `internal/` includes in public headers.                                |
 | No umbrella headers inside `im3e/`         | Script in `dev.py lint`                                                             | Flag includes of `<im3e/X.h>` where `im3e/X/` is a library.                                                                                                                                                                                                                         |
 | Include what you use                       | clang-tidy `misc-include-cleaner`                                                   | Would have caught the missing includes found when porting to Windows. Can report many findings at first.                                                                                                                                                                            |
 | Include order                              | clang-format `IncludeCategories`                                                    | Partially configured in `.clang-format`; would need to match the groups above.                                                                                                                                                                                                      |
