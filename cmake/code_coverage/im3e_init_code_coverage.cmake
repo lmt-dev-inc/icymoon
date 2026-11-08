@@ -1,6 +1,4 @@
-if (NOT(WIN32) AND (CMAKE_BUILD_TYPE STREQUAL "Debug" OR GENERATOR_IS_MULTI_CONFIG))
-    include("${CMAKE_CURRENT_LIST_DIR}/src/code_coverage.cmake")
-endif()
+include("${CMAKE_CURRENT_LIST_DIR}/src/im3e_gcc_code_coverage.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/src/im3e_llvm_code_coverage.cmake")
 
 option(TEST_COVERAGE "Builds with coverage instrumentation and adds coverage targets")
@@ -15,11 +13,10 @@ function(im3e_set_coverage_flags)
     endif()
 
     if(CMAKE_COMPILER_IS_GNUCXX)
-        append_coverage_compiler_flags()
-        # append_coverage_compiler_flags() only sets the flags in this function's scope: forward them to the caller
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" PARENT_SCOPE)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" PARENT_SCOPE)
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS}" PARENT_SCOPE)
+        # -fprofile-update=atomic: counters updated concurrently by several threads would otherwise be corrupted, and
+        # gcovr rejects the resulting negative counts
+        add_compile_options(--coverage -fprofile-abs-path -fprofile-update=atomic)
+        add_link_options(--coverage)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         # %4m makes all runs of the same executable merge their counters into a pool of at most 4 files, instead of
         # one file per process (%p) or each run overwriting the previous one (no pattern). The pool lets parallel runs
@@ -43,40 +40,7 @@ function(im3e_init_code_coverage)
     endif()
 
     if(CMAKE_COMPILER_IS_GNUCXX)
-        get_property(COVERAGE_EXCLUDES GLOBAL PROPERTY COVERAGE_EXCLUDES_PROPERTY)
-        set(COVERAGE_EXCLUDES
-            ${COVERAGE_EXCLUDES}
-            "~/.conan/*"
-            "~/.conan2/*"
-            "/opt/*"
-            "/usr/*"
-            "build/*"
-            "applications/*"
-            "external/*"
-            "resources/*"
-        )
-
-        setup_target_for_coverage_lcov(
-        NAME
-            im3e_test_coverage
-        EXECUTABLE
-            ctest
-        DEPENDENCIES
-            all
-        EXCLUDE
-            ${COVERAGE_EXCLUDES}
-        )
-
-        setup_target_for_coverage_lcov(
-        NAME
-            im3e_unit_test_coverage
-        EXECUTABLE
-            ctest -L "unit_test"
-        DEPENDENCIES
-            all
-        EXCLUDE
-            ${COVERAGE_EXCLUDES}
-        )
+        im3e_internal_init_gcc_code_coverage()
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         im3e_internal_init_llvm_code_coverage()
     endif()
