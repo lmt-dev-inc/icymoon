@@ -2,9 +2,9 @@
 
 #include "vulkan_debug_message_handler.h"
 #include "vulkan_extensions.h"
+#include "vulkan_loader_interface.h"
 #include "vulkan_physical_devices.h"
 
-#include <im3e/vulkan/internal/loader/vulkan_loaders.h>
 #include <im3e/utils/core/types.h>
 #include <im3e/utils/loggers.h>
 

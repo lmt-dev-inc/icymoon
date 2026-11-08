@@ -1,6 +1,7 @@
 #pragma once
 
-#include <im3e/vulkan/internal/loader/vulkan_loaders.h>
+#include "vulkan_loader_interface.h"
+
 #include <im3e/mock/mock_vulkan_functions.h>
 
 namespace im3e {

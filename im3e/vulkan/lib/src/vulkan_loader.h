@@ -1,7 +1,8 @@
 #pragma once
 
+#include "vulkan_loader_interface.h"
+
 #include <im3e/utils/core/types.h>
-#include <im3e/vulkan/internal/loader/vulkan_loaders.h>
 
 namespace im3e {
 

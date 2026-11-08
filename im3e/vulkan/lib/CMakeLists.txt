@@ -18,6 +18,11 @@ im3e_add_library(
     src/vulkan_images.h
     src/vulkan_instance.cpp
     src/vulkan_instance.h
+    $<$<PLATFORM_ID:Linux>:src/vulkan_library_loader_linux.h>
+    $<$<PLATFORM_ID:Windows>:src/vulkan_library_loader_windows.h>
+    src/vulkan_loader_interface.h
+    src/vulkan_loader.cpp
+    src/vulkan_loader.h
     src/vulkan_memory_allocator.cpp
     src/vulkan_memory_allocator.h
     src/vulkan_physical_devices.cpp
@@ -29,6 +34,6 @@ target_link_libraries(im3e_vulkan
     im3e_api
   PRIVATE
     cimg::cimg
-    fmt::fmt # used by the internal library im3e_vulkan_internal_loader
+    fmt::fmt
     im3e_utils
 )

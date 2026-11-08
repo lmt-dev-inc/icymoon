@@ -55,7 +55,8 @@ endfunction()
 # include/ folder doesn't propagate to the users of the owner. The link is wrapped in $<BUILD_INTERFACE:...> so that the
 # internal library stays out of exported and installed packages: its code is already in the owner's archive.
 #
-# The target name must match the folder: im3e/vulkan/internal/loader/lib/ defines im3e_vulkan_internal_loader.
+# The target name must match the folder: im3e/<library>/internal/<component>/lib/ defines
+# im3e_<library>_internal_<component>.
 # The owner must be defined before calling this function: add the owner's lib/ folder before internal/.
 function(im3e_add_internal_library)
     set(options)

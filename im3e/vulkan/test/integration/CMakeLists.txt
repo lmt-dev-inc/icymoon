@@ -5,6 +5,12 @@ im3e_add_integration_tests_executable(
     integration_vulkan_command_buffers.cpp
     integration_vulkan_device.cpp
     integration_vulkan_images.cpp
+    integration_vulkan_loader.cpp
+)
+
+target_include_directories(integration_im3e_vulkan
+  PRIVATE
+    ../../lib/src
 )
 
 target_link_libraries(integration_im3e_vulkan
