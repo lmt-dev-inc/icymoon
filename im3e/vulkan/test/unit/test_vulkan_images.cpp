@@ -1,8 +1,8 @@
 #include "vulkan_images.h"
 
-#include <im3e/mock/mock_device.h>
 #include <im3e/test_utils/test_utils.h>
 #include <im3e/test_utils/vk.h>
+#include <im3e/vulkan/mock_device.h>
 #include <im3e/vulkan/test/mock_vulkan_memory_allocator.h>
 
 using namespace im3e;

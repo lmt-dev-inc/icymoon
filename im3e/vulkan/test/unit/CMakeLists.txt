@@ -21,6 +21,6 @@ target_link_libraries(test_im3e_vulkan
     fmt::fmt
     im3e_test_utils
     im3e_vulkan
-    mock_im3e
+    mock_im3e_vulkan
     test_common_im3e_vulkan
 )

@@ -21,7 +21,7 @@ target_link_libraries(test_common_im3e_vulkan
     GTest::gmock
     im3e_test_utils
     im3e_vulkan
-    mock_im3e
+    mock_im3e_vulkan
 )
 
 im3e_exclude_from_coverage()

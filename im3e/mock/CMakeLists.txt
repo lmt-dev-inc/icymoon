@@ -2,16 +2,8 @@ im3e_add_mock_library(
   TARGET
     mock_im3e
   SOURCES
-    src/mock_command_buffer.cpp
-    src/mock_device.cpp
     src/mock_height_map.cpp
-    src/mock_image.cpp
-    src/mock_vulkan_functions.cpp
-    mock_command_buffer.h
-    mock_device.h
     mock_height_map.h
-    mock_image.h
-    mock_vulkan_functions.h
 )
 
 target_include_directories(mock_im3e
@@ -26,8 +18,4 @@ target_link_libraries(mock_im3e
   PUBLIC
     GTest::gmock
     im3e_api
-    im3e_vulkan
-    mock_im3e_utils
-  PRIVATE
-    im3e_utils
 )

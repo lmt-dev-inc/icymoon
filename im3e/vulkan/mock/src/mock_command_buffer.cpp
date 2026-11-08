@@ -1,4 +1,4 @@
-#include "mock_command_buffer.h"
+#include <im3e/vulkan/mock_command_buffer.h>
 
 using namespace im3e;
 

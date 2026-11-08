@@ -1,8 +1,8 @@
 #include "vulkan_command_queue.h"
 
-#include <im3e/mock/mock_device.h>
-#include <im3e/mock/mock_image.h>
 #include <im3e/test_utils/test_utils.h>
+#include <im3e/vulkan/mock_device.h>
+#include <im3e/vulkan/mock_image.h>
 
 using namespace im3e;
 

@@ -1,12 +1,11 @@
 #pragma once
 
-#include "mock_command_buffer.h"
-#include "mock_image.h"
-#include "mock_vulkan_functions.h"
-
 #include <im3e/utils/mock/mock_logger.h>
 #include <im3e/utils/mock/mock_stats.h>
 #include <im3e/vulkan/device.h>
+#include <im3e/vulkan/mock_command_buffer.h>
+#include <im3e/vulkan/mock_image.h>
+#include <im3e/vulkan/mock_vulkan_functions.h>
 
 #include <gmock/gmock.h>
 

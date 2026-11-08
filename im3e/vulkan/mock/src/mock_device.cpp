@@ -1,4 +1,4 @@
-#include "mock_device.h"
+#include <im3e/vulkan/mock_device.h>
 
 #include <im3e/test_utils/test_utils.h>
 
