@@ -256,7 +256,7 @@ The ANARI image reaches Vulkan through the CPU: `AnariFramePipeline` maps the AN
 ### Test support: `im3e_test_utils` and mocks
 
 - [im3e/test_utils/](../../im3e/test_utils/) provides GoogleTest fixtures: `IntegrationTest` (logger whose errors fail the test), `DeviceIntegrationTest` (a real Vulkan device) and `PipelineIntegrationTest` (runs an `IFramePipeline` into an image and compares pixels). It also has printers and matchers for GLM, Vulkan and standard types.
-- `mock_im3e` ([im3e/mock/](../../im3e/mock/)) mocks the `im3e_api` interfaces: device, images, command buffers, height maps, Vulkan function tables. `mock_im3e_utils` mocks loggers and stats. Mocks of private interfaces, such as `MockVulkanLoader`, are helpers of their library's unit tests.
+- `mock_im3e` ([im3e/mock/](../../im3e/mock/)) mocks the `im3e_api` interfaces: device, images, command buffers, height maps, Vulkan function tables. `mock_im3e_utils` mocks loggers and stats. Mocks of private interfaces, such as `MockVulkanLoader`, are test helpers of their library, in its `test/common/` target (`test_common_im3e_vulkan`).
 - Test executables are declared with `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` ([cmake/im3e_tests.cmake](../../cmake/im3e_tests.cmake)), which label them for `ctest -L` and exclude them from coverage.
 
 Current coverage by module: `utils`, `utils/core`, `vulkan` have unit and integration tests; `property` and `scene` have unit tests; `geo` tests the quad tree; `guis` has integration tests only; `anari` has no tests yet.

@@ -1,4 +1,4 @@
-#include "mock_vulkan_loader.h"
+#include <im3e/vulkan/test/mock_vulkan_loader.h>
 
 using namespace im3e;
 

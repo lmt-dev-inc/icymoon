@@ -146,7 +146,6 @@ im3e/scene/                                    group
   lib/                                         im3e_scene
     CMakeLists.txt
     include/im3e/scene/camera.h
-    include/im3e/scene.h                       umbrella header
     src/camera.cpp
   mock/                                        mock_im3e_scene
     CMakeLists.txt
@@ -154,6 +153,10 @@ im3e/scene/                                    group
     src/mock_camera.cpp
   test/                                        group
     CMakeLists.txt
+    common/                                    test_common_im3e_scene
+      CMakeLists.txt
+      include/im3e/scene/test/mock_camera_listener.h
+      src/mock_camera_listener.cpp
     unit/                                      test_im3e_scene
       CMakeLists.txt
       test_camera.cpp
@@ -165,10 +168,10 @@ im3e/scene/                                    group
 
 - **Created with `im3e_add_library`** (`cmake/im3e_libraries.cmake`), which makes the library `STATIC`, sets its include directories (see [Include directories](#include-directories)), and fails if the target name doesn't match the folder.
 - **Names come from paths.** The library target is `im3e_` followed by the library's path below `im3e/`, with `/` replaced by `_`, and its headers are included through that path: `im3e/render/anari/` is `im3e_render_anari`, and its headers are `<im3e/render/anari/...>`. The other targets are prefixed with their type: `mock_im3e_render_anari`, `test_im3e_render_anari` (unit tests), `integration_im3e_render_anari`. Sorted alphabetically, targets of the same type then sit together, in `bin/` as in `target_link_libraries`, where linked mocks are visible at a glance. Mock headers are included through the library's path, with the same prefix as their target: `<im3e/render/anari/mock_anari_renderer.h>`.
-- **Each test type is its own target**, in its own folder under `test/`, with its own `ctest` label (see [Tests](#tests)). Adding a test type means adding a folder. Helpers shared by several test types of a library go in a `test/common/` target, `test_common_im3e_<path>`.
+- **Each test type is its own target**, in its own folder under `test/`, with its own `ctest` label (see [Tests](#tests)). Adding a test type means adding a folder. Helpers shared by several test types of a library go in a `test/common/` target, `test_common_im3e_<path>`, a `STATIC` library excluded from coverage. Its headers are included through the library's path followed by `test/`: `<im3e/render/anari/test/...>`. Only the tests of that library link it.
 - **Mocks only implement interfaces** from the library's public headers. Never replace a concrete class at link time (a "link seam"): it depends on link order and ODR (one-definition rule) details, breaks silently, and behaves differently between linkers. Mocks define their constructor and destructor in `src/`, so that the mock methods are compiled once rather than in every test, as the [gMock cookbook](https://google.github.io/googletest/gmock_cook_book.html#making-the-compilation-faster) recommends.
 - **Mocks are created with `im3e_add_mock_library(... MOCKED <library>)`** (`cmake/im3e_tests.cmake`), which fails if the mock doesn't match its folder and the library of that folder, sets its include directories, and links GoogleMock and the mocked library.
-- **Private interfaces isolate the parts of a library**, so that its unit tests can replace them, e.g. `IVulkanLoader` and `IVulkanMemoryAllocator` in `im3e_vulkan`. They are declared in `lib/src/`, and their mocks are helpers of the unit tests, in `test/unit/`, not in `mock/`: other libraries never see them.
+- **Private interfaces isolate the parts of a library**, so that its unit tests can replace them, e.g. `IVulkanLoader` and `IVulkanMemoryAllocator` in `im3e_vulkan`. They are declared in `lib/src/`, and their mocks are test helpers in `test/common/`, not in `mock/`: other libraries never see them. `test/common/` then makes `lib/src/` a public include directory, so that its users can include the mocked interfaces.
 
 ### Families of libraries
 
@@ -215,25 +218,25 @@ im3e/<library>/                                group
 - **Only the owner uses it:** the owner's `src/` and tests, and the internal library's own mocks and tests. The owner's public headers never include it, and no other library links it. The owner links it privately, so its headers can't be found by the users of the owner.
 - **A target links either the owner or the internal library, never both.** Both contain the same object files. The internal library's tests link the internal library only. Its mock only gets its headers (`$<COMPILE_ONLY:...>`), as the tests that use the mock link the owner: `im3e_add_mock_library` does it when `MOCKED` is an internal library.
 - **The owner links the compiled third-party libraries that the internal library uses.** The internal library is left out of the owner's exported package, and so are its dependencies.
-- **No umbrella header**, and it is never installed.
+- **It is never installed.**
 - When a second library needs it, it becomes a library of its own: move it out of `internal/`, and make it `STATIC`.
 
 ### Include directories
 
 Each target only exposes its own `include/` folder, so a target can only include the headers of the targets it links. The repository root is not an include directory.
 
-| Target           | Public include directory | Private include directory                                           |
-| ---------------- | ------------------------ | ------------------------------------------------------------------- |
-| Library          | `lib/include/`           | `lib/src/`                                                          |
-| Internal library | `lib/include/`           | `lib/src/`                                                          |
-| Mock             | `mock/include/`          | `mock/src/`                                                         |
-| Test executable  |                          | `lib/src/`, only when the tests need the library's internal classes |
+| Target           | Public include directory                                                 | Private include directory                                           |
+| ---------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Library          | `lib/include/`                                                           | `lib/src/`                                                          |
+| Internal library | `lib/include/`                                                           | `lib/src/`                                                          |
+| Mock             | `mock/include/`                                                          | `mock/src/`                                                         |
+| Test helpers     | `test/common/include/`, and `lib/src/` when they mock private interfaces | `test/common/src/`                                                  |
+| Test executable  |                                                                          | `lib/src/`, only when the tests need the library's internal classes |
 
 ### Public headers
 
 - One header per public concept, named after its main type: `camera.h` declares `Camera`. A small type that only exists to configure another one can share its header, e.g. `MapCameraState` in `map_camera_controller.h`.
-- Each library has an **umbrella header** that includes all its public headers and contains nothing else, so that an application includes one file per library. It is one level above the library's headers, so that it can't clash with a class header: `<im3e/scene.h>` includes `<im3e/scene/camera.h>`..., and `<im3e/render/anari.h>` includes `<im3e/render/anari/...>`.
-- Code under `im3e/` never includes an umbrella header: it includes the headers it uses (see [Files and includes](#files-and-includes)), so that a change to a header only rebuilds the files that use it. Umbrella headers are for applications and other users of the library.
+- **No umbrella headers** (a header that includes all the public headers of a library). Code includes the headers it uses (see [Files and includes](#files-and-includes)), in `im3e/` as in applications, so that a change to a header only rebuilds the files that use it.
 
 *Automated:* no. Once every library follows this layout, the build enforces the include directories.
 
@@ -346,7 +349,7 @@ Nothing below is set up yet. This section lists the options for automating the r
 | Trailing return types                      | clang-tidy `modernize-use-trailing-return-type`                                     | Also rewrites `void` functions, unlike our convention. Either adopt `auto f() -> void` or skip this check.                                                                                                                                                                                                                          |
 | Library folders                            | Script in `dev.py lint`                                                             | Walk `im3e/`: a folder that defines a target may only contain `CMakeLists.txt`, `include/`, `src/`, `data/` and, for executables, `.cpp` files; any other folder may only contain folders and `CMakeLists.txt`. `im3e_add_library` already checks library names; the script can check the other target names and the include paths. |
 | Internal libraries                         | `im3e_add_internal_library`, and a script in `dev.py lint`                          | The function checks that the owner is a `STATIC` library defined beforehand, and scopes the include directories. A script can flag `im3e_*_internal_*` targets linked from outside their owner's folder, `internal/` includes in public headers, and includes of the owner's headers from an internal library.                      |
-| No umbrella headers inside `im3e/`         | Script in `dev.py lint`                                                             | Flag includes of `<im3e/X.h>` where `im3e/X/` is a library.                                                                                                                                                                                                                                                                         |
+| No umbrella headers                        | Script in `dev.py lint`                                                             | Flag headers directly in an `include/im3e/` folder: public headers are always one level deeper, in `include/im3e/<path>/`.                                                                                                                                                                                                          |
 | Include what you use                       | clang-tidy `misc-include-cleaner`                                                   | Would have caught the missing includes found when porting to Windows. Can report many findings at first.                                                                                                                                                                                                                            |
 | Include order                              | clang-format `IncludeCategories`                                                    | Partially configured in `.clang-format`; would need to match the groups above.                                                                                                                                                                                                                                                      |
 | Paths and encoding                         | Script flagging `.string().c_str()` and `.c_str()` on paths, or code review         | Hard to check reliably without type information.                                                                                                                                                                                                                                                                                    |

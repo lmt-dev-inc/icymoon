@@ -2,11 +2,6 @@ im3e_add_unit_tests_executable(
   TARGET
     test_im3e_vulkan
   SOURCES
-    mock_vulkan_helper.h
-    mock_vulkan_loader.cpp
-    mock_vulkan_loader.h
-    mock_vulkan_memory_allocator.cpp
-    mock_vulkan_memory_allocator.h
     test_vulkan_command_buffer.cpp
     test_vulkan_command_queue.cpp
     test_vulkan_debug_message_handler.cpp
@@ -27,4 +22,5 @@ target_link_libraries(test_im3e_vulkan
     im3e_test_utils
     im3e_vulkan
     mock_im3e
+    test_common_im3e_vulkan
 )

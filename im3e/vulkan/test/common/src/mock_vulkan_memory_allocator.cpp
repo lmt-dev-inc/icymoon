@@ -1,4 +1,4 @@
-#include "mock_vulkan_memory_allocator.h"
+#include <im3e/vulkan/test/mock_vulkan_memory_allocator.h>
 
 using namespace im3e;
 

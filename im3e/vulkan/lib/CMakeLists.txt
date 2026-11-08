@@ -2,7 +2,6 @@ im3e_add_library(
   TARGET
     im3e_vulkan
   SOURCES
-    include/im3e/vulkan.h
     include/im3e/vulkan/device.h
     src/vulkan_command_buffer.cpp
     src/vulkan_command_buffer.h

@@ -1,10 +1,9 @@
 #include "vulkan_extensions.h"
 
-#include "mock_vulkan_helper.h"
-#include "mock_vulkan_loader.h"
-
 #include <im3e/test_utils/test_utils.h>
 #include <im3e/utils/mock/mock_logger.h>
+#include <im3e/vulkan/test/mock_vulkan_helper.h>
+#include <im3e/vulkan/test/mock_vulkan_loader.h>
 
 using namespace im3e;
 
