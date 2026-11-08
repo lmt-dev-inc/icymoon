@@ -91,6 +91,9 @@ function(im3e_add_internal_library)
 
     add_library(${ARG_TARGET} OBJECT ${ARG_SOURCES})
 
+    # Read by im3e_add_mock_library: a mock links an internal library differently.
+    set_target_properties(${ARG_TARGET} PROPERTIES IM3E_INTERNAL_OWNER ${ARG_OWNER})
+
     target_include_directories(${ARG_TARGET}
       PUBLIC
         include

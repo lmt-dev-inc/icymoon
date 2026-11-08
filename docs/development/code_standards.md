@@ -167,6 +167,7 @@ im3e/scene/                                    group
 - **Names come from paths.** The library target is `im3e_` followed by the library's path below `im3e/`, with `/` replaced by `_`, and its headers are included through that path: `im3e/render/anari/` is `im3e_render_anari`, and its headers are `<im3e/render/anari/...>`. The other targets are prefixed with their type: `mock_im3e_render_anari`, `test_im3e_render_anari` (unit tests), `integration_im3e_render_anari`. Sorted alphabetically, targets of the same type then sit together, in `bin/` as in `target_link_libraries`, where linked mocks are visible at a glance. Mock headers are included through the library's path, with the same prefix as their target: `<im3e/render/anari/mock_anari_renderer.h>`.
 - **Each test type is its own target**, in its own folder under `test/`, with its own `ctest` label (see [Tests](#tests)). Adding a test type means adding a folder. Helpers shared by several test types of a library go in a `test/common/` target, `test_common_im3e_<path>`.
 - **Mocks only implement interfaces** from the library's public headers. Never replace a concrete class at link time (a "link seam"): it depends on link order and ODR (one-definition rule) details, breaks silently, and behaves differently between linkers. Mocks define their constructor and destructor in `src/`, so that the mock methods are compiled once rather than in every test, as the [gMock cookbook](https://google.github.io/googletest/gmock_cook_book.html#making-the-compilation-faster) recommends.
+- **Mocks are created with `im3e_add_mock_library(... MOCKED <library>)`** (`cmake/im3e_tests.cmake`), which fails if the mock doesn't match its folder and the library of that folder, sets its include directories, and links GoogleMock and the mocked library.
 
 ### Families of libraries
 
@@ -210,7 +211,7 @@ im3e/vulkan/                                   group
 
 - **Created with `im3e_add_internal_library`** (`cmake/im3e_libraries.cmake`), which checks its name like `im3e_add_library`, and links it privately into its owner. The owner's `lib/` folder is added before `internal/`, as the owner must exist.
 - **Only the owner uses it:** the owner's `src/` and tests, and the internal library's own mocks and tests. The owner's public headers never include it, and no other library links it. The owner links it privately, so its headers can't be found by the users of the owner.
-- **A target links either the owner or the internal library, never both.** Both contain the same object files. The internal library's tests link the internal library only.
+- **A target links either the owner or the internal library, never both.** Both contain the same object files. The internal library's tests link the internal library only. Its mock only gets its headers (`$<COMPILE_ONLY:...>`), as the tests that use the mock link the owner: `im3e_add_mock_library` does it when `MOCKED` is an internal library.
 - **The owner links the compiled third-party libraries that the internal library uses.** The internal library is left out of the owner's exported package, and so are its dependencies.
 - **No umbrella header**, and it is never installed.
 - When a second library needs it, it becomes a library of its own: move it out of `internal/`, and make it `STATIC`.
