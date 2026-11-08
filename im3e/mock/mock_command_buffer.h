@@ -1,7 +1,7 @@
 #pragma once
 
-#include <im3e/api/command_buffer.h>
 #include <im3e/test_utils/test_utils.h>
+#include <im3e/vulkan/command_buffer.h>
 
 namespace im3e {
 

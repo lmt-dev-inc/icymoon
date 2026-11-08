@@ -1,10 +1,9 @@
 #pragma once
 
-#include "command_buffer.h"
-#include "device.h"
-#include "image.h"
-
 #include <im3e/utils/vk_utils.h>
+#include <im3e/vulkan/command_buffer.h>
+#include <im3e/vulkan/device.h>
+#include <im3e/vulkan/image.h>
 
 namespace im3e {
 

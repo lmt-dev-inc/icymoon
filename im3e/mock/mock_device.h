@@ -4,9 +4,9 @@
 #include "mock_image.h"
 #include "mock_vulkan_functions.h"
 
-#include <im3e/api/device.h>
 #include <im3e/utils/mock/mock_logger.h>
 #include <im3e/utils/mock/mock_stats.h>
+#include <im3e/vulkan/device.h>
 
 #include <gmock/gmock.h>
 

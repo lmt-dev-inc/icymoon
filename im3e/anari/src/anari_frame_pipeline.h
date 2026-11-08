@@ -5,10 +5,10 @@
 #include "anari_renderer.h"
 #include "anari_world.h"
 
-#include <im3e/api/device.h>
-#include <im3e/api/frame_pipeline.h>
-#include <im3e/api/image.h>
 #include <im3e/utils/core/types.h>
+#include <im3e/vulkan/device.h>
+#include <im3e/vulkan/frame_pipeline.h>
+#include <im3e/vulkan/image.h>
 
 #include <anari/anari.h>
 

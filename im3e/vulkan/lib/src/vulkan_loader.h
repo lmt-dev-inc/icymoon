@@ -1,7 +1,7 @@
 #pragma once
 
-#include <im3e/api/vulkan_functions.h>
 #include <im3e/utils/core/types.h>
+#include <im3e/vulkan/vulkan_functions.h>
 
 #include <memory>
 

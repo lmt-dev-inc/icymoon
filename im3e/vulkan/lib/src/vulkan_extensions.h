@@ -1,7 +1,7 @@
 #pragma once
 
-#include <im3e/api/vulkan_functions.h>
 #include <im3e/utils/loggers.h>
+#include <im3e/vulkan/vulkan_functions.h>
 
 #include <vector>
 

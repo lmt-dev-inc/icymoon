@@ -1,11 +1,11 @@
 #pragma once
 
-#include <im3e/api/device.h>
-#include <im3e/api/frame_pipeline.h>
 #include <im3e/api/gui.h>
 #include <im3e/api/height_map.h>
 #include <im3e/property/property_interface.h>
 #include <im3e/utils/loggers.h>
+#include <im3e/vulkan/device.h>
+#include <im3e/vulkan/frame_pipeline.h>
 
 #include <anari/anari.h>
 

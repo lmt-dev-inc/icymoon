@@ -37,12 +37,12 @@ target_link_libraries(im3e_guis
     im3e_api
     im3e_property
     im3e_utils
+    im3e_vulkan
     glm::glm
   PRIVATE
     glfw
     imgui
     im3e_resources
-    im3e_vulkan
 )
 
 add_subdirectory(test)

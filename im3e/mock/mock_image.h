@@ -1,7 +1,7 @@
 #pragma once
 
-#include <im3e/api/image.h>
 #include <im3e/test_utils/test_utils.h>
+#include <im3e/vulkan/image.h>
 
 namespace im3e {
 

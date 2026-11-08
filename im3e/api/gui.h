@@ -1,8 +1,7 @@
 #pragma once
 
-#include "command_buffer.h"
-
 #include <im3e/utils/core/flags.h>
+#include <im3e/vulkan/command_buffer.h>
 
 #include <glm/glm.hpp>
 

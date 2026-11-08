@@ -1,11 +1,6 @@
 add_library(im3e_api INTERFACE
-    command_buffer.h
-    device.h
-    frame_pipeline.h
     gui.h
     height_map.h
-    image.h
-    vulkan_functions.h
     window.h
 )
 
@@ -19,4 +14,5 @@ target_link_libraries(im3e_api
     fmt::fmt
     glm::glm
     im3e_utils
+    im3e_vulkan
 )

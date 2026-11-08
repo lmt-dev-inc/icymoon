@@ -2,7 +2,11 @@ im3e_add_library(
   TARGET
     im3e_vulkan
   SOURCES
+    include/im3e/vulkan/command_buffer.h
     include/im3e/vulkan/device.h
+    include/im3e/vulkan/frame_pipeline.h
+    include/im3e/vulkan/image.h
+    include/im3e/vulkan/vulkan_functions.h
     src/vulkan_command_buffer.cpp
     src/vulkan_command_buffer.h
     src/vulkan_command_queue.cpp
@@ -27,9 +31,8 @@ im3e_add_library(
 
 target_link_libraries(im3e_vulkan
   PUBLIC
-    im3e_api
+    im3e_utils
   PRIVATE
     cimg::cimg
     fmt::fmt
-    im3e_utils
 )

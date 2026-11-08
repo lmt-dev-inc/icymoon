@@ -39,6 +39,7 @@ target_link_libraries(im3e_anari
     im3e_property
     im3e_scene
     im3e_utils
+    im3e_vulkan
   PRIVATE
     fmt::fmt
 )

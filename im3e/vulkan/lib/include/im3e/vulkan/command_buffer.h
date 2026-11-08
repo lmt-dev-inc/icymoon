@@ -1,8 +1,7 @@
 #pragma once
 
-#include "image.h"
-
 #include <im3e/utils/vk_utils.h>
+#include <im3e/vulkan/image.h>
 
 #include <optional>
 

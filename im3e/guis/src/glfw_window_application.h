@@ -3,8 +3,8 @@
 #include "glfw_window.h"
 #include "guis.h"
 
-#include <im3e/api/device.h>
 #include <im3e/api/window.h>
+#include <im3e/vulkan/device.h>
 
 #include <memory>
 

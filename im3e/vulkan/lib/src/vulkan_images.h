@@ -2,8 +2,8 @@
 
 #include "vulkan_memory_allocator.h"
 
-#include <im3e/api/device.h>
-#include <im3e/api/image.h>
+#include <im3e/vulkan/device.h>
+#include <im3e/vulkan/image.h>
 
 namespace im3e {
 

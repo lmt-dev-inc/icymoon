@@ -4,10 +4,10 @@
 #include "imgui_vulkan_backend.h"
 #include "imgui_workspace.h"
 
-#include <im3e/api/device.h>
-#include <im3e/api/frame_pipeline.h>
 #include <im3e/api/gui.h>
-#include <im3e/api/image.h>
+#include <im3e/vulkan/device.h>
+#include <im3e/vulkan/frame_pipeline.h>
+#include <im3e/vulkan/image.h>
 
 #include <GLFW/glfw3.h>
 

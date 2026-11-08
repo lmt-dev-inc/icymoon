@@ -1,6 +1,6 @@
 #pragma once
 
-#include <im3e/api/frame_pipeline.h>
+#include <im3e/vulkan/frame_pipeline.h>
 
 #include <memory>
 
