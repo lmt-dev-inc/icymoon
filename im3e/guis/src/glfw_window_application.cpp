@@ -2,7 +2,7 @@
 
 #include "guis.h"
 
-#include <im3e/devices/devices.h>
+#include <im3e/vulkan/device.h>
 
 #include <GLFW/glfw3.h>
 #include <fmt/format.h>

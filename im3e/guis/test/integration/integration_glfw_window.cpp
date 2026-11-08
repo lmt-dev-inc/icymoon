@@ -5,9 +5,9 @@
 
 #include "clear_color_test_pipeline.h"
 
-#include <im3e/devices/devices.h>
 #include <im3e/test_utils/integration_test.h>
 #include <im3e/test_utils/test_utils.h>
+#include <im3e/vulkan/device.h>
 
 using namespace im3e;
 

@@ -41,8 +41,8 @@ target_link_libraries(im3e_guis
   PRIVATE
     glfw
     imgui
-    im3e_devices
     im3e_resources
+    im3e_vulkan
 )
 
 add_subdirectory(test)

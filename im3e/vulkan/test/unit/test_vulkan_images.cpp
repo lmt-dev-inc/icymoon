@@ -1,4 +1,4 @@
-#include "src/vulkan_images.h"
+#include "vulkan_images.h"
 
 #include "mock_vulkan_memory_allocator.h"
 

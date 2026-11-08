@@ -1,4 +1,4 @@
-#include "src/vulkan_extensions.h"
+#include "vulkan_extensions.h"
 
 #include "mock_vulkan_helper.h"
 

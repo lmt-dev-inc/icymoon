@@ -1,6 +1,6 @@
 im3e_add_unit_tests_executable(
-  TARGET 
-    test_im3e_devices
+  TARGET
+    test_im3e_vulkan
   SOURCES
     mock_vulkan_helper.h
     mock_vulkan_memory_allocator.cpp
@@ -13,18 +13,16 @@ im3e_add_unit_tests_executable(
     test_vulkan_instance.cpp
 )
 
-target_include_directories(test_im3e_devices
+target_include_directories(test_im3e_vulkan
   PRIVATE
-    ..
+    ../../lib/src
 )
 
-target_link_libraries(test_im3e_devices
+target_link_libraries(test_im3e_vulkan
   PRIVATE
     fmt::fmt
-    im3e_devices
     im3e_test_utils
+    im3e_vulkan
     mock_im3e
     mock_im3e_vulkan_internal_loader
 )
-
-add_subdirectory(integration)

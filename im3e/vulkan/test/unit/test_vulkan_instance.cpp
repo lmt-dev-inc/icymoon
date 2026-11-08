@@ -1,4 +1,4 @@
-#include "src/vulkan_instance.h"
+#include "vulkan_instance.h"
 
 #include "mock_vulkan_helper.h"
 

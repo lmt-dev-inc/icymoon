@@ -1,14 +1,14 @@
 #pragma once
 
-#include "devices.h"
 #include "vulkan_command_queue.h"
 #include "vulkan_instance.h"
 #include "vulkan_memory_allocator.h"
 
 #include <im3e/api/device.h>
 #include <im3e/api/image.h>
-#include <im3e/vulkan/internal/loader/vulkan_loaders.h>
 #include <im3e/utils/loggers.h>
+#include <im3e/vulkan/device.h>
+#include <im3e/vulkan/internal/loader/vulkan_loaders.h>
 
 namespace im3e {
 

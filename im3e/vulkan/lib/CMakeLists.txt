@@ -3,5 +3,32 @@ im3e_add_library(
     im3e_vulkan
   SOURCES
     include/im3e/vulkan.h
-    src/placeholder.cpp
+    include/im3e/vulkan/device.h
+    src/vulkan_command_buffer.cpp
+    src/vulkan_command_buffer.h
+    src/vulkan_command_queue.cpp
+    src/vulkan_command_queue.h
+    src/vulkan_debug_message_handler.cpp
+    src/vulkan_debug_message_handler.h
+    src/vulkan_device.cpp
+    src/vulkan_device.h
+    src/vulkan_extensions.cpp
+    src/vulkan_extensions.h
+    src/vulkan_images.cpp
+    src/vulkan_images.h
+    src/vulkan_instance.cpp
+    src/vulkan_instance.h
+    src/vulkan_memory_allocator.cpp
+    src/vulkan_memory_allocator.h
+    src/vulkan_physical_devices.cpp
+    src/vulkan_physical_devices.h
+)
+
+target_link_libraries(im3e_vulkan
+  PUBLIC
+    im3e_api
+  PRIVATE
+    cimg::cimg
+    fmt::fmt # used by the internal library im3e_vulkan_internal_loader
+    im3e_utils
 )

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/vulkan_memory_allocator.h"
+#include "vulkan_memory_allocator.h"
 
 #include <im3e/test_utils/test_utils.h>
 

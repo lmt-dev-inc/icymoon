@@ -1,4 +1,4 @@
-#include "src/vulkan_command_buffer.h"
+#include "vulkan_command_buffer.h"
 
 #include <im3e/mock/mock_command_buffer.h>
 #include <im3e/mock/mock_device.h>

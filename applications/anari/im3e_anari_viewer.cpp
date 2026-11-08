@@ -1,13 +1,13 @@
 #include "anari_dem_surface_generator.h"
 
 #include <im3e/anari/anari.h>
-#include <im3e/devices/devices.h>
 #include <im3e/geo/geo.h>
 #include <im3e/guis/guis.h>
 #include <im3e/property/property_group.h>
 #include <im3e/utils/core/throw_utils.h>
 #include <im3e/utils/core/types.h>
 #include <im3e/utils/loggers.h>
+#include <im3e/vulkan/device.h>
 
 #include <anari/anari.h>
 #include <fmt/format.h>
