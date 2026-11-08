@@ -1,14 +1,112 @@
 #include "vulkan_loader.h"
 
+#include <im3e/utils/core/throw_utils.h>
+#include <im3e/utils/core/types.h>
+
+#include <vulkan/vulkan.h>
+
 #if defined(__linux__)
-#include "vulkan_library_loader_linux.h"
+#include <dlfcn.h>
 #elif defined(_WIN32)
-#include "vulkan_library_loader_windows.h"
+#include <windows.h>
 #else
 static_assert(false, "Vulkan Loader does not support this platform at the moment");
 #endif
 
+#include <array>
+#include <memory>
+#include <string_view>
+
 using namespace im3e;
+
+namespace {
+
+/// @brief Loads the Vulkan library of the system and its entry points.
+struct VulkanLibraryLoader
+{
+    VulkanLibraryLoader();
+
+    UniquePtrWithDeleter<void> pLibrary;
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr{};
+    PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr{};
+};
+
+#if defined(__linux__)
+VulkanLibraryLoader::VulkanLibraryLoader()
+{
+    constexpr std::array<std::string_view, 2U> VulkanLibraryNames{
+        "libvulkan.so.1",
+        "libvulkan.so",
+    };
+
+    for (const auto& rVulkanLibraryName : VulkanLibraryNames)
+    {
+        if (void* pLib = dlopen(rVulkanLibraryName.data(), RTLD_NOW))
+        {
+            pLibrary = UniquePtrWithDeleter<void>(pLib, [](void* pLib) { dlclose(pLib); });
+            break;
+        }
+    }
+    throwIfNull<std::runtime_error>(pLibrary.get(), "Could not load Vulkan shared library file");
+
+    vkGetInstanceProcAddr = throwIfNull<std::runtime_error>(
+        reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(pLibrary.get(), "vkGetInstanceProcAddr")),
+        "Failed to load vkGetInstanceProcAddr");
+
+    vkGetDeviceProcAddr = throwIfNull<std::runtime_error>(
+        reinterpret_cast<PFN_vkGetDeviceProcAddr>(dlsym(pLibrary.get(), "vkGetDeviceProcAddr")),
+        "Failed to load vkGetDeviceProcAddr");
+}
+#elif defined(_WIN32)
+auto loadFct(HMODULE hModule, LPCSTR fctName) -> void*
+{
+    // GetProcAddress returns FARPROC which is already a function pointer. This causes a warning a clang when
+    // trying to reinterpret_cast to the actual function pointer type. To avoid this warning, we cast the result
+    // to void* first:
+    return reinterpret_cast<void*>(GetProcAddress(hModule, fctName));
+}
+
+VulkanLibraryLoader::VulkanLibraryLoader()
+{
+    constexpr auto VulkanLibraryName{L"vulkan-1.dll"};
+    if (HMODULE hModule = LoadLibraryExW(VulkanLibraryName, nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32))
+    {
+        pLibrary = UniquePtrWithDeleter<void>(hModule,
+                                              [](void* hModule) { FreeLibrary(static_cast<HMODULE>(hModule)); });
+    }
+
+    throwIfNull<std::runtime_error>(pLibrary.get(), "Could not load Vulkan shared library file");
+    const auto hModule = static_cast<HMODULE>(pLibrary.get());
+
+    vkGetInstanceProcAddr = throwIfNull<std::runtime_error>(
+        reinterpret_cast<PFN_vkGetInstanceProcAddr>(loadFct(hModule, "vkGetInstanceProcAddr")),
+        "Failed to load vkGetInstanceProcAddr");
+
+    vkGetDeviceProcAddr = throwIfNull<std::runtime_error>(
+        reinterpret_cast<PFN_vkGetDeviceProcAddr>(loadFct(hModule, "vkGetDeviceProcAddr")),
+        "Failed to load vkGetDeviceProcAddr");
+}
+#endif
+
+class VulkanLoader : public IVulkanLoader
+{
+public:
+    VulkanLoader(VulkanLoaderConfig config, UniquePtrWithDeleter<void> pLibrary,
+                 PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr);
+
+    auto loadGlobalFcts() const -> VulkanGlobalFcts override;
+    auto loadInstanceFcts(VkInstance vkInstance) const -> VulkanInstanceFcts override;
+    auto loadDeviceFcts(VkDevice vkDevice) const -> VulkanDeviceFcts override;
+    auto loadVmaFcts(VkInstance VkInstance, VkDevice vkDevice) const -> VmaVulkanFunctions override;
+
+private:
+    const VulkanLoaderConfig m_config;
+    UniquePtrWithDeleter<void> m_pLibrary;
+    PFN_vkGetInstanceProcAddr m_vkGetInstanceProcAddr;
+    PFN_vkGetDeviceProcAddr m_vkGetDeviceProcAddr;
+};
+
+}  // namespace
 
 #define LOAD_GLOBAL_FCT(fctName) .fctName = reinterpret_cast<PFN_##fctName>(m_vkGetInstanceProcAddr(nullptr, #fctName))
 #define LOAD_INST_FCT(fctName) .fctName = reinterpret_cast<PFN_##fctName>(m_vkGetInstanceProcAddr(vkInstance, #fctName))
@@ -160,7 +258,15 @@ auto VulkanLoader::loadVmaFcts(VkInstance vkInstance, VkDevice vkDevice) const -
 
 auto im3e::createVulkanLoader(VulkanLoaderConfig config) -> std::unique_ptr<IVulkanLoader>
 {
-    vulkan_loader::VulkanLibraryLoader libraryLoader;
-    return std::make_unique<VulkanLoader>(std::move(config), std::move(libraryLoader.pLibrary),
-                                          libraryLoader.vkGetInstanceProcAddr, libraryLoader.vkGetDeviceProcAddr);
+    VulkanLibraryLoader libraryLoader;
+    return createVulkanLoader(std::move(config), std::move(libraryLoader.pLibrary), libraryLoader.vkGetInstanceProcAddr,
+                              libraryLoader.vkGetDeviceProcAddr);
+}
+
+auto im3e::createVulkanLoader(VulkanLoaderConfig config, UniquePtrWithDeleter<void> pLibrary,
+                              PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr,
+                              PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr) -> std::unique_ptr<IVulkanLoader>
+{
+    return std::make_unique<VulkanLoader>(std::move(config), std::move(pLibrary), vkGetInstanceProcAddr,
+                                          vkGetDeviceProcAddr);
 }

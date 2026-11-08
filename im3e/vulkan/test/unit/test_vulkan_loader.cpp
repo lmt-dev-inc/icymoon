@@ -30,7 +30,7 @@ struct VulkanLoaderTest : public Test
 
     auto createLoader()
     {
-        return std::make_unique<VulkanLoader>(
+        return createVulkanLoader(
             VulkanLoaderConfig{
                 .isDebugEnabled = true,
             },
@@ -90,19 +90,19 @@ TEST_F(VulkanLoaderTest, constructor)
 TEST_F(VulkanLoaderTest, constructorThrowsWithoutLibrary)
 {
     EXPECT_THROW(
-        VulkanLoader loader(VulkanLoaderConfig{}, nullptr, &mockVkGetInstanceProcAddr, &mockVkGetDeviceProcAddr),
+        createVulkanLoader(VulkanLoaderConfig{}, nullptr, &mockVkGetInstanceProcAddr, &mockVkGetDeviceProcAddr),
         std::invalid_argument);
 }
 
 TEST_F(VulkanLoaderTest, constructorThrowsWithoutVkGetInstanceProcAddr)
 {
-    EXPECT_THROW(VulkanLoader loader(VulkanLoaderConfig{}, createMockLibrary(), nullptr, &mockVkGetDeviceProcAddr),
+    EXPECT_THROW(createVulkanLoader(VulkanLoaderConfig{}, createMockLibrary(), nullptr, &mockVkGetDeviceProcAddr),
                  std::invalid_argument);
 }
 
 TEST_F(VulkanLoaderTest, constructorThrowsWithoutVkGetDeviceProcAddr)
 {
-    EXPECT_THROW(VulkanLoader loader(VulkanLoaderConfig{}, createMockLibrary(), &mockVkGetInstanceProcAddr, nullptr),
+    EXPECT_THROW(createVulkanLoader(VulkanLoaderConfig{}, createMockLibrary(), &mockVkGetInstanceProcAddr, nullptr),
                  std::invalid_argument);
 }
 

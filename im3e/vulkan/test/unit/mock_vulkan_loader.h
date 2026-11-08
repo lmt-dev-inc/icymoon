@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vulkan_loader_interface.h"
+#include "vulkan_loader.h"
 
 #include <im3e/mock/mock_vulkan_functions.h>
 

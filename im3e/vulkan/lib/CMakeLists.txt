@@ -18,9 +18,6 @@ im3e_add_library(
     src/vulkan_images.h
     src/vulkan_instance.cpp
     src/vulkan_instance.h
-    $<$<PLATFORM_ID:Linux>:src/vulkan_library_loader_linux.h>
-    $<$<PLATFORM_ID:Windows>:src/vulkan_library_loader_windows.h>
-    src/vulkan_loader_interface.h
     src/vulkan_loader.cpp
     src/vulkan_loader.h
     src/vulkan_memory_allocator.cpp

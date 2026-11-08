@@ -2,7 +2,7 @@
 
 #include "vulkan_command_queue.h"
 #include "vulkan_instance.h"
-#include "vulkan_loader_interface.h"
+#include "vulkan_loader.h"
 #include "vulkan_memory_allocator.h"
 
 #include <im3e/api/device.h>
