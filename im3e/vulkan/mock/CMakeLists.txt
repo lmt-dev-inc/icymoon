@@ -14,6 +14,7 @@ im3e_add_mock_library(
 
 target_link_libraries(mock_im3e_vulkan
   PUBLIC
-    im3e_test_utils
     mock_im3e_utils
+  PRIVATE
+    im3e_test_utils
 )
