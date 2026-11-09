@@ -45,6 +45,7 @@ function(im3e_internal_init_gcc_code_coverage)
             ${EXCLUDE_ARGS}
             ${IGNORE_ERRORS_ARGS}
             --parallel
+            --all
             --quiet
             --output-file "${LCOV_FILE}"
         COMMAND "${LCOV_EXECUTABLE}" --summary "${LCOV_FILE}" --rc branch_coverage=1 ${IGNORE_ERRORS_ARGS}
