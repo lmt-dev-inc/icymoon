@@ -1,6 +1,6 @@
 #pragma once
 
-#include <im3e/vulkan/vk_utils.h>
+#include <im3e/vulkan/utils.h>
 
 namespace im3e {
 

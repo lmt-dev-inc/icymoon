@@ -3,7 +3,7 @@
 #include <im3e/vulkan/device.h>
 #include <im3e/vulkan/frame_pipeline.h>
 #include <im3e/vulkan/image.h>
-#include <im3e/vulkan/vk_utils.h>
+#include <im3e/vulkan/utils.h>
 
 #include <GLFW/glfw3.h>
 

@@ -6,9 +6,9 @@ im3e_add_library(
     include/im3e/vulkan/device.h
     include/im3e/vulkan/frame_pipeline.h
     include/im3e/vulkan/image.h
-    include/im3e/vulkan/vk_utils.h
+    include/im3e/vulkan/utils.h
     include/im3e/vulkan/vulkan_functions.h
-    src/vk_utils.cpp
+    src/utils.cpp
     src/vulkan_command_buffer.cpp
     src/vulkan_command_buffer.h
     src/vulkan_command_queue.cpp

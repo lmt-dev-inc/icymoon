@@ -255,7 +255,7 @@ Each target only exposes its own `include/` folder, so a target can only include
 
 ## Error handling
 
-- Errors are reported with exceptions, through the helpers of `im3e/utils/core/throw_utils.h`: `throwIfNull`, `throwIfArgNull`, `throwIfFalse`. Vulkan results are checked with `throwIfVkFailed` (`im3e/vulkan/vk_utils.h`).
+- Errors are reported with exceptions, through the helpers of `im3e/utils/core/throw_utils.h`: `throwIfNull`, `throwIfArgNull`, `throwIfFalse`. Vulkan results are checked with `throwIfVkFailed` (`im3e/vulkan/utils.h`).
 - Constructors validate their dependencies with `throwIfArgNull`, e.g. `m_device(throwIfArgNull(std::move(device), "... requires a device"))`.
 
 *Automated:* no.

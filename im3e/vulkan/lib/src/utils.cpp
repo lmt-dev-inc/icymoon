@@ -1,4 +1,4 @@
-#include <im3e/vulkan/vk_utils.h>
+#include <im3e/vulkan/utils.h>
 
 #include <fmt/format.h>
 

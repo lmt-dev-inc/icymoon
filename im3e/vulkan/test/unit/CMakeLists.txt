@@ -2,7 +2,7 @@ im3e_add_unit_tests_executable(
   TARGET
     test_im3e_vulkan
   SOURCES
-    test_vk_utils.cpp
+    test_utils.cpp
     test_vulkan_command_buffer.cpp
     test_vulkan_command_queue.cpp
     test_vulkan_debug_message_handler.cpp
