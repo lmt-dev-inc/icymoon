@@ -1,4 +1,4 @@
-add_library(im3e_guis
+add_library(im3e_guis STATIC
     guis.h
     src/glfw_window.cpp
     src/glfw_window.h
