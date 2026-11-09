@@ -13,6 +13,11 @@ function(im3e_set_coverage_flags)
     endif()
 
     if(CMAKE_COMPILER_IS_GNUCXX)
+        # Optimizations inline and remove lines, which makes the percentages reported by gcov wrong
+        if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+            message(FATAL_ERROR "GCC coverage needs a Debug build, not '${CMAKE_BUILD_TYPE}'")
+        endif()
+
         # -fprofile-update=atomic: counters updated concurrently by several threads would otherwise be corrupted, and
         # lcov rejects the resulting negative counts
         add_compile_options(--coverage -fprofile-abs-path -fprofile-update=atomic)

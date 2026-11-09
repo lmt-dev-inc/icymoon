@@ -14,6 +14,12 @@ function(im3e_internal_init_gcc_code_coverage)
     find_program(LCOV_EXECUTABLE lcov REQUIRED)
     find_program(GENHTML_EXECUTABLE genhtml REQUIRED)
 
+    # Check that the current version of lcov supports the --all option:
+    execute_process(COMMAND "${LCOV_EXECUTABLE}" --help OUTPUT_VARIABLE LCOV_HELP ERROR_QUIET)
+    if(NOT LCOV_HELP MATCHES "[ \t]--all[ \t]")
+        message(FATAL_ERROR "Coverage needs lcov 2.1 or newer, ${LCOV_EXECUTABLE} doesn't support --all")
+    endif()
+
     # Only our code is reported (im3e/), without the directories excluded from coverage (tests and mocks)
     get_property(COVERAGE_EXCLUDES GLOBAL PROPERTY COVERAGE_EXCLUDES_PROPERTY)
     set(EXCLUDE_ARGS)
@@ -38,7 +44,7 @@ function(im3e_internal_init_gcc_code_coverage)
         COMMAND ${CMAKE_COMMAND} -E make_directory "${IM3E_COVERAGE_DIR}"
         COMMAND "${LCOV_EXECUTABLE}"
             --capture
-            --directory "${CMAKE_BINARY_DIR}"
+            --directory "${CMAKE_BINARY_DIR}/im3e"
             --gcov-tool "${GCOV_EXECUTABLE}"
             --rc branch_coverage=1
             --include "${CMAKE_SOURCE_DIR}/im3e/*"
