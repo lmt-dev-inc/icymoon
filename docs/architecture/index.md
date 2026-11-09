@@ -345,7 +345,7 @@ Notes:
 - **Conan 2** ([conanfile.py](../../conanfile.py)) provides the dependencies: ANARI SDK, CImg, fmt, GDAL (with PROJ), GLFW, GLM, Vulkan headers, VMA, whereami and GoogleTest. ANARI and OpenUSD use local recipes under `recipes/`. Versions are pinned in `conan.lock`.
 - **CMake** (4.2, Ninja, C++20) builds the project from presets that `dev.py install` generates, one per configuration (`lnx-gcc-*`, `win-clang-*`). All warnings are errors (`-Wall -Wextra -pedantic -Werror` or `/W4 /WX`).
 - **Executables and DLLs** are all built in `<build>/bin`. On Windows, `im3e_copy_runtime_dlls` and `im3e_copy_anari_devices` ([cmake/im3e_runtime_dlls.cmake](../../cmake/im3e_runtime_dlls.cmake)) copy the DLLs they need and the ANARI device plug-ins next to them.
-- **Coverage**: gcovr with GCC, source-based coverage with clang (see the [README](../../README.md#test-coverage)).
+- **Coverage**: lcov with GCC, source-based coverage with clang (see the [README](../../README.md#test-coverage)).
 - **CI**: GitHub Actions build and test the configurations (see [GitHub Actions](../development/github_actions.md)).
 
 The [README](../../README.md) has the build instructions.

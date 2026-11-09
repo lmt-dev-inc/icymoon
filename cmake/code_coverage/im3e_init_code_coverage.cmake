@@ -14,7 +14,7 @@ function(im3e_set_coverage_flags)
 
     if(CMAKE_COMPILER_IS_GNUCXX)
         # -fprofile-update=atomic: counters updated concurrently by several threads would otherwise be corrupted, and
-        # gcovr rejects the resulting negative counts
+        # lcov rejects the resulting negative counts
         add_compile_options(--coverage -fprofile-abs-path -fprofile-update=atomic)
         add_link_options(--coverage)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
