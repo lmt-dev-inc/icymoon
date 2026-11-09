@@ -1,4 +1,4 @@
-#include "mock_height_map.h"
+#include <im3e/geo/mock_height_map.h>
 
 using namespace im3e;
 

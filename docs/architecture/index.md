@@ -88,7 +88,7 @@ flowchart BT
     resources --> core
     vulkan --> utils
     api --> vulkan
-    geo --> api
+    geo --> utils
     scene --> props
     guis --> api
     guis --> props
@@ -119,7 +119,7 @@ There are no cycles. Modules talk to each other through interfaces: the Vulkan c
 | `im3e_utils_core` | static    | Lowest-level helpers with no graphics dependency: flags, paths, errors, platform.            | fmt, whereami                |
 | `im3e_property`   | static    | Property interfaces and implementations, groups, change notification.                        | fmt                          |
 | `im3e_utils`      | static    | Logging, stats, math, rays, view frustum.                                                    | glm                          |
-| `im3e_api`        | interface | Abstract interfaces shared between modules: GUI, windows, height maps.                       | glm                          |
+| `im3e_api`        | interface | Abstract interfaces shared between modules: GUI and windows.                                 | glm                          |
 | `im3e_vulkan`     | static    | Vulkan interfaces (device, images, commands, frame pipeline) and their implementation.       | Vulkan headers, VMA, CImg    |
 | `im3e_geo`        | static    | Height maps from GeoTIFF files, tile pyramid, quad tree for visibility.                      | GDAL                         |
 | `im3e_scene`      | static    | Renderer-independent camera: projection, view transform, map camera controller.              | glm                          |
@@ -161,11 +161,10 @@ There are no cycles. Modules talk to each other through interfaces: the Vulkan c
 
 [im3e/api/](../../im3e/api/) is header-only. It defines the contracts between modules:
 
-| Header         | Interfaces                                                                                             |
-| -------------- | ------------------------------------------------------------------------------------------------------ |
-| `gui.h`        | `IGuiPanel`, `IGuiWorkspace` (panels docked at a location), `IGuiEventListener` (mouse events in NDC). |
-| `window.h`     | `IWindowApplication`: creates windows for workspaces and runs the event loop.                          |
-| `height_map.h` | `IHeightMap` (size, tile size, levels of detail, min/max height) and `IHeightMapTileSampler`.          |
+| Header     | Interfaces                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------ |
+| `gui.h`    | `IGuiPanel`, `IGuiWorkspace` (panels docked at a location), `IGuiEventListener` (mouse events in NDC). |
+| `window.h` | `IWindowApplication`: creates windows for workspaces and runs the event loop.                          |
 
 `gui.h` and `window.h` use Vulkan types (`ICommandBuffer`, `IDevice`), so `im3e_api` links `im3e_vulkan` publicly.
 
@@ -199,7 +198,7 @@ Internally:
 
 ### Geospatial data: `im3e_geo`
 
-[im3e/geo/](../../im3e/geo/) turns raster files into the `IHeightMap` interface:
+[im3e/geo/](../../im3e/geo/) turns raster files into height maps, and does not depend on Vulkan. `<im3e/geo/height_map.h>` declares `IHeightMap` (size, tile size, levels of detail, min/max height) and `IHeightMapTileSampler`.
 
 - `loadHeightMapFromFile(logger, {path, readOnly})` opens a GeoTIFF with GDAL (`GdalGeoTiffHeightMap`). Tiles follow the file's block size, and levels of detail map to the file's overviews. When opened writable, `rebuildPyramid()` regenerates the overviews.
 - Tile samplers read one tile of one level of detail and report invalid (no-data) samples.
@@ -265,7 +264,7 @@ The ANARI image reaches Vulkan through the CPU: `AnariFramePipeline` maps the AN
 ### Test support: `im3e_test_utils` and mocks
 
 - [im3e/test_utils/](../../im3e/test_utils/) provides GoogleTest fixtures: `IntegrationTest` (logger whose errors fail the test), `DeviceIntegrationTest` (a real Vulkan device) and `PipelineIntegrationTest` (runs an `IFramePipeline` into an image and compares pixels). It also has printers and matchers for GLM, Vulkan and standard types.
-- `mock_im3e_vulkan` ([im3e/vulkan/mock/](../../im3e/vulkan/mock/)) mocks the interfaces of `im3e_vulkan`: device, images, command buffers, Vulkan function tables. `mock_im3e` ([im3e/mock/](../../im3e/mock/)) mocks the height maps of `im3e_api`, and `mock_im3e_utils` mocks loggers and stats. Mocks of private interfaces, such as `MockVulkanLoader`, are test helpers of their library, in its `test/common/` target (`test_common_im3e_vulkan`).
+- `mock_im3e_vulkan` ([im3e/vulkan/mock/](../../im3e/vulkan/mock/)) mocks the interfaces of `im3e_vulkan`: device, images, command buffers, Vulkan function tables. `mock_im3e_geo` ([im3e/geo/mock/](../../im3e/geo/mock/)) mocks the height maps of `im3e_geo`, and `mock_im3e_utils` mocks loggers and stats. Mocks of private interfaces, such as `MockVulkanLoader`, are test helpers of their library, in its `test/common/` target (`test_common_im3e_vulkan`).
 - Test executables are declared with `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` ([cmake/im3e_tests.cmake](../../cmake/im3e_tests.cmake)), which label them for `ctest -L` and exclude them from coverage.
 
 Current coverage by module: `utils`, `utils/core`, `vulkan` have unit and integration tests; `property` and `scene` have unit tests; `geo` tests the quad tree; `guis` has integration tests only; `anari` has no tests yet.

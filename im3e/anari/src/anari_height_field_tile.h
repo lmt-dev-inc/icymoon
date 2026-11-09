@@ -2,7 +2,7 @@
 
 #include "anari_device.h"
 
-#include <im3e/api/height_map.h>
+#include <im3e/geo/height_map.h>
 #include <im3e/utils/core/types.h>
 
 #include <anari/anari.h>

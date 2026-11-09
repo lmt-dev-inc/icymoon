@@ -1,6 +1,5 @@
 add_library(im3e_api INTERFACE
     gui.h
-    height_map.h
     window.h
 )
 

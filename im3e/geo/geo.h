@@ -1,6 +1,6 @@
 #pragma once
 
-#include <im3e/api/height_map.h>
+#include <im3e/geo/height_map.h>
 #include <im3e/utils/loggers.h>
 #include <im3e/utils/math_utils.h>
 #include <im3e/utils/view_frustum.h>

@@ -14,5 +14,5 @@ target_link_libraries(test_im3e_geo
   PRIVATE
     im3e_geo
     im3e_test_utils
-    mock_im3e
+    mock_im3e_geo
 )
