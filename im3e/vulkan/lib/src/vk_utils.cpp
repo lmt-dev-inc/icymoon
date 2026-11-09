@@ -1,7 +1,4 @@
-#include "vk_utils.h"
-
-#define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.h"
+#include <im3e/vulkan/vk_utils.h>
 
 #include <fmt/format.h>
 

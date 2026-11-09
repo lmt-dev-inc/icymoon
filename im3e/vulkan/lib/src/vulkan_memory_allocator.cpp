@@ -2,6 +2,11 @@
 
 #include "vulkan_instance.h"
 
+// Compiles the implementation of VMA, once for the whole project. The first include of vk_mem_alloc.h, through
+// vulkan_memory_allocator.h, only declares its interface.
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
 using namespace im3e;
 
 namespace {

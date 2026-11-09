@@ -103,7 +103,7 @@ flowchart BT
     gdal([GDAL]) -.- geo
     anarisdk([ANARI SDK]) --- anari
     imgui([ImGui + GLFW]) -.- guis
-    vk([Vulkan headers + VMA]) --- utils
+    vk([Vulkan headers + VMA]) --- vulkan
 ```
 
 There are no cycles. Modules talk to each other through interfaces: the Vulkan contracts of `im3e_vulkan` (device, images, commands, frame pipeline) and the GUI and data contracts of `im3e_api`, so `im3e_anari` does not know about `im3e_guis` and vice versa. The places where a module depends on another's implementation are:
@@ -118,7 +118,7 @@ There are no cycles. Modules talk to each other through interfaces: the Vulkan c
 | ----------------- | --------- | -------------------------------------------------------------------------------------------- | ---------------------------- |
 | `im3e_utils_core` | static    | Lowest-level helpers with no graphics dependency: flags, paths, errors, platform.            | fmt, whereami                |
 | `im3e_property`   | static    | Property interfaces and implementations, groups, change notification.                        | fmt                          |
-| `im3e_utils`      | static    | Logging, stats, math, rays, view frustum, Vulkan helpers.                                    | glm, Vulkan headers, VMA     |
+| `im3e_utils`      | static    | Logging, stats, math, rays, view frustum.                                                    | glm                          |
 | `im3e_api`        | interface | Abstract interfaces shared between modules: GUI, windows, height maps.                       | glm                          |
 | `im3e_vulkan`     | static    | Vulkan interfaces (device, images, commands, frame pipeline) and their implementation.       | Vulkan headers, VMA, CImg    |
 | `im3e_geo`        | static    | Height maps from GeoTIFF files, tile pyramid, quad tree for visibility.                      | GDAL                         |
@@ -146,7 +146,6 @@ There are no cycles. Modules talk to each other through interfaces: the Vulkan c
 - `path.h`: `Path`, an absolute path in a tree of named nodes (`/camera/view`) that always uses `/`, unlike `std::filesystem::path`.
 - `math_utils.h`: `TileID` (`u16vec3`: x, y, level of detail) and small math helpers.
 - `ray.h`, `view_frustum.h`, `transform.h`: rays, frustum culling, TRS transforms. Conventions are in [Coordinate Spaces](coordinate_spaces.md).
-- `vk_utils.h`: `VkUniquePtr`/`VkSharedPtr` for Vulkan handles, `throwIfVkFailed`, `getVkList`, and formatting of Vulkan enums.
 - `imgui_utils.h`: header-only helpers for ImGui.
 
 **`im3e_property`** ([im3e/property/](../../im3e/property/)) is a small reflection system that lets objects expose editable parameters without knowing the GUI:
@@ -181,6 +180,9 @@ There are no cycles. Modules talk to each other through interfaces: the Vulkan c
 | `command_buffer.h`   | `ICommandQueue::startScopedCommand` returns a command buffer that is submitted when it goes out of scope, sync or async. `ICommandBuffer` records scoped image barriers and creates futures to wait on. |
 | `frame_pipeline.h`   | `IFramePipeline`: records the commands that render a frame into an output image, and handles resizes.                                                                                                   |
 | `vulkan_functions.h` | `VulkanGlobalFcts`, `VulkanInstanceFcts`, `VulkanDeviceFcts`: tables of the Vulkan functions the project uses.                                                                                          |
+| `vk_utils.h`         | Helpers rather than interfaces: `VkUniquePtr`/`VkSharedPtr` for Vulkan handles, `throwIfVkFailed`, `getVkList`, `getFormatProperties`, `VkExtent2D` comparisons.                                       |
+
+The VMA implementation is compiled once, in `vulkan_memory_allocator.cpp`.
 
 `IFramePipeline` is the central abstraction: the ImGui GUI, the ANARI renderer and the test pipelines all implement it, and they can be nested (the ImGui pipeline draws a render panel, which runs an ANARI pipeline into an offscreen image).
 

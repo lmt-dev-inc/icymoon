@@ -5,7 +5,6 @@ add_library(im3e_utils STATIC
     src/stream_logger.cpp
     src/stream_logger.h
     src/view_frustum.cpp
-    src/vk_utils.cpp
     imgui_utils.h
     loggers.h
     math_utils.h
@@ -14,7 +13,6 @@ add_library(im3e_utils STATIC
     stats.h
     transform.h
     view_frustum.h
-    vk_utils.h
 )
 
 target_include_directories(im3e_utils
@@ -30,8 +28,6 @@ target_link_libraries(im3e_utils
     fmt::fmt
     glm::glm
     im3e_utils_core
-    GPUOpen::VulkanMemoryAllocator
-    Vulkan::Headers
   PRIVATE
     whereami::whereami
 )

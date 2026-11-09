@@ -1,6 +1,6 @@
 #include "vulkan_extensions.h"
 
-#include <im3e/utils/vk_utils.h>
+#include <im3e/vulkan/vk_utils.h>
 
 #include <fmt/format.h>
 
