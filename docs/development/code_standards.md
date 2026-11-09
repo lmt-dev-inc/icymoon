@@ -263,6 +263,8 @@ CMake has no private functions: once a file is included, everything it defines c
 - Scripts that are run rather than included (`cmake -P`, or loaded by CTest through `TEST_INCLUDE_FILES`) are internal and named with a `_script` suffix. Their header comment says what runs them and with which variables.
 - Public scripts include internal ones relative to their own location: `include("${CMAKE_CURRENT_LIST_DIR}/src/<name>.cmake")`. Paths to files used later, e.g. a script run by a target, use `CMAKE_CURRENT_FUNCTION_LIST_DIR` from within the function.
 
+For example, in `cmake/code_coverage/` (not all files are listed):
+
 ```
 cmake/code_coverage/
   im3e_init_code_coverage.cmake                public: im3e_init_code_coverage()...

@@ -67,7 +67,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang") # clang and clang-cl
 endif()
 
 add_subdirectory(cmake)
-im3e_set_coverage_flags()
+im3e_set_coverage_link_flags()
 
 find_package(anari REQUIRED)
 find_package(CImg REQUIRED)
@@ -84,6 +84,7 @@ find_package(whereami REQUIRED)
 
 add_subdirectory(applications)
 add_subdirectory(external)
+im3e_set_coverage_flags()
 add_subdirectory(im3e)
 add_subdirectory(resources)
 

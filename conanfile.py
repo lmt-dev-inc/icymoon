@@ -3,6 +3,7 @@ from conan.errors import ConanException
 from conan.tools.cmake import CMakeToolchain, CMakeDeps, CMake, cmake_layout
 from conan.tools.env import Environment, VirtualBuildEnv
 from conan.tools.microsoft import VCVars
+from conan.tools.system.package_manager import Apt
 import os
 import subprocess
 
@@ -60,6 +61,12 @@ class IcyMoonEngineRecipe(ConanFile):
 
     def layout(self):
         cmake_layout(self)
+
+    def system_requirements(self):
+        # Generates the test coverage reports of the lnx-gcc-coverage configuration. ConanCenter has no recipe for
+        # lcov. Its JSON parsing is about 10 times slower without Cpanel::JSON::XS. Apt does nothing on other systems.
+        if self.options.coverage == "on":  # pyright: ignore[reportAttributeAccessIssue]
+            Apt(self).install(["lcov", "libcpanel-json-xs-perl"], update=True)
 
     def generate(self):
         toolchain = CMakeToolchain(self, generator="Ninja")
