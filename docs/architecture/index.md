@@ -10,7 +10,7 @@ This document describes how IcyMoon is structured: the libraries it is made of, 
     - [Summary](#summary)
     - [Foundation: `im3e_utils_core`, `im3e_utils`, `im3e_property`](#foundation-im3e_utils_core-im3e_utils-im3e_property)
     - [Interfaces: `im3e_api`](#interfaces-im3e_api)
-    - [GPU device: `im3e_devices` and `im3e_vulkan_loaders`](#gpu-device-im3e_devices-and-im3e_vulkan_loaders)
+    - [GPU device: `im3e_vulkan`](#gpu-device-im3e_vulkan)
     - [Geospatial data: `im3e_geo`](#geospatial-data-im3e_geo)
     - [Scene: `im3e_scene`](#scene-im3e_scene)
     - [Windows and GUI: `im3e_guis`](#windows-and-gui-im3e_guis)
@@ -51,11 +51,11 @@ The long-term goal is to use IcyMoon as a library from other languages, Python f
 | `.github/`            | CI workflows (see [GitHub Actions](../development/github_actions.md)).                                                |
 | `docs/`               | Project documentation (see the [index](../index.md)).                                                                 |
 
-Every header is included through its path from the repository root, e.g. `#include <im3e/geo/geo.h>`: each target adds the root folder (`IM3E_INCLUDE_DIR`) to its public include directories.
+Every header is included through its path from the repository root, e.g. `#include <im3e/geo/geo.h>`.
 
 ## Libraries
 
-Each folder under `im3e/` follows the same layout:
+Libraries are moving to the layout of [Library folders](../development/code_standards.md#library-folders) in the code standards, where each library is a group of targets (`lib/`, `mock/`, `test/...`) and only exposes its own `include/` folder. `im3e_property`, `im3e_scene` and `im3e_vulkan` follow it. The older libraries (`im3e_utils`, `im3e_api`, `im3e_geo`, `im3e_guis`, `im3e_anari`, `im3e_test_utils`) still use the previous layout:
 
 ```
 im3e/<module>/
@@ -63,8 +63,9 @@ im3e/<module>/
   src/                implementation, private to the target
   test/               unit tests (test_<name>.cpp)
   test/integration/   integration tests that need a GPU or a window (integration_<name>.cpp)
-  mock/               GoogleMock implementations of the module's interfaces, when other modules need them
 ```
+
+and add the repository root (`IM3E_INCLUDE_DIR`) to their public include directories.
 
 ### Dependency graph
 
@@ -76,8 +77,7 @@ flowchart BT
     props[im3e_property]
     utils[im3e_utils]
     api[im3e_api]
-    loaders[im3e_vulkan_loaders]
-    devices[im3e_devices]
+    vulkan[im3e_vulkan]
     geo[im3e_geo]
     scene[im3e_scene]
     resources[im3e_resources]
@@ -87,17 +87,16 @@ flowchart BT
     utils --> core
     props --> core
     resources --> core
-    api --> utils
-    loaders --> api
-    devices --> api
-    devices -.-> loaders
-    geo --> api
+    vulkan --> utils
+    api --> vulkan
+    geo --> utils
     scene --> props
     guis --> api
     guis --> props
-    guis -.-> devices
+    guis --> vulkan
     guis -.-> resources
     anari --> api
+    anari --> vulkan
     anari --> geo
     anari --> props
     anari --> scene
@@ -105,32 +104,31 @@ flowchart BT
     gdal([GDAL]) -.- geo
     anarisdk([ANARI SDK]) --- anari
     imgui([ImGui + GLFW]) -.- guis
-    vk([Vulkan headers + VMA]) --- utils
+    vk([Vulkan headers + VMA]) --- vulkan
 ```
 
-There are no cycles. `im3e_api` is the hub: modules talk to each other through its interfaces, so `im3e_anari` does not know about `im3e_guis` and vice versa. The places where a module depends on another's implementation are:
+There are no cycles. Modules talk to each other through interfaces: the Vulkan contracts of `im3e_vulkan` (device, images, commands, frame pipeline) and the GUI and data contracts of `im3e_api`, so `im3e_anari` does not know about `im3e_guis` and vice versa. The places where a module depends on another's implementation are:
 
-- `im3e_guis` links `im3e_devices` privately, because `GlfwWindowApplication` creates the Vulkan device itself.
+- `im3e_guis` calls `createDevice` of `im3e_vulkan`, because `GlfwWindowApplication` creates the Vulkan device itself.
 - `im3e_anari` links `im3e_geo` publicly, for the height map quad tree used to pick visible tiles.
 - `im3e_anari` links `im3e_scene` publicly, for the renderer-independent camera.
 
 ### Summary
 
-| Target                | Kind      | Role                                                                                         | Key third-party dependencies |
-| --------------------- | --------- | -------------------------------------------------------------------------------------------- | ---------------------------- |
-| `im3e_utils_core`     | static    | Lowest-level helpers with no graphics dependency: flags, paths, errors, platform.            | fmt, whereami                |
-| `im3e_property`       | static    | Property interfaces and implementations, groups, change notification.                        | fmt                          |
-| `im3e_utils`          | static    | Logging, stats, math, rays, view frustum, Vulkan helpers.                                    | glm, Vulkan headers, VMA     |
-| `im3e_api`            | interface | Abstract interfaces shared between modules: device, images, commands, frame pipeline, GUI.   | glm                          |
-| `im3e_vulkan_loaders` | object    | Loads the Vulkan library at run time and resolves function pointers.                         | Vulkan headers               |
-| `im3e_devices`        | static    | Vulkan implementation of `IDevice`: instance, device, queue, images, memory.                 | VMA, CImg                    |
-| `im3e_geo`            | static    | Height maps from GeoTIFF files, tile pyramid, quad tree for visibility.                      | GDAL                         |
-| `im3e_scene`          | static    | Renderer-independent camera: projection, view transform, map camera controller.              | glm                          |
-| `im3e_guis`           | default   | GLFW windows, swapchain presentation, ImGui workspace and panels.                            | GLFW, ImGui                  |
-| `im3e_anari`          | static    | ANARI engine, world, camera, renderer and frame pipeline.                                    | ANARI SDK                    |
-| `im3e_resources`      | interface | Generated header giving the paths of fonts and assets; copies the GUI font next to binaries. |                              |
-| `im3e_test_utils`     | static    | Test fixtures and GoogleTest printers/matchers for Vulkan and GLM types.                     | GoogleTest                   |
-| `mock_im3e*`          | static    | GoogleMock implementations of the interfaces.                                                | GoogleMock                   |
+| Target            | Kind      | Role                                                                                         | Key third-party dependencies |
+| ----------------- | --------- | -------------------------------------------------------------------------------------------- | ---------------------------- |
+| `im3e_utils_core` | static    | Lowest-level helpers with no graphics dependency: flags, paths, errors, platform.            | fmt, whereami                |
+| `im3e_property`   | static    | Property interfaces and implementations, groups, change notification.                        | fmt                          |
+| `im3e_utils`      | static    | Logging, stats, math, rays, view frustum.                                                    | glm                          |
+| `im3e_api`        | interface | Abstract interfaces shared between modules: GUI and windows.                                 | glm                          |
+| `im3e_vulkan`     | static    | Vulkan interfaces (device, images, commands, frame pipeline) and their implementation.       | Vulkan headers, VMA, CImg    |
+| `im3e_geo`        | static    | Height maps from GeoTIFF files, tile pyramid, quad tree for visibility.                      | GDAL                         |
+| `im3e_scene`      | static    | Renderer-independent camera: projection, view transform, map camera controller.              | glm                          |
+| `im3e_guis`       | static    | GLFW windows, swapchain presentation, ImGui workspace and panels.                            | GLFW, ImGui                  |
+| `im3e_anari`      | static    | ANARI engine, world, camera, renderer and frame pipeline.                                    | ANARI SDK                    |
+| `im3e_resources`  | interface | Generated header giving the paths of fonts and assets; copies the GUI font next to binaries. |                              |
+| `im3e_test_utils` | static    | Test fixtures and GoogleTest printers/matchers for Vulkan and GLM types.                     | GoogleTest                   |
+| `mock_im3e*`      | static    | GoogleMock implementations of the interfaces.                                                | GoogleMock                   |
 
 ### Foundation: `im3e_utils_core`, `im3e_utils`, `im3e_property`
 
@@ -149,7 +147,6 @@ There are no cycles. `im3e_api` is the hub: modules talk to each other through i
 - `path.h`: `Path`, an absolute path in a tree of named nodes (`/camera/view`) that always uses `/`, unlike `std::filesystem::path`.
 - `math_utils.h`: `TileID` (`u16vec3`: x, y, level of detail) and small math helpers.
 - `ray.h`, `view_frustum.h`, `transform.h`: rays, frustum culling, TRS transforms. Conventions are in [Coordinate Spaces](coordinate_spaces.md).
-- `vk_utils.h`: `VkUniquePtr`/`VkSharedPtr` for Vulkan handles, `throwIfVkFailed`, `getVkList`, and formatting of Vulkan enums.
 - `imgui_utils.h`: header-only helpers for ImGui.
 
 **`im3e_property`** ([im3e/property/](../../im3e/property/)) is a small reflection system that lets objects expose editable parameters without knowing the GUI:
@@ -165,36 +162,22 @@ There are no cycles. `im3e_api` is the hub: modules talk to each other through i
 
 [im3e/api/](../../im3e/api/) is header-only. It defines the contracts between modules:
 
-| Header               | Interfaces                                                                                                                                                                                              |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `device.h`           | `IDevice`: Vulkan handles and function tables, semaphores and fences, image factory, command queue, logger and stats factories.                                                                         |
-| `image.h`            | `IImage`, `IHostVisibleImage` (CPU mapping), `IImageView`, `IImageMetadata` (current layout and access, for automatic barriers), `IImageFactory`.                                                       |
-| `command_buffer.h`   | `ICommandQueue::startScopedCommand` returns a command buffer that is submitted when it goes out of scope, sync or async. `ICommandBuffer` records scoped image barriers and creates futures to wait on. |
-| `frame_pipeline.h`   | `IFramePipeline`: records the commands that render a frame into an output image, and handles resizes.                                                                                                   |
-| `gui.h`              | `IGuiPanel`, `IGuiWorkspace` (panels docked at a location), `IGuiEventListener` (mouse events in NDC).                                                                                                  |
-| `window.h`           | `IWindowApplication`: creates windows for workspaces and runs the event loop.                                                                                                                           |
-| `height_map.h`       | `IHeightMap` (size, tile size, levels of detail, min/max height) and `IHeightMapTileSampler`.                                                                                                           |
-| `vulkan_functions.h` | `VulkanGlobalFcts`, `VulkanInstanceFcts`, `VulkanDeviceFcts`: tables of the Vulkan functions the project uses.                                                                                          |
+| Header     | Interfaces                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------ |
+| `gui.h`    | `IGuiPanel`, `IGuiWorkspace` (panels docked at a location), `IGuiEventListener` (mouse events in NDC). |
+| `window.h` | `IWindowApplication`: creates windows for workspaces and runs the event loop.                          |
+
+`gui.h` and `window.h` use Vulkan types (`ICommandBuffer`, `IDevice`), so `im3e_api` links `im3e_vulkan` publicly.
+
+### GPU device: `im3e_vulkan`
+
+[im3e/vulkan/](../../im3e/vulkan/) holds the Vulkan contracts between modules, under `<im3e/vulkan/...>`, and implements them: device (`IDevice`, `createDevice`), images, command queue and buffers, frame pipelines (`IFramePipeline`), Vulkan function tables and helpers. It loads Vulkan at run time and allocates memory with VMA. See [Vulkan](vulkan.md) for the details.
 
 `IFramePipeline` is the central abstraction: the ImGui GUI, the ANARI renderer and the test pipelines all implement it, and they can be nested (the ImGui pipeline draws a render panel, which runs an ANARI pipeline into an offscreen image).
 
-### GPU device: `im3e_devices` and `im3e_vulkan_loaders`
-
-[im3e/devices/](../../im3e/devices/) implements `IDevice` with Vulkan. Its public header only exposes `createDevice(logger, DeviceConfig)`; the config carries the debug flag, a callback to check presentation support (provided by GLFW) and the instance extensions the window system needs.
-
-Internally:
-
-- `VulkanInstance` creates the instance, with validation layers and a `VulkanDebugMessageHandler` that forwards validation messages to the logger when debug is enabled.
-- `VulkanPhysicalDevices` ranks the physical devices (discrete GPUs first, required extensions and queues present) and picks a queue family supporting graphics and, when a presentation check is given, presentation.
-- `VulkanDevice` owns the logical device, a single `VulkanCommandQueue`, the VMA-based memory allocator and the image factory.
-- `VulkanImages` creates device-local images, host-visible (linear, mappable) images and proxies for images the device does not own (swapchain images). Each image tracks its layout and last access in `IImageMetadata`, so barriers only need the destination state.
-- `VulkanCommandBuffer` and `VulkanCommandQueue` implement scoped recording, submission with wait/signal semaphores and fence-based futures.
-
-**`im3e_vulkan_loaders`** ([im3e/devices/vulkan_loaders/](../../im3e/devices/vulkan_loaders/)) loads `vulkan-1.dll` / `libvulkan.so.1` at run time and resolves the function tables of `vulkan_functions.h`, plus the function table VMA needs. The whole project is compiled with `VK_NO_PROTOTYPES`: no code calls Vulkan through the loader's exported symbols, every call goes through `IDevice::getFcts()` or `getInstanceFcts()`. This keeps Vulkan an optional run-time dependency and makes Vulkan calls mockable in unit tests (`mock_im3e_vulkan_loaders`, `MockVulkanFunctions`).
-
 ### Geospatial data: `im3e_geo`
 
-[im3e/geo/](../../im3e/geo/) turns raster files into the `IHeightMap` interface:
+[im3e/geo/](../../im3e/geo/) turns raster files into height maps, and does not depend on Vulkan. `<im3e/geo/height_map.h>` declares `IHeightMap` (size, tile size, levels of detail, min/max height) and `IHeightMapTileSampler`.
 
 - `loadHeightMapFromFile(logger, {path, readOnly})` opens a GeoTIFF with GDAL (`GdalGeoTiffHeightMap`). Tiles follow the file's block size, and levels of detail map to the file's overviews. When opened writable, `rebuildPyramid()` regenerates the overviews.
 - Tile samplers read one tile of one level of detail and report invalid (no-data) samples.
@@ -260,10 +243,10 @@ The ANARI image reaches Vulkan through the CPU: `AnariFramePipeline` maps the AN
 ### Test support: `im3e_test_utils` and mocks
 
 - [im3e/test_utils/](../../im3e/test_utils/) provides GoogleTest fixtures: `IntegrationTest` (logger whose errors fail the test), `DeviceIntegrationTest` (a real Vulkan device) and `PipelineIntegrationTest` (runs an `IFramePipeline` into an image and compares pixels). It also has printers and matchers for GLM, Vulkan and standard types.
-- `mock_im3e` ([im3e/mock/](../../im3e/mock/)) mocks the `im3e_api` interfaces: device, images, command buffers, height maps, Vulkan function tables. `mock_im3e_utils` mocks loggers and stats, `mock_im3e_vulkan_loaders` mocks the loader.
+- `mock_im3e_vulkan` ([im3e/vulkan/mock/](../../im3e/vulkan/mock/)) mocks the interfaces of `im3e_vulkan`: device, images, command buffers, Vulkan function tables. `mock_im3e_geo` ([im3e/geo/mock/](../../im3e/geo/mock/)) mocks the height maps of `im3e_geo`, and `mock_im3e_utils` mocks loggers and stats. Mocks of private interfaces, such as `MockVulkanLoader`, are test helpers of their library, in its `test/common/` target (`test_common_im3e_vulkan`).
 - Test executables are declared with `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` ([cmake/im3e_tests.cmake](../../cmake/im3e_tests.cmake)), which label them for `ctest -L` and exclude them from coverage.
 
-Current coverage by module: `utils`, `utils/core`, `devices` and `vulkan_loaders` have unit and integration tests; `property` and `scene` have unit tests; `geo` tests the quad tree; `guis` has integration tests only; `anari` has no tests yet.
+Current coverage by module: `utils`, `utils/core`, `vulkan` have unit and integration tests; `property` and `scene` have unit tests; `geo` tests the quad tree; `guis` has integration tests only; `anari` has no tests yet.
 
 ## Applications
 
@@ -354,12 +337,12 @@ The [README](../../README.md) has the build instructions.
 
 Observations on the current state of the code, as input for future plans:
 
-- **Library packaging.** There is no install or export of the `im3e_*` targets, no versioned public API and no language bindings yet. `im3e_guis` has no explicit library type, unlike the other targets. `resources.h` hard-codes source-tree paths for assets, which will not work once the library is installed elsewhere. `getGdalInstance` registers GDAL drivers process-wide, which a host process that also uses GDAL may not expect.
-- **Interfaces that leak implementations.** `IDevice` exposes raw Vulkan handles and function tables, and `anari.h` includes `<anari/anari.h>`. `GlfwWindowApplication::createWindow` only accepts `ImguiWorkspace`s (checked with a `dynamic_pointer_cast`), and creates the device itself, so a host application cannot provide its own.
+- **Library packaging.** There is no install or export of the `im3e_*` targets, no versioned public API and no language bindings yet. `resources.h` hard-codes source-tree paths for assets, which will not work once the library is installed elsewhere. `getGdalInstance` registers GDAL drivers process-wide, which a host process that also uses GDAL may not expect.
+- **Vulkan.** The limitations of `im3e_vulkan` (required ray tracing, raw handles in `IDevice`, single queue, device created by the window application) are listed in [Vulkan](vulkan.md#known-limitations).
+- **Interfaces that leak implementations.** `anari.h` includes `<anari/anari.h>`. `GlfwWindowApplication::createWindow` only accepts `ImguiWorkspace`s (checked with a `dynamic_pointer_cast`).
 - **ANARI to Vulkan transfer.** Frames go through a CPU copy every frame. GPU interop (e.g. VisRTX's CUDA or Vulkan frame output) would remove it.
 - **Threading.** `updateAsync` is synchronous: visible tiles are loaded from disk on the main thread, which stalls frames while streaming. `AnariInstanceSet` is already guarded by a mutex in preparation.
 - **Height fields.** Frustum culling misses some tiles when changing levels of detail (TODO in [anari_height_field.cpp](../../im3e/anari/src/anari_height_field.cpp)); the tile pool size (100) and the level of detail are fixed rather than driven by screen-space error.
-- **Single queue.** `IDevice` has one command queue used for everything.
 - **Applications.** The ANARI viewer loads a hard-coded file path. `gdal_dem_loader` and `anari_dem_surface_generator` in `applications/anari/` are built but no longer used (superseded by `im3e_geo` and `AnariHeightField`). `im3e_usd_viewer` and `im3e/usd` are placeholders. ImPlot support is commented out.
 - **Tests.** `im3e_anari` has no tests, and `im3e_geo` only tests the quad tree.
 - **Windows support** is in progress.

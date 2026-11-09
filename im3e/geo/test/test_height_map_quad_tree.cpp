@@ -1,6 +1,6 @@
 #include "geo.h"
 
-#include <im3e/mock/mock_height_map.h>
+#include <im3e/geo/mock_height_map.h>
 #include <im3e/test_utils/glm.h>
 #include <im3e/test_utils/test_utils.h>
 

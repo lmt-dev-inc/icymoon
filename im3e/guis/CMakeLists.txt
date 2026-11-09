@@ -1,4 +1,4 @@
-add_library(im3e_guis
+add_library(im3e_guis STATIC
     guis.h
     src/glfw_window.cpp
     src/glfw_window.h
@@ -37,11 +37,11 @@ target_link_libraries(im3e_guis
     im3e_api
     im3e_property
     im3e_utils
+    im3e_vulkan
     glm::glm
   PRIVATE
     glfw
     imgui
-    im3e_devices
     im3e_resources
 )
 

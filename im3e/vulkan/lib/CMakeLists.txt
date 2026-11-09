@@ -1,0 +1,42 @@
+im3e_add_library(
+  TARGET
+    im3e_vulkan
+  SOURCES
+    include/im3e/vulkan/command_buffer.h
+    include/im3e/vulkan/device.h
+    include/im3e/vulkan/frame_pipeline.h
+    include/im3e/vulkan/image.h
+    include/im3e/vulkan/utils.h
+    include/im3e/vulkan/vulkan_functions.h
+    src/utils.cpp
+    src/vulkan_command_buffer.cpp
+    src/vulkan_command_buffer.h
+    src/vulkan_command_queue.cpp
+    src/vulkan_command_queue.h
+    src/vulkan_debug_message_handler.cpp
+    src/vulkan_debug_message_handler.h
+    src/vulkan_device.cpp
+    src/vulkan_device.h
+    src/vulkan_extensions.cpp
+    src/vulkan_extensions.h
+    src/vulkan_images.cpp
+    src/vulkan_images.h
+    src/vulkan_instance.cpp
+    src/vulkan_instance.h
+    src/vulkan_loader.cpp
+    src/vulkan_loader.h
+    src/vulkan_memory_allocator.cpp
+    src/vulkan_memory_allocator.h
+    src/vulkan_physical_devices.cpp
+    src/vulkan_physical_devices.h
+)
+
+target_link_libraries(im3e_vulkan
+  PUBLIC
+    fmt::fmt
+    GPUOpen::VulkanMemoryAllocator
+    im3e_utils
+    Vulkan::Headers
+  PRIVATE
+    cimg::cimg
+)

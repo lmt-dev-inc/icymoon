@@ -1,4 +1,7 @@
-add_library(im3e_scene STATIC
+im3e_add_library(
+  TARGET
+    im3e_scene
+  SOURCES
     include/im3e/scene/camera.h
     include/im3e/scene/map_camera_controller.h
     include/im3e/scene/perspective_projection.h
@@ -7,13 +10,6 @@ add_library(im3e_scene STATIC
     src/map_camera_controller.cpp
     src/perspective_projection.cpp
     src/view_transform.cpp
-)
-
-target_include_directories(im3e_scene
-  PUBLIC
-    include
-  PRIVATE
-    src
 )
 
 target_link_libraries(im3e_scene

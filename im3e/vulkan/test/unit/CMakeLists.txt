@@ -1,0 +1,22 @@
+im3e_add_unit_tests_executable(
+  TARGET
+    test_im3e_vulkan
+  SOURCES
+    test_utils.cpp
+    test_vulkan_command_buffer.cpp
+    test_vulkan_command_queue.cpp
+    test_vulkan_debug_message_handler.cpp
+    test_vulkan_extensions.cpp
+    test_vulkan_images.cpp
+    test_vulkan_instance.cpp
+    test_vulkan_loader.cpp
+)
+
+target_link_libraries(test_im3e_vulkan
+  PRIVATE
+    fmt::fmt
+    im3e_test_utils
+    im3e_vulkan
+    mock_im3e_vulkan
+    test_common_im3e_vulkan
+)

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <im3e/api/device.h>
 #include <im3e/api/gui.h>
+#include <im3e/vulkan/device.h>
 
 #include <functional>
 #include <memory>

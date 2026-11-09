@@ -7,6 +7,7 @@ How the project is designed and why.
 - [Overview](architecture/index.md): libraries and applications of the project, how they depend on each other, shared design patterns and the run-time flow of a frame.
 - [Camera](architecture/camera.md): camera, map camera controller and ANARI adapter, how changes flow between them, navigation and how to use the camera with a renderer.
 - [Coordinate Spaces](architecture/coordinate_spaces.md): coordinate spaces used in the project, their axis conventions, and how values are converted between them.
+- [Vulkan](architecture/vulkan.md): the Vulkan library, its interfaces, device creation, memory, synchronization, tests and known limitations.
 
 ## Development
 

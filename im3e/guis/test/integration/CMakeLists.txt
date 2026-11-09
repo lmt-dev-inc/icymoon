@@ -19,7 +19,7 @@ target_link_libraries(integration_im3e_guis
   PRIVATE
     glfw
     imgui
-    im3e_devices
     im3e_guis
     im3e_test_utils
+    im3e_vulkan
 )

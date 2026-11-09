@@ -1,7 +1,7 @@
 #pragma once
 
-#include <im3e/api/device.h>
-#include <im3e/api/frame_pipeline.h>
+#include <im3e/vulkan/device.h>
+#include <im3e/vulkan/frame_pipeline.h>
 
 namespace im3e {
 

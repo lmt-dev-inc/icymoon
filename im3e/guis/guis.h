@@ -1,12 +1,12 @@
 #pragma once
 
-#include <im3e/api/device.h>
-#include <im3e/api/frame_pipeline.h>
 #include <im3e/api/gui.h>
 #include <im3e/api/window.h>
 #include <im3e/property/property_interface.h>
 #include <im3e/utils/loggers.h>
 #include <im3e/utils/stats.h>
+#include <im3e/vulkan/device.h>
+#include <im3e/vulkan/frame_pipeline.h>
 
 #include <glm/glm.hpp>
 

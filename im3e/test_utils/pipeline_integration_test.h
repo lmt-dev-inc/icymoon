@@ -2,11 +2,11 @@
 
 #include "device_integration_test.h"
 
-#include <im3e/api/device.h>
-#include <im3e/api/frame_pipeline.h>
-#include <im3e/api/image.h>
 #include <im3e/utils/core/types.h>
 #include <im3e/utils/loggers.h>
+#include <im3e/vulkan/device.h>
+#include <im3e/vulkan/frame_pipeline.h>
+#include <im3e/vulkan/image.h>
 
 #include <array>
 #include <functional>

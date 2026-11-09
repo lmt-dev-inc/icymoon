@@ -3,7 +3,7 @@
 #include "gdal_instance.h"
 #include "geo.h"
 
-#include <im3e/api/height_map.h>
+#include <im3e/geo/height_map.h>
 #include <im3e/utils/core/path_utils.h>
 #include <im3e/utils/loggers.h>
 

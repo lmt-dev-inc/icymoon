@@ -1,6 +1,6 @@
 #include "presenter.h"
 
-#include <im3e/utils/vk_utils.h>
+#include <im3e/vulkan/utils.h>
 
 #include <algorithm>
 #include <ranges>

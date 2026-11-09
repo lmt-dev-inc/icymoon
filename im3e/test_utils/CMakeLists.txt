@@ -28,10 +28,9 @@ target_link_libraries(im3e_test_utils
     glm::glm
     GTest::gmock
     GTest::gtest_main
-    im3e_api
-    im3e_devices
     im3e_guis
     im3e_utils
+    im3e_vulkan
 )
 
 im3e_exclude_from_coverage()

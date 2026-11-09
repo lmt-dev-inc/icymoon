@@ -1,9 +1,9 @@
 #pragma once
 
-#include <im3e/api/device.h>
-#include <im3e/api/frame_pipeline.h>
-#include <im3e/api/image.h>
-#include <im3e/utils/vk_utils.h>
+#include <im3e/vulkan/device.h>
+#include <im3e/vulkan/frame_pipeline.h>
+#include <im3e/vulkan/image.h>
+#include <im3e/vulkan/utils.h>
 
 #include <GLFW/glfw3.h>
 
