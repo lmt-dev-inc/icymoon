@@ -21,3 +21,4 @@ How to work on the project.
 Temporary documents: reviews, plans and trackers, to delete once their content is done or moved into the documents above.
 
 - [Architecture Review](work_in_progress/architecture_review.md): inconsistencies in the current architecture, preparation for new renderers, and a roadmap of proposed changes.
+- [Vulkan Renderer Plan](work_in_progress/vulkan_renderer_plan.md): milestones to build a Vulkan renderer with Slang shaders and replace ANARI.
