@@ -18,6 +18,7 @@ Each rule says whether it is checked automatically today. Rules without automati
     - [Libraries](#libraries)
     - [Families of libraries](#families-of-libraries)
     - [Internal libraries](#internal-libraries)
+    - [Executables](#executables)
     - [Include directories](#include-directories)
     - [Public headers](#public-headers)
   - [Files and includes](#files-and-includes)
@@ -220,6 +221,30 @@ im3e/<library>/                                group
 - **The owner links the compiled third-party libraries that the internal library uses.** The internal library is left out of the owner's exported package, and so are its dependencies.
 - **It is never installed.**
 - When a second library needs it, it becomes a library of its own: move it out of `internal/`, and make it `STATIC`.
+
+### Executables
+
+Executables that are part of the libraries, such as the build tools used by their targets, live under `im3e/`. Each one is a group laid out like a library, so that its tests are next to it. Applications built on the libraries live in `applications/` instead.
+
+```
+im3e/shader/                                   group
+  compiler/                                    group
+    CMakeLists.txt                             adds app/, and test/ when tests are built
+    app/                                       im3e_shader_compiler
+      CMakeLists.txt
+      im3e_shader_compiler.cpp
+    test/                                      group
+      CMakeLists.txt
+      unit/                                    test_im3e_shader_compiler
+        CMakeLists.txt
+        test_shader_compiler.cpp
+  lib/                                         im3e_shader
+  test/
+```
+
+- **The executable is in `app/`**, which has no `include/` or `src/` folder: nothing is public, so its files are directly in the folder (see [Targets and groups](#targets-and-groups)).
+- **Names come from paths**, as for libraries: `app/` is left out like `lib/`, so `im3e/shader/compiler/app/` defines `im3e_shader_compiler`, and its tests are `test_im3e_shader_compiler`.
+- **When its code needs unit tests of its own**, it moves to a library in `lib/` next to `app/`, and `app/` keeps only `main`.
 
 ### Include directories
 

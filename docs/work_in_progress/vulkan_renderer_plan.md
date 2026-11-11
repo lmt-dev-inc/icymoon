@@ -136,10 +136,10 @@ Work:
 
 1. Make the Slang library available through Conan: `recipes/slang` packages the official release binaries for Windows and Linux.
 2. Create `im3e_shader`, with the C++ type that gives access to a compiled shader.
-3. Create `im3e_shader_compiler` in `im3e/shader/compiler/`, which compiles one file with the Slang API, with all its entry points in one SPIR-V module.
+3. Create `im3e_shader_compiler` in `im3e/shader/compiler/app/` (see [Executables](../development/code_standards.md#executables)), which compiles one file with the Slang API, with all its entry points in one SPIR-V module.
    - It writes a `.h` and a `.cpp` that give access to the SPIR-V through the type of `im3e_shader`, and a dependency file listing the imported modules. Outputs are only rewritten when their content changes.
    - It prints the diagnostics of Slang as they are, in the usual `file(line): error` form, and returns non-zero on error.
-   - `test_im3e_shader` tests it, with an `add_custom_command` written by hand for now. The command runs the tool with the `bin/` folder of Slang on the `PATH`, as Slang loads `slang-glslang` and its modules from its own folder.
+   - `test_im3e_shader_compiler` tests it, with an `add_custom_command` written by hand for now. The command runs the tool with the `bin/` folder of Slang on the `PATH`, as Slang loads `slang-glslang` and its modules from its own folder.
    - The tool should be covered by the coverage report, if its instrumented runs during the build allow it.
    - Paths with non-ASCII characters aren't supported on Windows, as `argv` uses the process code page. The tool documents it.
 4. Add `cmake/im3e_shaders.cmake`, and have `im3e_add_library` and the test target functions accept `.slang` files in their sources. It replaces the command written by hand. Debug builds keep shader debug information.

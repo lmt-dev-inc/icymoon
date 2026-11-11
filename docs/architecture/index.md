@@ -40,7 +40,7 @@ The long-term goal is to use IcyMoon as a library from other languages, Python f
 
 | Path                  | Content                                                                                                               |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `im3e/`               | The library, split into one CMake target per subfolder (see [Libraries](#libraries)).                                 |
+| `im3e/`               | The library, split into one CMake target per subfolder (see [Libraries](#libraries)), and the tools its build uses.   |
 | `applications/`       | Executables built on the library: the ANARI viewer and smaller tools and samples (see [Applications](#applications)). |
 | `external/imgui/`     | Dear ImGui, as a git submodule, built as the static `imgui` target with its GLFW and Vulkan back-ends.                |
 | `resources/`          | Build-time resources from dependencies: copies PROJ's `proj.db`, which GDAL needs, next to the executables.           |
