@@ -266,7 +266,7 @@ auto pFramePipeline = pEngine->createFramePipeline();
 auto pHeightField = pFramePipeline->getWorld()->addHeightField(loadHeightMapFromFile(*pLogger, {.path = ...}));
 
 auto pWorkspace = createImguiWorkspace("ANARI");
-PropertyGroup parameters{{.name = "Parameters"}, {pFramePipeline->getRendererProperties(), ...}};
+PropertyGroup parameters{{.name = "ParametersName"}, {pFramePipeline->getRendererProperties(), ...}};
 pWorkspace->addPanel(Location::Left, createImguiPropertyPanel(parameters.getAccessor()));
 pWorkspace->addPanel(Location::Center, createImguiRenderPanel("Renderer", std::move(pFramePipeline), pCameraListener));
 pWorkspace->addPanel(Location::Bottom, createImguiStatsPanel("Stats", pDevice->getStatsProvider()));
