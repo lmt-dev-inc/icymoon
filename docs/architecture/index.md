@@ -45,7 +45,7 @@ The long-term goal is to use IcyMoon as a library from other languages, Python f
 | `external/imgui/`     | Dear ImGui, as a git submodule, built as the static `imgui` target with its GLFW and Vulkan back-ends.                |
 | `resources/`          | Build-time resources from dependencies: copies PROJ's `proj.db`, which GDAL needs, next to the executables.           |
 | `cmake/`              | CMake helpers: test and mock targets, code coverage, copy of DLLs on Windows.                                         |
-| `recipes/`            | Local Conan recipes for dependencies that ConanCenter does not provide as we need them: ANARI SDK and OpenUSD.        |
+| `recipes/`            | Local Conan recipes for dependencies that ConanCenter does not provide as we need them: ANARI SDK, OpenUSD and Slang. |
 | `profiles/`           | Conan profiles, composed per OS, compiler and variant (see [profiles/README.md](../../profiles/README.md)).           |
 | `devtools/`, `dev.py` | Python developer CLI: `setup`, `install` and `lock` (see the [README](../../README.md#devpy-commands)).               |
 | `.github/`            | CI workflows (see [GitHub Actions](../development/github_actions.md)).                                                |
@@ -325,7 +325,7 @@ Notes:
 
 ## Build system and tooling
 
-- **Conan 2** ([conanfile.py](../../conanfile.py)) provides the dependencies: ANARI SDK, CImg, fmt, GDAL (with PROJ), GLFW, GLM, Vulkan headers, VMA, whereami and GoogleTest. ANARI and OpenUSD use local recipes under `recipes/`. Versions are pinned in `conan.lock`.
+- **Conan 2** ([conanfile.py](../../conanfile.py)) provides the dependencies: ANARI SDK, CImg, fmt, GDAL (with PROJ), GLFW, GLM, Slang, Vulkan headers, VMA, whereami and GoogleTest. ANARI, OpenUSD and Slang use local recipes under `recipes/`. The Slang recipe packages the official release binaries. Versions are pinned in `conan.lock`.
 - **CMake** (4.2, Ninja, C++20) builds the project from presets that `dev.py install` generates, one per configuration (`lnx-gcc-*`, `win-clang-*`). All warnings are errors (`-Wall -Wextra -pedantic -Werror` or `/W4 /WX`).
 - **Executables and DLLs** are all built in `<build>/bin`. On Windows, `im3e_copy_runtime_dlls` and `im3e_copy_anari_devices` ([cmake/im3e_runtime_dlls.cmake](../../cmake/im3e_runtime_dlls.cmake)) copy the DLLs they need and the ANARI device plug-ins next to them.
 - **Coverage**: lcov with GCC, source-based coverage with clang (see the [README](../../README.md#test-coverage)).

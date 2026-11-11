@@ -23,6 +23,7 @@ class IcyMoonEngineRecipe(ConanFile):
         "glfw/3.4",
         "glm/1.0.1",
         "proj/9.3.1",  # required by GDAL
+        "slang/2026.22",
         "vulkan-headers/1.3.243.0",  # version depended on by vulkan-memory-allocator
         "vulkan-memory-allocator/cci.20231120",
         "whereami/cci.20220112",
