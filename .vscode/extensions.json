@@ -3,6 +3,7 @@
         "ms-vscode.cmake-tools",
         "ms-vscode.cpptools",
         "ms-python.python",
-        "yzhang.markdown-all-in-one"
+        "yzhang.markdown-all-in-one",
+        "shader-slang.slang-language-extension"
     ]
 }
