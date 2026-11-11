@@ -55,7 +55,7 @@ Every header is included through its path from the repository root, e.g. `#inclu
 
 ## Libraries
 
-Libraries are moving to the layout of [Library folders](../development/code_standards.md#library-folders) in the code standards, where each library is a group of targets (`lib/`, `mock/`, `test/...`) and only exposes its own `include/` folder. `im3e_property`, `im3e_scene` and `im3e_vulkan` follow it. The older libraries (`im3e_utils`, `im3e_api`, `im3e_geo`, `im3e_guis`, `im3e_anari`, `im3e_test_utils`) still use the previous layout:
+Libraries are moving to the layout of [Library folders](../development/code_standards.md#library-folders) in the code standards, where each library is a group of targets (`lib/`, `mock/`, `test/...`) and only exposes its own `include/` folder. `im3e_property`, `im3e_scene`, `im3e_shader` and `im3e_vulkan` follow it. The older libraries (`im3e_utils`, `im3e_api`, `im3e_geo`, `im3e_guis`, `im3e_anari`, `im3e_test_utils`) still use the previous layout:
 
 ```
 im3e/<module>/
@@ -80,6 +80,7 @@ flowchart BT
     vulkan[im3e_vulkan]
     geo[im3e_geo]
     scene[im3e_scene]
+    shader[im3e_shader]
     resources[im3e_resources]
     guis[im3e_guis]
     anari[im3e_anari]
@@ -91,6 +92,7 @@ flowchart BT
     api --> vulkan
     geo --> utils
     scene --> props
+    shader -.-> core
     guis --> api
     guis --> props
     guis --> vulkan
@@ -124,6 +126,7 @@ There are no cycles. Modules talk to each other through interfaces: the Vulkan c
 | `im3e_vulkan`     | static    | Vulkan interfaces (device, images, commands, frame pipeline) and their implementation.       | Vulkan headers, VMA, CImg    |
 | `im3e_geo`        | static    | Height maps from GeoTIFF files, tile pyramid, quad tree for visibility.                      | GDAL                         |
 | `im3e_scene`      | static    | Renderer-independent camera: projection, view transform, map camera controller.              | glm                          |
+| `im3e_shader`     | static    | Shaders compiled at build time, as plain data independent of Vulkan and Slang.               |                              |
 | `im3e_guis`       | static    | GLFW windows, swapchain presentation, ImGui workspace and panels.                            | GLFW, ImGui                  |
 | `im3e_anari`      | static    | ANARI engine, world, camera, renderer and frame pipeline.                                    | ANARI SDK                    |
 | `im3e_resources`  | interface | Generated header giving the paths of fonts and assets; copies the GUI font next to binaries. |                              |
