@@ -9,15 +9,22 @@
 // Arguments are read as UTF-8 on every OS. On Windows, argv uses the code page of the process, so CLI11 reads them
 // from the UTF-16 command line instead.
 #include <im3e/utils/core/path_utils.h>
+#include <im3e/utils/core/throw_utils.h>
 
-#include <CLI/CLI.hpp>
 #include <fmt/format.h>
 #include <fmt/std.h>
+#include <slang-com-ptr.h>
+#include <slang.h>
+#include <CLI/CLI.hpp>
 
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <regex>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 
 using namespace im3e;
 
@@ -32,9 +39,7 @@ struct Arguments
     std::string function;
 };
 
-}  // namespace
-
-int main(int argc, char* argv[])
+int parseCliArguments(int argc, char* argv[], Arguments& arguments)
 {
     CLI::App app("Compiles a Slang file to SPIR-V, embedded in generated C++ code", "im3e_shader_compiler");
     argv = app.ensure_utf8(argv);
@@ -67,18 +72,104 @@ int main(int argc, char* argv[])
         return app.exit(e);
     }
 
-    const Arguments arguments{
+    arguments = Arguments{
         .input = path::fromUtf8(input),
         .header = path::fromUtf8(header),
         .source = path::fromUtf8(source),
         .depfile = path::fromUtf8(depfile),
         .function = function,
     };
+    return 0;
+}
+
+void logIfExists(slang::IBlob* diagnostics)
+{
+    if (diagnostics && diagnostics->getBufferSize() > 0U)
+    {
+        const auto text = std::string_view(static_cast<const char*>(diagnostics->getBufferPointer()),
+                                           diagnostics->getBufferSize());
+        fmt::print(stderr, "{}{}", text, text.ends_with("\n") ? "" : "\n");
+    }
+}
+
+void throwIfSlangFailed(SlangResult result, std::string_view stepName)
+{
+    if (SLANG_FAILED(result))
+    {
+        throw std::runtime_error(fmt::format("error: failed to {}", stepName));
+    }
+}
+
+auto createSlangGlobalSession()
+{
+    Slang::ComPtr<slang::IGlobalSession> globalSession;
+    throwIfSlangFailed(slang::createGlobalSession(globalSession.writeRef()), "create the global session");
+    return globalSession;
+}
+
+auto createSlangSession(Slang::ComPtr<slang::IGlobalSession> globalSession)
+{
+    slang::TargetDesc target{
+        .format = SLANG_SPIRV,
+        .profile = globalSession->findProfile("spirv_1_5"),
+    };
+    slang::SessionDesc sessionDesc{
+        .targets = &target,
+        .targetCount = 1,
+    };
+    Slang::ComPtr<slang::ISession> session;
+    throwIfSlangFailed(globalSession->createSession(sessionDesc, session.writeRef()), "create the session");
+    return session;
+}
+
+auto readFile(const std::filesystem::path& filePath)
+{
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file)
+    {
+        throw std::runtime_error(fmt::format("{:g}: error: cannot open file", filePath));
+    }
+    return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+}
+
+auto loadModule(Slang::ComPtr<slang::ISession> session, const std::filesystem::path& filePath)
+{
+    const auto moduleName = path::toUtf8(filePath.filename().stem());
+    const auto sourceCode = readFile(filePath);
+
+    Slang::ComPtr<slang::IBlob> diagnostics;
+    Slang::ComPtr<slang::IModule> module(session->loadModuleFromSourceString(
+        moduleName.c_str(), path::toUtf8(filePath).c_str(), sourceCode.c_str(), diagnostics.writeRef()));
+    logIfExists(diagnostics);
+    throwIfFalse<std::runtime_error>(module != nullptr, fmt::format("error: failed to load module {}", moduleName));
+    return module;
+}
+
+}  // namespace
+
+int main(int argc, char* argv[])
+{
+    Arguments arguments;
+    if (auto errorCode = parseCliArguments(argc, argv, arguments))
+    {
+        return errorCode;
+    }
 
     if (!std::filesystem::is_regular_file(arguments.input))
     {
         fmt::print(stderr, "{:g}: error: file not found\n", arguments.input);
         return 1;
+    }
+
+    try
+    {
+        auto globalSession = createSlangGlobalSession();
+        auto session = createSlangSession(globalSession);
+        auto module = loadModule(session, arguments.input);
+    }
+    catch (const std::exception& exception)
+    {
+        fmt::print(stderr, "{}\n", exception.what());
     }
 
     return 0;
