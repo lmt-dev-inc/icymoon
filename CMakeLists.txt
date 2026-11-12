@@ -74,6 +74,7 @@ im3e_set_coverage_link_flags()
 
 find_package(anari REQUIRED)
 find_package(CImg REQUIRED)
+find_package(CLI11 REQUIRED)
 find_package(fmt REQUIRED)
 find_package(GDAL REQUIRED)
 find_package(glfw3 REQUIRED)

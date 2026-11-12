@@ -18,6 +18,7 @@ class IcyMoonEngineRecipe(ConanFile):
     requires = {
         "anari/0.14.1",
         "cimg/3.3.2",
+        "cli11/2.7.2",
         "fmt/11.0.2",
         "gdal/3.10.3",
         "glfw/3.4",

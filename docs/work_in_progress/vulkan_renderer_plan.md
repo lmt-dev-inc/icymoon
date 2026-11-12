@@ -141,10 +141,10 @@ Work:
    - It prints the diagnostics of Slang as they are, in the usual `file(line): error` form, and returns non-zero on error.
    - `test_im3e_shader_compiler` tests it, with an `add_custom_command` written by hand for now. The command runs the tool with the `bin/` folder of Slang on the `PATH`, as Slang loads `slang-glslang` and its modules from its own folder.
    - The tool should be covered by the coverage report, if its instrumented runs during the build allow it.
-   - Paths with non-ASCII characters aren't supported on Windows, as `argv` uses the process code page. The tool documents it.
+   - Its arguments are parsed with CLI11, which also reads them as UTF-8 on Windows, where `argv` uses the process code page.
 4. Add `cmake/im3e_shaders.cmake`, and have `im3e_add_library` and the test target functions accept `.slang` files in their sources. It replaces the command written by hand. Debug builds keep shader debug information.
 5. Add a shared module to `im3e_shader`, and pass the shared module folders of linked libraries to the tool as import paths.
-6. Describe where shaders go in the [code standards](../development/code_standards.md), including the limitation on non-ASCII paths.
+6. Describe where shaders go in the [code standards](../development/code_standards.md).
 
 **Done when:**
 
