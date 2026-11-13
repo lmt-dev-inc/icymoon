@@ -61,8 +61,8 @@ All follow the [library folder rules](../development/code_standards.md#library-f
 
 - **Compiled at build time, through CMake.** The Slang library is used by a build tool only. It is not shipped with the project or its future Python module.
 - **Compiled by a small tool of ours, `im3e_shader_compiler`,** in `im3e/shader/compiler/`, built on the Slang compilation API. It writes generated C++ with the SPIR-V and the reflection data, and a dependency file, which CMake passes to the build system through `add_custom_command(DEPFILE)`. This is preferred over `slangc` because reflection needs the API (see [Reflection](#reflection)), and it replaces a separate embedding step. The same code can later become a runtime compiler in `im3e_shader`, if hot reload or user-written shaders are wanted.
-- **Listed like C++ files.** A `.slang` file with entry points goes in the `SOURCES` of its target, and the CMake function adds the build step. CMake has no global rule per file type, and one would not work here anyway, because only some `.slang` files have entry points.
-- **Entry-point files are like `.cpp` files, imported modules are like headers.** Imported modules are not listed: the dependency file makes their users rebuild when they change.
+- **Entry-point files are like `.cpp` files, imported modules are like headers.** A `.slang` file with entry points goes in the `SHADERS` of its target, and the CMake function adds the build step. Imported modules go in `SOURCES`, like headers: they are shown in IDEs but not compiled on their own, and the dependency file makes their users rebuild when they change.
+- **Why a separate `SHADERS` list.** Both kinds of files must have the `.slang` extension, since `import` only finds modules by that name, so the extension can't tell them apart as it does for C++. Detecting entry points in CMake would read every shader at configure time and rerun CMake on each edit. Letting the tool decide doesn't work either, as the outputs of a build step must be known at configure time. The tool fails on a file without entry points, so a module listed in `SHADERS` by mistake is reported.
 - **Shaders live where they are used.** Entry-point files go in the `src/` folder of their library. Only modules shared between libraries go in `im3e_shader`, under `include/im3e/shader/`.
 - **Imports follow the link graph.** A target can only import the shared modules of libraries it links.
 - **Shaders are embedded in the binaries**, so that no shader file has to be found at run time (finding X3 of the review).
@@ -130,7 +130,7 @@ Milestones 6 and 7 can be done in either order. Milestones 9 and 10 are not need
 
 ### 1. Shader compilation
 
-**Goal:** a `.slang` file listed in a target's sources is compiled to SPIR-V and embedded in that target, with the same incremental behaviour as a `.cpp` file.
+**Goal:** a `.slang` file listed in a target's shaders is compiled to SPIR-V and embedded in that target, with the same incremental behaviour as a `.cpp` file.
 
 Work:
 
@@ -142,7 +142,7 @@ Work:
    - `test_im3e_shader_compiler` tests it, with an `add_custom_command` written by hand for now. The command runs the tool with the `bin/` folder of Slang on the `PATH`, as Slang loads `slang-glslang` and its modules from its own folder.
    - The tool should be covered by the coverage report, if its instrumented runs during the build allow it.
    - Its arguments are parsed with CLI11, which also reads them as UTF-8 on Windows, where `argv` uses the process code page.
-4. Add `cmake/im3e_shaders.cmake`, and have `im3e_add_library` and the test target functions accept `.slang` files in their sources. It replaces the command written by hand. Debug builds keep shader debug information.
+4. Add `cmake/im3e_shaders.cmake`, and give `im3e_add_library` and the test target functions a `SHADERS` argument for the `.slang` files with entry points. It replaces the command written by hand. Debug builds keep shader debug information.
 5. Add a shared module to `im3e_shader`, and pass the shared module folders of linked libraries to the tool as import paths.
 6. Describe where shaders go in the [code standards](../development/code_standards.md).
 
