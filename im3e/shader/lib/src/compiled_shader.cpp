@@ -10,11 +10,11 @@ namespace {
 
 // Magic number, version, generator, bound and schema (SPIR-V specification, "Physical Layout of a SPIR-V Module")
 constexpr std::size_t SpirvHeaderWordCount = 5U;
-constexpr std::uint32_t SpirvMagicNumber = 0x07230203U;
+constexpr uint32_t SpirvMagicNumber = 0x07230203U;
 
 }  // namespace
 
-CompiledShader::CompiledShader(std::span<const std::uint32_t> spirv)
+CompiledShader::CompiledShader(std::span<const uint32_t> spirv)
   : m_spirv(spirv)
 {
     throwIfFalse<std::invalid_argument>(m_spirv.size() >= SpirvHeaderWordCount,

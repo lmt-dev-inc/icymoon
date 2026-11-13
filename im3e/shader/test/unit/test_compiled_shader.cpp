@@ -12,7 +12,7 @@ using namespace im3e;
 namespace {
 
 // Header of a SPIR-V module: magic number, version 1.5, generator, bound and schema
-constexpr std::array<std::uint32_t, 5U> SpirvHeader{0x07230203U, 0x00010500U, 0U, 1U, 0U};
+constexpr std::array<uint32_t, 5U> SpirvHeader{0x07230203U, 0x00010500U, 0U, 1U, 0U};
 
 }  // namespace
 
@@ -26,7 +26,7 @@ TEST(CompiledShaderTest, constructor)
 
 TEST(CompiledShaderTest, constructor_withEmptyCode)
 {
-    EXPECT_THROW(CompiledShader(std::span<const std::uint32_t>()), std::invalid_argument);
+    EXPECT_THROW(CompiledShader(std::span<const uint32_t>()), std::invalid_argument);
 }
 
 TEST(CompiledShaderTest, constructor_withTooShortCode)

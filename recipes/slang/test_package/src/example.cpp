@@ -52,7 +52,7 @@ int main()
 
     Slang::ComPtr<slang::IBlob> diagnostics;
     slang::IModule* module = session->loadModuleFromSourceString("example", "example.slang", Source,
-                                                                  diagnostics.writeRef());
+                                                                 diagnostics.writeRef());
     check(module ? SLANG_OK : SLANG_FAIL, diagnostics, "load the module");
 
     Slang::ComPtr<slang::IEntryPoint> entryPoint;
@@ -60,17 +60,16 @@ int main()
 
     slang::IComponentType* components[] = {module, entryPoint};
     Slang::ComPtr<slang::IComponentType> program;
-    check(session->createCompositeComponentType(components, 2, program.writeRef(), diagnostics.writeRef()),
-          diagnostics, "compose the program");
+    check(session->createCompositeComponentType(components, 2, program.writeRef(), diagnostics.writeRef()), diagnostics,
+          "compose the program");
 
     Slang::ComPtr<slang::IComponentType> linked;
     check(program->link(linked.writeRef(), diagnostics.writeRef()), diagnostics, "link the program");
 
     Slang::ComPtr<slang::IBlob> code;
-    check(linked->getEntryPointCode(0, 0, code.writeRef(), diagnostics.writeRef()), diagnostics,
-          "generate SPIR-V");
+    check(linked->getEntryPointCode(0, 0, code.writeRef(), diagnostics.writeRef()), diagnostics, "generate SPIR-V");
 
-    std::uint32_t magic = 0;
+    uint32_t magic = 0;
     if (code->getBufferSize() < sizeof(magic))
     {
         throw std::runtime_error("Generated SPIR-V is empty");

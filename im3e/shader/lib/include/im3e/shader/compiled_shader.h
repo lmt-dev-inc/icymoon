@@ -14,13 +14,13 @@ class CompiledShader
 public:
     /// Throws std::invalid_argument if the code is shorter than a SPIR-V header or doesn't start with the SPIR-V magic
     /// number.
-    explicit CompiledShader(std::span<const std::uint32_t> spirv);
+    explicit CompiledShader(std::span<const uint32_t> spirv);
 
     /// Words of the SPIR-V code. Its size_bytes() is the code size Vulkan expects.
-    [[nodiscard]] auto getSpirv() const -> std::span<const std::uint32_t> { return m_spirv; }
+    [[nodiscard]] auto getSpirv() const -> std::span<const uint32_t> { return m_spirv; }
 
 private:
-    std::span<const std::uint32_t> m_spirv;
+    std::span<const uint32_t> m_spirv;
 };
 
 }  // namespace im3e

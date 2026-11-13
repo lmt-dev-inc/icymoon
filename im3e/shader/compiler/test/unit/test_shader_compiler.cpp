@@ -15,9 +15,9 @@ using namespace im3e;
 namespace {
 
 // Execution models and opcode from the SPIR-V specification ("Binary Form")
-constexpr std::uint32_t ExecutionModelVertex = 0U;
-constexpr std::uint32_t ExecutionModelFragment = 4U;
-constexpr std::uint32_t OpEntryPoint = 15U;
+constexpr uint32_t ExecutionModelVertex = 0U;
+constexpr uint32_t ExecutionModelFragment = 4U;
+constexpr uint32_t OpEntryPoint = 15U;
 constexpr std::size_t SpirvHeaderWordCount = 5U;
 
 /// Reads the OpEntryPoint instructions of a SPIR-V module, as their names and execution models.
@@ -25,9 +25,9 @@ constexpr std::size_t SpirvHeaderWordCount = 5U;
 /// Each instruction starts with a word holding its word count in the high 16 bits and its opcode in the low 16 bits.
 /// OpEntryPoint is followed by the execution model, the id of the function, then the name as a null-terminated string
 /// packed in words.
-auto getEntryPoints(std::span<const std::uint32_t> spirv) -> std::map<std::string, std::uint32_t>
+auto getEntryPoints(std::span<const uint32_t> spirv) -> std::map<std::string, uint32_t>
 {
-    std::map<std::string, std::uint32_t> entryPoints;
+    std::map<std::string, uint32_t> entryPoints;
     auto offset = SpirvHeaderWordCount;
     while (offset < spirv.size())
     {
@@ -54,7 +54,7 @@ auto getEntryPoints(std::span<const std::uint32_t> spirv) -> std::map<std::strin
 TEST(ShaderCompilerTest, generatesValidShader)
 {
     // CompiledShader checks the size and the magic number of the code
-    EXPECT_NO_THROW(test::getTestShader());
+    EXPECT_NO_THROW([[maybe_unused]] auto shader = test::getTestShader());
 }
 
 TEST(ShaderCompilerTest, generatesSameShaderOnEachCall)
@@ -66,7 +66,7 @@ TEST(ShaderCompilerTest, generatesAllEntryPointsInOneModule)
 {
     const auto entryPoints = getEntryPoints(test::getTestShader().getSpirv());
 
-    EXPECT_THAT(entryPoints, ContainerEq(std::map<std::string, std::uint32_t>{
+    EXPECT_THAT(entryPoints, ContainerEq(std::map<std::string, uint32_t>{
                                  {"fragmentMain", ExecutionModelFragment},
                                  {"vertexMain", ExecutionModelVertex},
                              }));
