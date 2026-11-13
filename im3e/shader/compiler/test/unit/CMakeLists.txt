@@ -51,6 +51,7 @@ im3e_add_unit_tests_executable(
   SOURCES
     "${_GENERATED_DIR}/test_shader.cpp"
     "${_GENERATED_DIR}/test_shader.h"
+    test_module.slang
     test_shader.slang
     test_shader_compiler.cpp
 )
