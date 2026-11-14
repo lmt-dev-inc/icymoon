@@ -2,10 +2,16 @@
 
 #include <im3e/shader/compiled_shader.h>
 #include <im3e/test_utils/test_utils.h>
+#include <im3e/utils/core/path_utils.h>
 
-#include <cstddef>
+#include <fmt/format.h>
+
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <map>
+#include <regex>
 #include <span>
 #include <string>
 #include <string_view>
@@ -49,6 +55,13 @@ auto getEntryPoints(std::span<const uint32_t> spirv) -> std::map<std::string, ui
     return entryPoints;
 }
 
+/// Escapes spaces as the tool does in the dependency file. The tool also escapes "#" and "$", which aren't expected in
+/// the folders of the tests.
+auto escapeSpaces(const std::string& path) -> std::string
+{
+    return std::regex_replace(path, std::regex(" "), R"(\ )");
+}
+
 }  // namespace
 
 TEST(ShaderCompilerTest, generatesValidShader)
@@ -70,4 +83,21 @@ TEST(ShaderCompilerTest, generatesAllEntryPointsInOneModule)
                                  {"fragmentMain", ExecutionModelFragment},
                                  {"vertexMain", ExecutionModelVertex},
                              }));
+}
+
+TEST(ShaderCompilerTest, writesGeneratedFilesDependingOnShaderAndImportedModules)
+{
+    // Paths come from CMake, which uses "/" on every OS, as the tool does. The dependencies are sorted.
+    const auto sourceDir = escapeSpaces(TEST_SHADER_SOURCE_DIR);
+    const auto generatedDir = escapeSpaces(TEST_SHADER_GENERATED_DIR);
+    const auto expected = fmt::format(
+        "{0}/test_shader.h \\\n"
+        "{0}/test_shader.cpp: \\\n"
+        "  {1}/test_module.slang \\\n"
+        "  {1}/test_shader.slang\n",
+        generatedDir, sourceDir);
+
+    std::ifstream file(path::fromUtf8(TEST_SHADER_GENERATED_DIR) / "test_shader.d", std::ios::binary);
+    const std::string depfile{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+    EXPECT_THAT(depfile, Eq(expected));
 }

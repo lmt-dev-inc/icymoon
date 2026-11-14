@@ -24,6 +24,7 @@
 #include <fstream>
 #include <iterator>
 #include <regex>
+#include <set>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -318,6 +319,51 @@ auto {functionName}() -> const im3e::CompiledShader&
                                    "spirVCode"_a = convertSpirVToString(spirVCode), "functionName"_a = args.function));
 }
 
+// Absolute path in generic form ("/" separators on every OS), escaped for the Makefile syntax of depfiles, which CMake
+// and Ninja read: spaces and "#" are escaped with "\", "$" is doubled.
+auto toDepfilePath(const std::filesystem::path& filePath) -> std::string
+{
+    const auto genericPath = std::filesystem::absolute(filePath).lexically_normal().generic_u8string();
+
+    std::string escaped;
+    escaped.reserve(genericPath.size());
+    for (const auto character : genericPath)
+    {
+        switch (character)
+        {
+            // White spaces are treated as separators between paths in depfile targets:
+            case u8' ': escaped += "\\ "; break;
+            // '#' are treated as comments in depfiles:
+            case u8'#': escaped += "\\#"; break;
+            // '$' are used to create variables in depfiles:
+            case u8'$': escaped += "$$"; break;
+            default: escaped += static_cast<char>(character); break;
+        }
+    }
+    return escaped;
+}
+
+// Lists the outputs, which depend on the input and the files it imports, so that the build system compiles the shader
+// again when one of them changes.
+void createDepfile(const Arguments& args, Slang::ComPtr<slang::IModule> module)
+{
+    // Use a set to avoid duplicate paths:
+    std::set<std::string> dependencies{toDepfilePath(args.input)};
+    for (SlangInt32 i = 0; i < module->getDependencyFileCount(); ++i)
+    {
+        const auto dependency = path::fromUtf8(module->getDependencyFilePath(i));
+        dependencies.insert(toDepfilePath(dependency));
+    }
+
+    auto content = fmt::format("{} \\\n{}:", toDepfilePath(args.header), toDepfilePath(args.source));
+    for (const auto& dependency : dependencies)
+    {
+        fmt::format_to(std::back_inserter(content), " \\\n  {}", dependency);
+    }
+    content += '\n';
+    writeFileIfChanged(args.depfile, content);
+}
+
 }  // namespace
 
 int main(int argc, char* argv[])
@@ -347,6 +393,7 @@ int main(int argc, char* argv[])
         FunctionName functionName{arguments.function};
         createHeaderFile(arguments.input, arguments.header, functionName);
         createSourceFile(arguments, spirVCode);
+        createDepfile(arguments, module);
     }
     catch (const std::exception& exception)
     {

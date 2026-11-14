@@ -9,7 +9,8 @@
 #     --depfile <output dependency file>
 #     --function <qualified name of the generated function, e.g. im3e::test::getTestShader>
 
-set(_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+# The space tests that the tool handles it, and that it is escaped in the dependency file
+set(_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated files")
 
 set(_SHADER_LAUNCHER "")
 if (WIN32)
@@ -59,6 +60,13 @@ im3e_add_unit_tests_executable(
 target_include_directories(test_im3e_shader_compiler
   PRIVATE
     "${_GENERATED_DIR}"
+)
+
+# Read by the tests of the dependency file
+target_compile_definitions(test_im3e_shader_compiler
+  PRIVATE
+    TEST_SHADER_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+    TEST_SHADER_GENERATED_DIR="${_GENERATED_DIR}"
 )
 
 target_link_libraries(test_im3e_shader_compiler
