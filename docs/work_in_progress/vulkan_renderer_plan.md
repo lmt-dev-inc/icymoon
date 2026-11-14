@@ -138,11 +138,11 @@ Work:
 2. Create `im3e_shader`, with the C++ type that gives access to a compiled shader.
 3. Create `im3e_shader_compiler` in `im3e/shader/compiler/app/` (see [Executables](../development/code_standards.md#executables)), which compiles one file with the Slang API, with all its entry points in one SPIR-V module.
    - It writes a `.h` and a `.cpp` that give access to the SPIR-V through the type of `im3e_shader`, and a dependency file listing the imported modules. Outputs are only rewritten when their content changes.
-   - It prints the diagnostics of Slang as they are, in the usual `file(line): error` form, and returns non-zero on error.
+   - It prints the diagnostics of Slang as they are, with the file, line and column of each error, and returns non-zero on error.
    - `test_im3e_shader_compiler` tests it, with an `add_custom_command` written by hand for now. The command runs the tool with the `bin/` folder of Slang on the `PATH`, as Slang loads `slang-glslang` and its modules from its own folder.
    - The tests also read the dependency file: it must list the shader and the module it imports, with the generated files as targets. The generated files are written to a folder whose name has a space, to test escaping.
-   - CTest tests run the tool on invalid inputs (a module without entry points, a Slang error, a missing file), and check that it prints the error and returns non-zero.
-   - The tool should be covered by the coverage report, if its instrumented runs during the build allow it.
+   - CTest tests run the tool on invalid inputs (a missing file, a module without entry points, a Slang error, an invalid function name), and check that it prints the error and returns non-zero. Two more run it successfully, with a function in a namespace and in the global namespace.
+   - The tool is in the coverage report, from its runs under CTest. Its runs during the build aren't reported, as the coverage data of the build is deleted before the tests run.
    - Its arguments are parsed with CLI11, which also reads them as UTF-8 on Windows, where `argv` uses the process code page.
 4. Add `cmake/im3e_shaders.cmake`, and give `im3e_add_library` and the test target functions a `SHADERS` argument for the `.slang` files with entry points. It replaces the command written by hand. Debug builds keep shader debug information.
    - A CTest test builds a small CMake project with two shaders, one importing a module, changes the module, and checks that only the importing shader is compiled again. The project has no C++ language, so the function must also be able to add the build step without a C++ target.
