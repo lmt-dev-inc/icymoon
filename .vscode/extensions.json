@@ -4,6 +4,7 @@
         "ms-vscode.cpptools",
         "ms-python.python",
         "yzhang.markdown-all-in-one",
-        "shader-slang.slang-language-extension"
+        "shader-slang.slang-language-extension",
+        "ryanluker.vscode-coverage-gutters"
     ]
 }

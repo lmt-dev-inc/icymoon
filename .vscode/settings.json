@@ -13,6 +13,13 @@
     "cmake.coverageInfoFiles": [
         "${command:cmake.buildDirectory}/coverage/lcov.info"
     ],
+    // Coverage Gutters shows the same lcov.info in the editor, for any coverage preset. It reads the file directly,
+    // as the Test Coverage view stopped showing line coverage from CMake Tools (seen with VS Code 1.146).
+    "coverage-gutters.coverageBaseDir": "build/*/coverage",
+    "coverage-gutters.coverageFileNames": [
+        "lcov.info"
+    ],
+    "coverage-gutters.watchOnActivate": true,
     // Don't re-run configure when a CMakeLists.txt / *.cmake file changes
     "cmake.configureOnEdit": false,
     // Don't re-run configure when CMakePresets.json changes (the preset is reloaded and re-applied)
