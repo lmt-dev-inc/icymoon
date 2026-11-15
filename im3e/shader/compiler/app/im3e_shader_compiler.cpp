@@ -5,10 +5,11 @@
 //     --source <output .cpp>
 //     --depfile <output dependency file>
 //     --function <qualified name of the generated function, e.g. im3e::test::getTestShader>
-//     [--debug-info]
+//     [--debug-info | --no-debug-info]
 //
 // --debug-info keeps the debug information in the SPIR-V, and disables optimizations, which lose most of the mapping
-// to source lines. The build passes it in Debug builds.
+// to source lines. The build passes it in Debug builds, and --no-debug-info otherwise: a generator expression that
+// evaluates to nothing would still pass an empty argument.
 //
 // Arguments are read as UTF-8 on every OS. On Windows, argv uses the code page of the process, so CLI11 reads them
 // from the UTF-16 command line instead.
@@ -75,7 +76,7 @@ int parseCliArguments(int argc, char* argv[], Arguments& arguments)
             },
             "QUALIFIED_NAME"));
     bool debugInfo = false;
-    app.add_flag("--debug-info", debugInfo, "Keep debug information and disable optimizations");
+    app.add_flag("--debug-info,!--no-debug-info", debugInfo, "Keep debug information and disable optimizations");
 
     try
     {

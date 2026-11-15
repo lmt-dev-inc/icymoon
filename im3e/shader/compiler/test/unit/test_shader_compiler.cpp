@@ -1,4 +1,4 @@
-#include "test_shader.h"
+#include "test_shader.slang.h"
 
 #include <im3e/shader/compiled_shader.h>
 #include <im3e/test_utils/test_utils.h>
@@ -67,17 +67,17 @@ auto escapeSpaces(const std::string& path) -> std::string
 TEST(ShaderCompilerTest, generatesValidShader)
 {
     // CompiledShader checks the size and the magic number of the code
-    EXPECT_NO_THROW([[maybe_unused]] auto shader = test::getTestShader());
+    EXPECT_NO_THROW([[maybe_unused]] auto shader = shaders::getTestShader());
 }
 
 TEST(ShaderCompilerTest, generatesSameShaderOnEachCall)
 {
-    EXPECT_THAT(&test::getTestShader(), Eq(&test::getTestShader()));
+    EXPECT_THAT(&shaders::getTestShader(), Eq(&shaders::getTestShader()));
 }
 
 TEST(ShaderCompilerTest, generatesAllEntryPointsInOneModule)
 {
-    const auto entryPoints = getEntryPoints(test::getTestShader().getSpirv());
+    const auto entryPoints = getEntryPoints(shaders::getTestShader().getSpirv());
 
     EXPECT_THAT(entryPoints, ContainerEq(std::map<std::string, uint32_t>{
                                  {"fragmentMain", ExecutionModelFragment},
@@ -91,13 +91,13 @@ TEST(ShaderCompilerTest, writesGeneratedFilesDependingOnShaderAndImportedModules
     const auto sourceDir = escapeSpaces(TEST_SHADER_SOURCE_DIR);
     const auto generatedDir = escapeSpaces(TEST_SHADER_GENERATED_DIR);
     const auto expected = fmt::format(
-        "{0}/test_shader.h \\\n"
-        "{0}/test_shader.cpp: \\\n"
+        "{0}/test_shader.slang.h \\\n"
+        "{0}/test_shader.slang.cpp: \\\n"
         "  {1}/test_module.slang \\\n"
         "  {1}/test_shader.slang\n",
         generatedDir, sourceDir);
 
-    std::ifstream file(path::fromUtf8(TEST_SHADER_GENERATED_DIR) / "test_shader.d", std::ios::binary);
+    std::ifstream file(path::fromUtf8(TEST_SHADER_GENERATED_DIR) / "test_shader.slang.d", std::ios::binary);
     const std::string depfile{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
     EXPECT_THAT(depfile, Eq(expected));
 }

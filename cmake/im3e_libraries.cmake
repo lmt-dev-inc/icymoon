@@ -7,14 +7,16 @@ include("${CMAKE_CURRENT_LIST_DIR}/src/im3e_library_names.cmake")
 #   im3e_add_library(
 #     TARGET <target>
 #     SOURCES <sources>...
+#     [SHADERS <.slang files with entry points>...]
 #   )
 #
 # The target name must match the folder: im3e/vulkan/lib/ defines im3e_vulkan.
 # The library exposes its include/ folder to the targets that link it, and keeps src/ private.
+# SHADERS are compiled and embedded in the library (see im3e_target_shaders in cmake/im3e_shaders.cmake).
 function(im3e_add_library)
     set(options)
     set(oneValueArgs TARGET)
-    set(multiValueArgs SOURCES)
+    set(multiValueArgs SOURCES SHADERS)
     cmake_parse_arguments(ARG
         "${options}"
         "${oneValueArgs}"
@@ -40,6 +42,10 @@ function(im3e_add_library)
       PRIVATE
         src
     )
+
+    if (ARG_SHADERS)
+        im3e_target_shaders(TARGET ${ARG_TARGET} SHADERS ${ARG_SHADERS})
+    endif()
 endfunction()
 
 # Creates an internal library: an OBJECT library that is part of exactly one STATIC library, its owner.
@@ -48,6 +54,7 @@ endfunction()
 #     TARGET <target>
 #     OWNER <owner target>
 #     SOURCES <sources>...
+#     [SHADERS <.slang files with entry points>...]
 #   )
 #
 # The internal library exposes its include/ folder to the targets that link it, and keeps src/ private.
@@ -55,13 +62,14 @@ endfunction()
 # include/ folder doesn't propagate to the users of the owner. The link is wrapped in $<BUILD_INTERFACE:...> so that the
 # internal library stays out of exported and installed packages: its code is already in the owner's archive.
 #
+# SHADERS are handled as in im3e_add_library.
 # The target name must match the folder: im3e/<library>/internal/<component>/lib/ defines
 # im3e_<library>_internal_<component>.
 # The owner must be defined before calling this function: add the owner's lib/ folder before internal/.
 function(im3e_add_internal_library)
     set(options)
     set(oneValueArgs TARGET OWNER)
-    set(multiValueArgs SOURCES)
+    set(multiValueArgs SOURCES SHADERS)
     cmake_parse_arguments(ARG
         "${options}"
         "${oneValueArgs}"
@@ -106,4 +114,8 @@ function(im3e_add_internal_library)
       PRIVATE
         $<BUILD_INTERFACE:${ARG_TARGET}>
     )
+
+    if (ARG_SHADERS)
+        im3e_target_shaders(TARGET ${ARG_TARGET} SHADERS ${ARG_SHADERS})
+    endif()
 endfunction()
