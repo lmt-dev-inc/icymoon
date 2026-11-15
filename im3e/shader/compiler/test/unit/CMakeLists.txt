@@ -118,7 +118,8 @@ _im3e_add_shader_compiler_error_test(failsOnInvalidFunctionName
     "${CMAKE_CURRENT_SOURCE_DIR}/test_shader.slang" "1invalid" "not a qualified C\\+\\+ name"
 )
 
-# Successful runs, with and without a namespace, which generate different headers
+# Successful runs, with and without a namespace, which generate different headers, and with debug information. Extra
+# arguments are passed to the tool.
 function(_im3e_add_shader_compiler_success_test NAME FUNCTION)
     _im3e_add_shader_compiler_test(${NAME}
         $<TARGET_FILE:im3e_shader_compiler>
@@ -127,8 +128,10 @@ function(_im3e_add_shader_compiler_success_test NAME FUNCTION)
         --source "${_TOOL_TESTS_DIR}/${NAME}/shader.cpp"
         --depfile "${_TOOL_TESTS_DIR}/${NAME}/shader.d"
         --function "${FUNCTION}"
+        ${ARGN}
     )
 endfunction()
 
 _im3e_add_shader_compiler_success_test(compilesShaderInNamespace "im3e::test::getShader")
 _im3e_add_shader_compiler_success_test(compilesShaderInGlobalNamespace "getShader")
+_im3e_add_shader_compiler_success_test(compilesShaderWithDebugInformation "im3e::test::getShader" --debug-info)

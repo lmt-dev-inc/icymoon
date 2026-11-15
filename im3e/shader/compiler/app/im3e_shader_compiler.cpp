@@ -5,6 +5,10 @@
 //     --source <output .cpp>
 //     --depfile <output dependency file>
 //     --function <qualified name of the generated function, e.g. im3e::test::getTestShader>
+//     [--debug-info]
+//
+// --debug-info keeps the debug information in the SPIR-V, and disables optimizations, which lose most of the mapping
+// to source lines. The build passes it in Debug builds.
 //
 // Arguments are read as UTF-8 on every OS. On Windows, argv uses the code page of the process, so CLI11 reads them
 // from the UTF-16 command line instead.
@@ -18,6 +22,7 @@
 #include <CLI/CLI.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
@@ -44,6 +49,7 @@ struct Arguments
     std::filesystem::path source;
     std::filesystem::path depfile;
     std::string function;
+    bool debugInfo = false;
 };
 
 int parseCliArguments(int argc, char* argv[], Arguments& arguments)
@@ -68,6 +74,8 @@ int parseCliArguments(int argc, char* argv[], Arguments& arguments)
                 return std::regex_match(name, QualifiedName) ? std::string() : "not a qualified C++ name";
             },
             "QUALIFIED_NAME"));
+    bool debugInfo = false;
+    app.add_flag("--debug-info", debugInfo, "Keep debug information and disable optimizations");
 
     try
     {
@@ -85,6 +93,7 @@ int parseCliArguments(int argc, char* argv[], Arguments& arguments)
         .source = path::fromUtf8(source),
         .depfile = path::fromUtf8(depfile),
         .function = function,
+        .debugInfo = debugInfo,
     };
     return 0;
 }
@@ -114,11 +123,23 @@ auto createSlangGlobalSession()
     return globalSession;
 }
 
-auto createSlangSession(Slang::ComPtr<slang::IGlobalSession> globalSession)
+auto createSlangSession(Slang::ComPtr<slang::IGlobalSession> globalSession, bool debugInfo)
 {
+    const std::array debugOptions{
+        slang::CompilerOptionEntry{
+            .name = slang::CompilerOptionName::DebugInformation,
+            .value = {.intValue0 = SLANG_DEBUG_INFO_LEVEL_STANDARD},
+        },
+        slang::CompilerOptionEntry{
+            .name = slang::CompilerOptionName::Optimization,
+            .value = {.intValue0 = SLANG_OPTIMIZATION_LEVEL_NONE},
+        },
+    };
     slang::TargetDesc target{
         .format = SLANG_SPIRV,
         .profile = globalSession->findProfile("spirv_1_5"),
+        .compilerOptionEntries = debugInfo ? debugOptions.data() : nullptr,
+        .compilerOptionEntryCount = debugInfo ? static_cast<uint32_t>(debugOptions.size()) : 0U,
     };
     slang::SessionDesc sessionDesc{
         .targets = &target,
@@ -383,7 +404,7 @@ int main(int argc, char* argv[])
     try
     {
         auto globalSession = createSlangGlobalSession();
-        auto session = createSlangSession(globalSession);
+        auto session = createSlangSession(globalSession, arguments.debugInfo);
         auto module = loadModule(session, arguments.input);
 
         const auto entryPoints = getEntryPoints(arguments.input, module);
