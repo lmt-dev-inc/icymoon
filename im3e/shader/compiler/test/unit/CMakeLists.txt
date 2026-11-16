@@ -82,3 +82,18 @@ endfunction()
 _im3e_add_shader_compiler_success_test(compilesShaderInNamespace "im3e::test::getShader")
 _im3e_add_shader_compiler_success_test(compilesShaderInGlobalNamespace "getShader")
 _im3e_add_shader_compiler_success_test(compilesShaderWithDebugInformation "im3e::test::getShader" --debug-info)
+
+# Builds the small project of "incremental build/" with cmake/im3e_shaders.cmake, and checks which shaders compile
+# again when an imported module changes (see incremental_build_script.cmake). Its source and build folders have a
+# space, to check that the build tool reads the escaped paths of the dependency files.
+_im3e_add_shader_compiler_test(rebuildsOnlyShadersImportingChangedModule
+    ${CMAKE_COMMAND}
+    "-DPROJECT_DIR=${CMAKE_CURRENT_SOURCE_DIR}/incremental build"
+    "-DWORK_DIR=${_TOOL_TESTS_DIR}/incremental build"
+    "-DIM3E_CMAKE_DIR=${PROJECT_SOURCE_DIR}/cmake"
+    "-DGENERATOR=${CMAKE_GENERATOR}"
+    "-DMAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+    "-DCOMPILER=$<TARGET_FILE:im3e_shader_compiler>"
+    "-DCOMPILER_DLL_DIRS=$<JOIN:$<TARGET_RUNTIME_DLL_DIRS:im3e_shader_compiler>,|>"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/incremental_build_script.cmake"
+)
