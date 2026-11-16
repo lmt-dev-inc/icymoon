@@ -3,6 +3,7 @@ im3e_add_library(
     im3e_shader
   SOURCES
     include/im3e/shader/compiled_shader.h
+    include/im3e/shader/constants.slang
     src/compiled_shader.cpp
 )
 

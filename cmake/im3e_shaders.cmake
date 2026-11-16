@@ -12,6 +12,10 @@
 #
 # The function name comes from the file name (see im3e_internal_shader_function_name), so it must be unique across the
 # project: configuring fails otherwise.
+#
+# Modules shared between libraries go in the include/ folder of their library, next to its public headers, and are
+# imported through their path: include/im3e/shader/constants.slang is imported with "import im3e.shader.constants;".
+# As for headers, a shader can only import the shared modules of the libraries its target links.
 
 include("${CMAKE_CURRENT_LIST_DIR}/src/im3e_shader_names.cmake")
 
@@ -130,6 +134,10 @@ endfunction()
 # The generated files are written to the shaders/ folder of the current binary folder, which is a private include
 # folder of the target: plane.slang is used with #include "plane.slang.h". The target links im3e_shader, which the
 # generated header includes. Called by the functions creating targets, through their SHADERS argument.
+#
+# The import paths are the include folders of the target, so that import finds what #include finds: the target's own
+# folders, and the public folders of every library it links. A target makes more modules importable by adding their
+# folder with target_include_directories.
 function(im3e_target_shaders)
     set(options)
     set(oneValueArgs TARGET)
@@ -157,6 +165,8 @@ function(im3e_target_shaders)
         "${_OUTPUT_DIR}"
       GENERATED_SOURCES
         _GENERATED_SOURCES
+      IMPORT_PATHS
+        "$<TARGET_PROPERTY:${ARG_TARGET},INCLUDE_DIRECTORIES>"
     )
 
     # The shaders are listed too, so that IDEs show them
