@@ -15,6 +15,8 @@ im3e_compile_shaders(
     "${CMAKE_CURRENT_BINARY_DIR}/shaders"
   GENERATED_SOURCES
     _GENERATED_SOURCES
+  IMPORT_PATHS
+    "${CMAKE_CURRENT_SOURCE_DIR}/modules"
 )
 
 add_custom_target(shaders ALL

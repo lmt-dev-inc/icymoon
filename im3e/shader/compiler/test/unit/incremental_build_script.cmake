@@ -1,6 +1,7 @@
 # Builds a copy of the project in "incremental build/", and checks that a shader compiles again only when a file it
 # reads changes: after a first build, a build without changes compiles nothing, and editing the imported module only
-# compiles the shader importing it. Run by the ShaderCompilerTool.rebuildsOnlyShadersImportingChangedModule test, with:
+# compiles the shader importing it. The module is in another folder, found through an import path. Run by the
+# ShaderCompilerTool.rebuildsOnlyShadersImportingChangedModule test, with:
 #
 #   cmake -DPROJECT_DIR=<folder of the test project>
 #         -DWORK_DIR=<folder for the copy of the project and its build, deleted first>
@@ -71,7 +72,7 @@ check_build("Build without changes")
 
 # Waits, so that the edited module is newer than the generated files on file systems with coarse timestamps
 execute_process(COMMAND "${CMAKE_COMMAND}" -E sleep 1)
-file(APPEND "${SOURCE_DIR}/imported_module.slang" "\npublic float4 getOtherColor() { return float4(0.0); }\n")
+file(APPEND "${SOURCE_DIR}/modules/imported_module.slang" "\npublic float4 getOtherColor() { return float4(0.0); }\n")
 check_build("Build after editing the imported module" importing_shader)
 
 # The function added to the module is unused, so the generated files don't change and the tool leaves them as they

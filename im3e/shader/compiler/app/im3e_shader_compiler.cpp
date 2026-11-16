@@ -6,10 +6,15 @@
 //     --depfile <output dependency file>
 //     --function <qualified name of the generated function, e.g. im3e::test::getTestShader>
 //     [--debug-info | --no-debug-info]
+//     [--import-paths <folders where import looks for modules, separated by ";">]
 //
 // --debug-info keeps the debug information in the SPIR-V, and disables optimizations, which lose most of the mapping
 // to source lines. The build passes it in Debug builds, and --no-debug-info otherwise: a generator expression that
 // evaluates to nothing would still pass an empty argument.
+//
+// --import-paths takes all the folders in one argument, as a CMake list, so that the build can pass a generator
+// expression evaluating to a list: it stays one argument, and an empty list is still a valid value. Empty entries are
+// ignored. Modules are also found in the folder of the importing file.
 //
 // Arguments are read as UTF-8 on every OS. On Windows, argv uses the code page of the process, so CLI11 reads them
 // from the UTF-16 command line instead.
@@ -51,7 +56,27 @@ struct Arguments
     std::filesystem::path depfile;
     std::string function;
     bool debugInfo = false;
+    std::vector<std::filesystem::path> importPaths;
 };
+
+/// Splits a list of folders separated by ";", ignoring empty entries
+auto splitImportPaths(std::string_view pathsStr) -> std::vector<std::filesystem::path>
+{
+    std::vector<std::filesystem::path> paths;
+    while (!pathsStr.empty())
+    {
+        const auto separatorPos = pathsStr.find(';');
+        const auto entry = pathsStr.substr(0U, separatorPos);
+        if (!entry.empty())
+        {
+            paths.emplace_back(path::fromUtf8(entry));
+        }
+        pathsStr = (separatorPos == pathsStr.npos)  //
+                       ? std::string_view()
+                       : pathsStr.substr(separatorPos + 1U);
+    }
+    return paths;
+}
 
 int parseCliArguments(int argc, char* argv[], Arguments& arguments)
 {
@@ -77,6 +102,9 @@ int parseCliArguments(int argc, char* argv[], Arguments& arguments)
             "QUALIFIED_NAME"));
     bool debugInfo = false;
     app.add_flag("--debug-info,!--no-debug-info", debugInfo, "Keep debug information and disable optimizations");
+    std::string importPaths;
+    app.add_option("--import-paths", importPaths, "Folders where import looks for modules, separated by \";\"")
+        ->expected(0, 1);  // CLI11 reads "--import-paths=" as no value rather than an empty one
 
     try
     {
@@ -95,6 +123,7 @@ int parseCliArguments(int argc, char* argv[], Arguments& arguments)
         .depfile = path::fromUtf8(depfile),
         .function = function,
         .debugInfo = debugInfo,
+        .importPaths = splitImportPaths(importPaths),
     };
     return 0;
 }
@@ -124,7 +153,7 @@ auto createSlangGlobalSession()
     return globalSession;
 }
 
-auto createSlangSession(Slang::ComPtr<slang::IGlobalSession> globalSession, bool debugInfo)
+auto createSlangSession(Slang::ComPtr<slang::IGlobalSession> globalSession, const Arguments& args)
 {
     const std::array debugOptions{
         slang::CompilerOptionEntry{
@@ -139,12 +168,23 @@ auto createSlangSession(Slang::ComPtr<slang::IGlobalSession> globalSession, bool
     slang::TargetDesc target{
         .format = SLANG_SPIRV,
         .profile = globalSession->findProfile("spirv_1_5"),
-        .compilerOptionEntries = debugInfo ? debugOptions.data() : nullptr,
-        .compilerOptionEntryCount = debugInfo ? static_cast<uint32_t>(debugOptions.size()) : 0U,
+        .compilerOptionEntries = args.debugInfo ? debugOptions.data() : nullptr,
+        .compilerOptionEntryCount = args.debugInfo ? static_cast<uint32_t>(debugOptions.size()) : 0U,
     };
+
+    // Slang takes the paths as UTF-8 strings, which must live until the session is created
+    std::vector<std::string> searchPaths;
+    std::ranges::transform(args.importPaths, std::back_inserter(searchPaths),
+                           [](const auto& importPath) { return path::toUtf8(std::filesystem::absolute(importPath)); });
+    std::vector<const char*> searchPathPointers;
+    std::ranges::transform(searchPaths, std::back_inserter(searchPathPointers),
+                           [](const auto& searchPath) { return searchPath.c_str(); });
+
     slang::SessionDesc sessionDesc{
         .targets = &target,
         .targetCount = 1,
+        .searchPaths = searchPathPointers.data(),
+        .searchPathCount = static_cast<SlangInt>(searchPathPointers.size()),
     };
     Slang::ComPtr<slang::ISession> session;
     throwIfSlangFailed(globalSession->createSession(sessionDesc, session.writeRef()), "create session");
@@ -405,7 +445,7 @@ int main(int argc, char* argv[])
     try
     {
         auto globalSession = createSlangGlobalSession();
-        auto session = createSlangSession(globalSession, arguments.debugInfo);
+        auto session = createSlangSession(globalSession, arguments);
         auto module = loadModule(session, arguments.input);
 
         const auto entryPoints = getEntryPoints(arguments.input, module);

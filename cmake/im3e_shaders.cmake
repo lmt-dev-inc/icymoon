@@ -21,9 +21,11 @@ include("${CMAKE_CURRENT_LIST_DIR}/src/im3e_shader_names.cmake")
 #     SHADERS <.slang files with entry points>...
 #     OUTPUT_DIR <folder of the generated files>
 #     GENERATED_SOURCES <variable set to the generated .h and .cpp files>
+#     [IMPORT_PATHS <folders where import looks for modules>...]
 #   )
 #
-# Relative shader paths are relative to the current source folder. The files in GENERATED_SOURCES must be used by a
+# Relative shader paths are relative to the current source folder. IMPORT_PATHS may hold generator expressions, and
+# modules are also found in the folder of the importing shader. The files in GENERATED_SOURCES must be used by a
 # target of the same folder, which runs the build steps: a C++ target compiling them, or a custom target depending on
 # them.
 #
@@ -33,7 +35,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/src/im3e_shader_names.cmake")
 function(im3e_compile_shaders)
     set(options)
     set(oneValueArgs OUTPUT_DIR GENERATED_SOURCES)
-    set(multiValueArgs SHADERS)
+    set(multiValueArgs SHADERS IMPORT_PATHS)
     cmake_parse_arguments(ARG
         "${options}"
         "${oneValueArgs}"
@@ -100,6 +102,8 @@ function(im3e_compile_shaders)
             --depfile "${_DEPFILE}"
             --function "${_FUNCTION_NAME}"
             $<IF:$<CONFIG:Debug>,--debug-info,--no-debug-info>
+            # One argument for the whole list, which may be empty (see the tool)
+            "--import-paths=${ARG_IMPORT_PATHS}"
           DEPENDS
             "${_COMPILER_DEPENDENCY}"
             "${_SHADER_PATH}"
