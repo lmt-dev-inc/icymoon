@@ -1,6 +1,6 @@
 # Code Standards
 
-Rules for the C++ code (`im3e/`, `applications/`) and CMake scripts (`cmake/`) of IcyMoon. Third-party code under `external/` is excluded.
+Rules for the C++ code (`im3e/`, `applications/`), Slang shaders and CMake scripts (`cmake/`) of IcyMoon. Third-party code under `external/` is excluded.
 
 The project follows the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines). This document records the project's own choices and additions on top of them; where the two differ, this document takes precedence. Rules refer to guidelines by number where relevant, e.g. [ES.20](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#res-always).
 
@@ -21,6 +21,7 @@ Each rule says whether it is checked automatically today. Rules without automati
     - [Executables](#executables)
     - [Include directories](#include-directories)
     - [Public headers](#public-headers)
+    - [Shaders](#shaders)
   - [Files and includes](#files-and-includes)
   - [Error handling](#error-handling)
   - [Text encoding and paths](#text-encoding-and-paths)
@@ -265,6 +266,33 @@ Each target only exposes its own `include/` folder, so a target can only include
 - **No umbrella headers** (a header that includes all the public headers of a library). Code includes the headers it uses (see [Files and includes](#files-and-includes)), in `im3e/` as in applications, so that a change to a header only rebuilds the files that use it.
 
 *Automated:* no. Once every library follows this layout, the build enforces the include directories.
+
+### Shaders
+
+Shaders are written in [Slang](https://shader-slang.org/) and compiled to SPIR-V at build time by `im3e_shader_compiler`. The SPIR-V is embedded in the binaries, so that no shader file has to be found at run time.
+
+```
+im3e/shader/
+  lib/                                         im3e_shader
+    include/im3e/shader/constants.slang        shared module: import im3e.shader.constants;
+  test/
+    unit/                                      test_im3e_shader
+      CMakeLists.txt                           SHADERS test_constants.slang
+      test_constants.slang                     shader: entry points
+      test_constants.cpp                       #include "test_constants.slang.h"
+```
+
+- **Shaders are like `.cpp` files, modules are like headers.** A shader is a `.slang` file with entry points. A module has none, and is imported by shaders. Both must use the `.slang` extension, as `import` only finds files by that name, so their extension can't tell them apart.
+- **Shaders are listed in `SHADERS`**, an argument of `im3e_add_library`, `im3e_add_internal_library`, `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` ([cmake/im3e_shaders.cmake](../../cmake/im3e_shaders.cmake)). Each shader has its own build step, which runs again when the shader or a module it imports changes. Modules are listed in `SOURCES`, so that IDEs show them.
+- **Shaders go in `src/`**, as they are private to their target, and so do the modules only their target uses.
+- **Modules shared between libraries go in `include/`**, next to the public headers of the library that owns them, and are imported through their path with dots: `include/im3e/shader/constants.slang` is imported with `import im3e.shader.constants;`. General-purpose modules, used by libraries of different families, go in `im3e_shader`.
+- **Imports follow includes.** The import paths of a shader are the include directories of its target (see [Include directories](#include-directories)): a shader can import the modules its target's C++ code could include headers from, and the shared modules of the libraries its target links. A target makes more modules importable by adding their folder with `target_include_directories`.
+- **Module file names are `snake_case`**, like other files. In the dotted form, Slang reads `_` in a name as `-`, but it still finds the `snake_case` file, as `import test_module;` in the tests of `im3e_shader_compiler` shows.
+- **Each shader generates one function**, named after its file: `plane.slang` generates `plane.slang.h` and `plane.slang.cpp`, which declare and define `im3e::shaders::getPlaneShader()`, returning an `im3e::CompiledShader` (`<im3e/shader/compiled_shader.h>`). "Shader" isn't repeated: `test_shader.slang` generates `getTestShader()`. The generated files are in a private include directory of the target: `#include "plane.slang.h"`.
+- **Shader file names are unique across the project**, as every generated function is in `im3e::shaders`.
+- **Debug builds keep debug information** in the SPIR-V, and don't optimize it, so that graphics debuggers can map it to the source.
+
+*Automated:* partially. Configuring fails on a shader file name that isn't `snake_case` or is already used. The build fails on a module listed in `SHADERS`, as it has no entry points, and on an import that isn't found in the import paths.
 
 ## Files and includes
 
