@@ -34,6 +34,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <optional>
 #include <regex>
 #include <set>
 #include <span>
@@ -78,7 +79,13 @@ auto splitImportPaths(std::string_view pathsStr) -> std::vector<std::filesystem:
     return paths;
 }
 
-int parseCliArguments(int argc, char* argv[], Arguments& arguments)
+struct ParseResults
+{
+    std::optional<Arguments> arguments;
+    int exitCode{};
+};
+
+auto parseCliArguments(int argc, char* argv[]) -> ParseResults
 {
     CLI::App app("Compiles a Slang file to SPIR-V, embedded in generated C++ code", "im3e_shader_compiler");
     argv = app.ensure_utf8(argv);
@@ -113,19 +120,22 @@ int parseCliArguments(int argc, char* argv[], Arguments& arguments)
     catch (const CLI::ParseError& e)
     {
         // Prints the help, or the error with the usage, and returns the matching exit code
-        return app.exit(e);
+        return ParseResults{.exitCode = app.exit(e)};
     }
 
-    arguments = Arguments{
-        .input = path::fromUtf8(input),
-        .header = path::fromUtf8(header),
-        .source = path::fromUtf8(source),
-        .depfile = path::fromUtf8(depfile),
-        .function = function,
-        .debugInfo = debugInfo,
-        .importPaths = splitImportPaths(importPaths),
+    return ParseResults{
+        .arguments =
+            Arguments{
+                .input = path::fromUtf8(input),
+                .header = path::fromUtf8(header),
+                .source = path::fromUtf8(source),
+                .depfile = path::fromUtf8(depfile),
+                .function = function,
+                .debugInfo = debugInfo,
+                .importPaths = splitImportPaths(importPaths),
+            },
+        .exitCode = 0,
     };
-    return 0;
 }
 
 void logIfExists(slang::IBlob* diagnostics)
@@ -430,11 +440,12 @@ void createDepfile(const Arguments& args, Slang::ComPtr<slang::IModule> module)
 
 int main(int argc, char* argv[])
 {
-    Arguments arguments;
-    if (auto errorCode = parseCliArguments(argc, argv, arguments))
+    auto [argumentsOpt, exitCode] = parseCliArguments(argc, argv);
+    if (exitCode || !argumentsOpt)
     {
-        return errorCode;
+        return exitCode;
     }
+    const auto& arguments = argumentsOpt.value();
 
     if (!std::filesystem::is_regular_file(arguments.input))
     {
