@@ -27,7 +27,7 @@ target_link_libraries(test_im3e_shader_compiler
 # build, so that the coverage report includes them: the coverage data of the build is deleted before the tests run.
 set(_TOOL_TESTS_DIR "${CMAKE_CURRENT_BINARY_DIR}/tool_tests")
 
-function(_im3e_add_shader_compiler_test NAME)
+function(im3e_internal_add_shader_compiler_test NAME)
     add_test(NAME ShaderCompilerTool.${NAME} COMMAND ${ARGN})
     set_tests_properties(ShaderCompilerTool.${NAME} PROPERTIES LABELS "unit_test")
     if (WIN32)
@@ -38,37 +38,37 @@ function(_im3e_add_shader_compiler_test NAME)
     endif()
 endfunction()
 
-# Runs the tool through expect_compiler_error.cmake, which checks both the exit code and the error
-function(_im3e_add_shader_compiler_error_test NAME INPUT FUNCTION EXPECTED_ERROR)
-    _im3e_add_shader_compiler_test(${NAME}
+# Runs the tool through expect_compiler_error_script.cmake, which checks both the exit code and the error
+function(im3e_internal_add_shader_compiler_error_test NAME INPUT FUNCTION EXPECTED_ERROR)
+    im3e_internal_add_shader_compiler_test(${NAME}
         ${CMAKE_COMMAND}
         "-DTOOL=$<TARGET_FILE:im3e_shader_compiler>"
         "-DINPUT=${INPUT}"
         "-DOUTPUT_DIR=${_TOOL_TESTS_DIR}/${NAME}"
         "-DFUNCTION=${FUNCTION}"
         "-DEXPECTED_ERROR=${EXPECTED_ERROR}"
-        -P "${CMAKE_CURRENT_SOURCE_DIR}/expect_compiler_error.cmake"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/expect_compiler_error_script.cmake"
     )
 endfunction()
 
-_im3e_add_shader_compiler_error_test(failsOnMissingInput
+im3e_internal_add_shader_compiler_error_test(failsOnMissingInput
     "${CMAKE_CURRENT_SOURCE_DIR}/missing.slang" "im3e::getShader" "missing\\.slang: error: file not found"
 )
-_im3e_add_shader_compiler_error_test(failsOnModuleWithoutEntryPoints
+im3e_internal_add_shader_compiler_error_test(failsOnModuleWithoutEntryPoints
     "${CMAKE_CURRENT_SOURCE_DIR}/test_module.slang" "im3e::getShader" "test_module\\.slang: error: no entry points"
 )
 # Slang's diagnostic, printed as it is: "--> <file>:<line>:<column>", line 8 being the missing ";"
-_im3e_add_shader_compiler_error_test(failsOnSlangError
+im3e_internal_add_shader_compiler_error_test(failsOnSlangError
     "${CMAKE_CURRENT_SOURCE_DIR}/test_syntax_error.slang" "im3e::getShader" "test_syntax_error\\.slang:8:"
 )
-_im3e_add_shader_compiler_error_test(failsOnInvalidFunctionName
+im3e_internal_add_shader_compiler_error_test(failsOnInvalidFunctionName
     "${CMAKE_CURRENT_SOURCE_DIR}/test_shader.slang" "1invalid" "not a qualified C\\+\\+ name"
 )
 
 # Successful runs, with and without a namespace, which generate different headers, and with debug information. Extra
 # arguments are passed to the tool.
-function(_im3e_add_shader_compiler_success_test NAME FUNCTION)
-    _im3e_add_shader_compiler_test(${NAME}
+function(im3e_internal_add_shader_compiler_success_test NAME FUNCTION)
+    im3e_internal_add_shader_compiler_test(${NAME}
         $<TARGET_FILE:im3e_shader_compiler>
         "${CMAKE_CURRENT_SOURCE_DIR}/test_shader.slang"
         --header "${_TOOL_TESTS_DIR}/${NAME}/shader.h"
@@ -79,14 +79,14 @@ function(_im3e_add_shader_compiler_success_test NAME FUNCTION)
     )
 endfunction()
 
-_im3e_add_shader_compiler_success_test(compilesShaderInNamespace "im3e::test::getShader")
-_im3e_add_shader_compiler_success_test(compilesShaderInGlobalNamespace "getShader")
-_im3e_add_shader_compiler_success_test(compilesShaderWithDebugInformation "im3e::test::getShader" --debug-info)
+im3e_internal_add_shader_compiler_success_test(compilesShaderInNamespace "im3e::test::getShader")
+im3e_internal_add_shader_compiler_success_test(compilesShaderInGlobalNamespace "getShader")
+im3e_internal_add_shader_compiler_success_test(compilesShaderWithDebugInformation "im3e::test::getShader" --debug-info)
 
 # Builds the small project of "incremental build/" with cmake/im3e_shaders.cmake, and checks which shaders compile
 # again when an imported module changes (see incremental_build_script.cmake). Its source and build folders have a
 # space, to check that the build tool reads the escaped paths of the dependency files.
-_im3e_add_shader_compiler_test(rebuildsOnlyShadersImportingChangedModule
+im3e_internal_add_shader_compiler_test(rebuildsOnlyShadersImportingChangedModule
     ${CMAKE_COMMAND}
     "-DPROJECT_DIR=${CMAKE_CURRENT_SOURCE_DIR}/incremental build"
     "-DWORK_DIR=${_TOOL_TESTS_DIR}/incremental build"

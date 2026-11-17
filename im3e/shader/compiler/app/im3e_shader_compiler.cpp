@@ -56,7 +56,7 @@ struct Arguments
     std::filesystem::path source;
     std::filesystem::path depfile;
     std::string function;
-    bool debugInfo = false;
+    bool debugInfo{false};
     std::vector<std::filesystem::path> importPaths;
 };
 
@@ -107,7 +107,7 @@ auto parseCliArguments(int argc, char* argv[]) -> ParseResults
                 return std::regex_match(name, QualifiedName) ? std::string() : "not a qualified C++ name";
             },
             "QUALIFIED_NAME"));
-    bool debugInfo = false;
+    bool debugInfo{false};
     app.add_flag("--debug-info,!--no-debug-info", debugInfo, "Keep debug information and disable optimizations");
     std::string importPaths;
     app.add_option("--import-paths", importPaths, "Folders where import looks for modules, separated by \";\"")
@@ -376,6 +376,7 @@ void createSourceFile(const Arguments& args, Slang::ComPtr<slang::IBlob> spirVCo
 #include "{headerFile}"
 
 #include <array>
+#include <cstdint>
 
 namespace {{
 

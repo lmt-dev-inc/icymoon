@@ -1,8 +1,9 @@
 # Runs im3e_shader_compiler on an invalid input, and fails unless the tool returns non-zero and prints the expected
-# error. A script is needed as the PASS_REGULAR_EXPRESSION test property ignores the exit code.
+# error. A script is needed as the PASS_REGULAR_EXPRESSION test property ignores the exit code. Run by the error tests
+# of CMakeLists.txt (im3e_internal_add_shader_compiler_error_test).
 #
 # Usage: cmake -DTOOL=<tool> -DINPUT=<.slang> -DOUTPUT_DIR=<folder> -DFUNCTION=<name> -DEXPECTED_ERROR=<regex>
-#              -P expect_compiler_error.cmake
+#              -P expect_compiler_error_script.cmake
 
 foreach(VARIABLE TOOL INPUT OUTPUT_DIR FUNCTION EXPECTED_ERROR)
     if(NOT DEFINED ${VARIABLE})
