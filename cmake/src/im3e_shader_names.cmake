@@ -4,10 +4,15 @@
 # plane.slang gives im3e::shaders::getPlaneShader, and terrain_tile.slang gives im3e::shaders::getTerrainTileShader.
 # "Shader" isn't repeated: test_shader.slang gives im3e::shaders::getTestShader.
 #
-# Fails unless the stem is snake_case, so that it gives a valid C++ name.
+# Fails unless the stem is snake_case, so that it gives a valid C++ name, and on shader.slang, which would give either
+# getShaderShader or a name saying nothing about the shader.
 function(im3e_internal_shader_function_name STEM OUTPUT_VARIABLE)
     if (NOT STEM MATCHES "^[a-z][a-z0-9]*(_[a-z0-9]+)*$")
         message(FATAL_ERROR "Shader file name \"${STEM}.slang\" must be snake_case, e.g. terrain_tile.slang")
+    endif()
+
+    if (STEM STREQUAL "shader")
+        message(FATAL_ERROR "Shader file name \"${STEM}.slang\" must say what the shader is, e.g. terrain_tile.slang")
     endif()
 
     string(REGEX REPLACE "_shader$" "" _NAME "${STEM}")

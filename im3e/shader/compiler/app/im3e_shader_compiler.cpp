@@ -306,7 +306,10 @@ void writeFileIfChanged(const std::filesystem::path& filePath, std::string_view 
     }
 
     // Make sure that all parent folders exist:
-    std::filesystem::create_directories(filePath.parent_path());
+    if (filePath.has_parent_path())
+    {
+        std::filesystem::create_directories(filePath.parent_path());
+    }
 
     std::ofstream file(filePath, std::ios::binary | std::ios::trunc);
     throwIfFalse<std::runtime_error>(!!file, fmt::format("{:g}: error: cannot open file", filePath));
@@ -440,21 +443,21 @@ void createDepfile(const Arguments& args, Slang::ComPtr<slang::IModule> module)
 
 int main(int argc, char* argv[])
 {
-    auto [argumentsOpt, exitCode] = parseCliArguments(argc, argv);
-    if (exitCode || !argumentsOpt)
-    {
-        return exitCode;
-    }
-    const auto& arguments = argumentsOpt.value();
-
-    if (!std::filesystem::is_regular_file(arguments.input))
-    {
-        fmt::print(stderr, "{:g}: error: file not found\n", arguments.input);
-        return 1;
-    }
-
     try
     {
+        auto [argumentsOpt, exitCode] = parseCliArguments(argc, argv);
+        if (exitCode || !argumentsOpt)
+        {
+            return exitCode;
+        }
+        const auto& arguments = argumentsOpt.value();
+
+        if (!std::filesystem::is_regular_file(arguments.input))
+        {
+            fmt::print(stderr, "{:g}: error: file not found\n", arguments.input);
+            return 1;
+        }
+
         auto globalSession = createSlangGlobalSession();
         auto session = createSlangSession(globalSession, arguments);
         auto module = loadModule(session, arguments.input);

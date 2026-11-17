@@ -117,5 +117,12 @@ function(im3e_add_internal_library)
 
     if (ARG_SHADERS)
         im3e_target_shaders(TARGET ${ARG_TARGET} SHADERS ${ARG_SHADERS})
+
+        # The generated code is archived into the owner, but the internal library's dependencies stay out of the
+        # exported package: the owner links what the generated code calls.
+        target_link_libraries(${ARG_OWNER}
+        PRIVATE
+            im3e_shader
+        )
     endif()
 endfunction()

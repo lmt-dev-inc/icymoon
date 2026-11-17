@@ -288,11 +288,11 @@ im3e/shader/
 - **Modules shared between libraries go in `include/`**, next to the public headers of the library that owns them, and are imported through their path with dots: `include/im3e/shader/constants.slang` is imported with `import im3e.shader.constants;`. General-purpose modules, used by libraries of different families, go in `im3e_shader`.
 - **Imports follow includes.** The import paths of a shader are the include directories of its target (see [Include directories](#include-directories)): a shader can import the modules its target's C++ code could include headers from, and the shared modules of the libraries its target links. A target makes more modules importable by adding their folder with `target_include_directories`.
 - **Module file names are `snake_case`**, like other files. In the dotted form, Slang reads `_` in a name as `-`, but it still finds the `snake_case` file, as `import test_module;` in the tests of `im3e_shader_compiler` shows.
-- **Each shader generates one function**, named after its file: `plane.slang` generates `plane.slang.h` and `plane.slang.cpp`, which declare and define `im3e::shaders::getPlaneShader()`, returning an `im3e::CompiledShader` (`<im3e/shader/compiled_shader.h>`). "Shader" isn't repeated: `test_shader.slang` generates `getTestShader()`. The generated files are in a private include directory of the target: `#include "plane.slang.h"`.
+- **Each shader generates one function**, named after its file: `plane.slang` generates `plane.slang.h` and `plane.slang.cpp`, which declare and define `im3e::shaders::getPlaneShader()`, returning an `im3e::CompiledShader` (`<im3e/shader/compiled_shader.h>`). "Shader" isn't repeated: `test_shader.slang` generates `getTestShader()`, and a shader can't be named just `shader.slang`. The generated files are in a private include directory of the target: `#include "plane.slang.h"`.
 - **Shader file names are unique across the project**, as every generated function is in `im3e::shaders`.
 - **Debug builds keep debug information** in the SPIR-V, and don't optimize it, so that graphics debuggers can map it to the source.
 
-*Automated:* partially. Configuring fails on a shader file name that isn't `snake_case` or is already used. The build fails on a module listed in `SHADERS`, as it has no entry points, and on an import that isn't found in the import paths.
+*Automated:* partially. Configuring fails on a shader file name that isn't `snake_case`, is `shader.slang`, or is already used. The build fails on a module listed in `SHADERS`, as it has no entry points, and on an import that isn't found in the import paths.
 
 ## Files and includes
 
