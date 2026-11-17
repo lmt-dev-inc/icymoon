@@ -8,7 +8,9 @@
       "PowerShell(cmake --build --preset *)",
       "PowerShell(ctest --preset *)",
       "PowerShell(cmake --list-presets)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "PowerShell(.venv\\\\Scripts\\\\Activate.ps1; cmake --build --preset *)",
+      "PowerShell(.venv\\\\Scripts\\\\Activate.ps1; ctest --preset *)"
     ]
   }
 }

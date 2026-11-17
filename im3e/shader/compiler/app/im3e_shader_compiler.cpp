@@ -210,7 +210,9 @@ auto readFile(const std::filesystem::path& filePath)
 
 auto loadModule(Slang::ComPtr<slang::ISession> session, const std::filesystem::path& filePath)
 {
-    const auto moduleName = path::toUtf8(filePath.stem());
+    // Named after the full path rather than the stem, so that no import can name the shader by mistake: Slang finds
+    // loaded modules by name, and "import lighting;" in lighting.slang could otherwise resolve to the shader itself
+    const auto moduleName = path::toUtf8(std::filesystem::absolute(filePath));
     const auto sourceCode = readFile(filePath);
 
     Slang::ComPtr<slang::IBlob> diagnostics;
