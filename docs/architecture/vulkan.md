@@ -98,4 +98,4 @@ This keeps Vulkan an optional run-time dependency, and makes every Vulkan call m
 - **`IDevice` exposes raw Vulkan handles and function tables.** Users call Vulkan directly, so the interfaces don't hide Vulkan from them.
 - **Single queue.** `IDevice` has one command queue, used for graphics, transfers and presentation.
 - **The window application creates the device.** A host application can't provide its own device, nor create one without GLFW (see `GlfwWindowApplication`).
-- **No rendering resources yet.** A Vulkan renderer needs buffers, shader modules, graphics pipelines, descriptor sets and depth images, which `im3e_vulkan` doesn't provide yet, and a shader toolchain to compile shaders to SPIR-V.
+- **No rendering resources yet.** A Vulkan renderer needs buffers, shader modules, graphics pipelines, descriptor sets and depth images, which `im3e_vulkan` doesn't provide yet. Shaders are already compiled to SPIR-V at build time, by `im3e_shader` (see [Shaders: `im3e_shader`](index.md#shaders-im3e_shader)).

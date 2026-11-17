@@ -74,6 +74,7 @@ im3e_set_coverage_link_flags()
 
 find_package(anari REQUIRED)
 find_package(CImg REQUIRED)
+find_package(CLI11 REQUIRED)
 find_package(fmt REQUIRED)
 find_package(GDAL REQUIRED)
 find_package(glfw3 REQUIRED)
@@ -81,6 +82,7 @@ find_package(glm REQUIRED)
 find_package(GTest REQUIRED)
 find_package(OpenGL REQUIRED) # required by OpenUSD
 find_package(pxr CONFIG) # made optional for now
+find_package(slang REQUIRED)
 find_package(VulkanHeaders REQUIRED)
 find_package(VulkanMemoryAllocator REQUIRED)
 find_package(whereami REQUIRED)

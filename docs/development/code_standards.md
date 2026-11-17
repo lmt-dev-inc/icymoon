@@ -1,6 +1,6 @@
 # Code Standards
 
-Rules for the C++ code (`im3e/`, `applications/`) and CMake scripts (`cmake/`) of IcyMoon. Third-party code under `external/` is excluded.
+Rules for the C++ code (`im3e/`, `applications/`), Slang shaders and CMake scripts (`cmake/`) of IcyMoon. Third-party code under `external/` is excluded.
 
 The project follows the [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines). This document records the project's own choices and additions on top of them; where the two differ, this document takes precedence. Rules refer to guidelines by number where relevant, e.g. [ES.20](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#res-always).
 
@@ -18,8 +18,10 @@ Each rule says whether it is checked automatically today. Rules without automati
     - [Libraries](#libraries)
     - [Families of libraries](#families-of-libraries)
     - [Internal libraries](#internal-libraries)
+    - [Executables](#executables)
     - [Include directories](#include-directories)
     - [Public headers](#public-headers)
+    - [Shaders](#shaders)
   - [Files and includes](#files-and-includes)
   - [Error handling](#error-handling)
   - [Text encoding and paths](#text-encoding-and-paths)
@@ -59,6 +61,7 @@ Each rule says whether it is checked automatically today. Rules without automati
 - `.cpp` files may use `using namespace im3e;`. Headers never use `using namespace`.
 - Implementation details of a `.cpp` file go in an anonymous namespace.
 - Calls to standard functions are always qualified, including those that would compile without the prefix through argument-dependent lookup (`std::move`, `std::pow`, `std::back_inserter`...). Without the prefix, a call can silently resolve to another function: unqualified `pow(float, float)` calls the C function `::pow(double, double)`.
+- The exception is the fixed-width integer types of `<cstdint>`, which are written without the prefix: `uint32_t`, `int64_t`, `uintptr_t`... Include `<cstdint>` for them, not `<stdint.h>`. Strictly, `<cstdint>` only guarantees the `std::` names, but every standard library we build with also declares the global ones. This also applies to generated code.
 
 *Automated:* no.
 
@@ -221,6 +224,30 @@ im3e/<library>/                                group
 - **It is never installed.**
 - When a second library needs it, it becomes a library of its own: move it out of `internal/`, and make it `STATIC`.
 
+### Executables
+
+Executables that are part of the libraries, such as the build tools used by their targets, live under `im3e/`. Each one is a group laid out like a library, so that its tests are next to it. Applications built on the libraries live in `applications/` instead.
+
+```
+im3e/shader/                                   group
+  compiler/                                    group
+    CMakeLists.txt                             adds app/, and test/ when tests are built
+    app/                                       im3e_shader_compiler
+      CMakeLists.txt
+      im3e_shader_compiler.cpp
+    test/                                      group
+      CMakeLists.txt
+      unit/                                    test_im3e_shader_compiler
+        CMakeLists.txt
+        test_shader_compiler.cpp
+  lib/                                         im3e_shader
+  test/
+```
+
+- **The executable is in `app/`**, which has no `include/` or `src/` folder: nothing is public, so its files are directly in the folder (see [Targets and groups](#targets-and-groups)).
+- **Names come from paths**, as for libraries: `app/` is left out like `lib/`, so `im3e/shader/compiler/app/` defines `im3e_shader_compiler`, and its tests are `test_im3e_shader_compiler`.
+- **When its code needs unit tests of its own**, it moves to a library in `lib/` next to `app/`, and `app/` keeps only `main`.
+
 ### Include directories
 
 Each target only exposes its own `include/` folder, so a target can only include the headers of the targets it links. The repository root is not an include directory.
@@ -239,6 +266,33 @@ Each target only exposes its own `include/` folder, so a target can only include
 - **No umbrella headers** (a header that includes all the public headers of a library). Code includes the headers it uses (see [Files and includes](#files-and-includes)), in `im3e/` as in applications, so that a change to a header only rebuilds the files that use it.
 
 *Automated:* no. Once every library follows this layout, the build enforces the include directories.
+
+### Shaders
+
+Shaders are written in [Slang](https://shader-slang.org/) and compiled to SPIR-V at build time by `im3e_shader_compiler`. The SPIR-V is embedded in the binaries, so that no shader file has to be found at run time.
+
+```
+im3e/shader/
+  lib/                                         im3e_shader
+    include/im3e/shader/constants.slang        shared module: import im3e.shader.constants;
+  test/
+    unit/                                      test_im3e_shader
+      CMakeLists.txt                           SHADERS test_constants.slang
+      test_constants.slang                     shader: entry points
+      test_constants.cpp                       #include "test_constants.slang.h"
+```
+
+- **Shaders are like `.cpp` files, modules are like headers.** A shader is a `.slang` file with entry points. A module has none, and is imported by shaders. Both must use the `.slang` extension, as `import` only finds files by that name, so their extension can't tell them apart.
+- **Shaders are listed in `SHADERS`**, an argument of `im3e_add_library`, `im3e_add_internal_library`, `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` ([cmake/im3e_shaders.cmake](../../cmake/im3e_shaders.cmake)). Each shader has its own build step, which runs again when the shader or a module it imports changes. Modules are listed in `SOURCES`, so that IDEs show them.
+- **Shaders go in `src/`**, as they are private to their target, and so do the modules only their target uses.
+- **Modules shared between libraries go in `include/`**, next to the public headers of the library that owns them, and are imported through their path with dots: `include/im3e/shader/constants.slang` is imported with `import im3e.shader.constants;`. General-purpose modules, used by libraries of different families, go in `im3e_shader`.
+- **Imports follow includes.** The import paths of a shader are the include directories of its target (see [Include directories](#include-directories)): a shader can import the modules its target's C++ code could include headers from, and the shared modules of the libraries its target links. A target makes more modules importable by adding their folder with `target_include_directories`. A shader can't import a module with the same file name as itself, e.g. `import lighting;` in `lighting.slang`, as Slang looks in the shader's own folder first and finds the shader: import shared modules through their path, e.g. `import im3e.render.lighting;`.
+- **Module file names are `snake_case`**, like other files. In the dotted form, Slang reads `_` in a name as `-`, but it still finds the `snake_case` file, as `import test_module;` in the tests of `im3e_shader_compiler` shows.
+- **Each shader generates one function**, named after its file: `plane.slang` generates `plane.slang.h` and `plane.slang.cpp`, which declare and define `im3e::shaders::getPlaneShader()`, returning an `im3e::CompiledShader` (`<im3e/shader/compiled_shader.h>`). "Shader" isn't repeated: `test_shader.slang` generates `getTestShader()`, and a shader can't be named just `shader.slang`. The generated files are in a private include directory of the target: `#include "plane.slang.h"`.
+- **Shader file names are unique across the project**, as every generated function is in `im3e::shaders`.
+- **Debug builds keep debug information** in the SPIR-V, and don't optimize it, so that graphics debuggers can map it to the source.
+
+*Automated:* partially. Configuring fails on a shader file name that isn't `snake_case`, is `shader.slang`, or is already used. The build fails on a module listed in `SHADERS`, as it has no entry points, and on an import that isn't found in the import paths.
 
 ## Files and includes
 
@@ -342,6 +396,7 @@ Nothing below is set up yet. This section lists the options for automating the r
 | No `using namespace std`                   | Script (regular expression) in `dev.py lint`                                        | clang-tidy's `google-build-using-namespace` allows only literal namespaces, but it would also reject `using namespace im3e;`, which `.cpp` files use. A small script matches the rule exactly.                                                                                                                                      |
 | No `using namespace` in headers            | clang-tidy `google-global-names-in-headers`                                         |                                                                                                                                                                                                                                                                                                                                     |
 | Qualified standard calls                   | clang's `-Wunqualified-std-cast-call` (already on, `std::move`/`std::forward` only) | No tool covers all functions. Code review.                                                                                                                                                                                                                                                                                          |
+| Unprefixed fixed-width integers            | Script (regular expression) in `dev.py lint`                                        | Flag `std::u?int(8\|16\|32\|64\|ptr\|max)_t`. clang-tidy's `modernize-deprecated-headers` rejects `<stdint.h>`.                                                                                                                                                                                                                     |
 | Naming                                     | clang-tidy `readability-identifier-naming`                                          | Covers case styles and the `m_` prefix. It can't check the `vk` prefix, nor reject leftover `p`/`r` prefixes, which code review catches.                                                                                                                                                                                            |
 | Leading `_` on private methods             | clang-tidy `readability-identifier-naming` (`PrivateMethodPrefix: _`)               | Exact match for the rule.                                                                                                                                                                                                                                                                                                           |
 | `EXPECT_THAT` instead of comparison macros | Script (regular expression) in `dev.py lint`                                        | Flag `EXPECT_`/`ASSERT_` + `EQ`, `NE`, `TRUE`, `FALSE`, `LT`, `LE`, `GT`, `GE`, `STREQ`... in test files.                                                                                                                                                                                                                           |

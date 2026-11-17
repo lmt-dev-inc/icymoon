@@ -8,10 +8,19 @@ macro(im3e_exclude_from_coverage)
     set_property(GLOBAL PROPERTY COVERAGE_EXCLUDES_PROPERTY ${_COVERAGE_EXCLUDES})
 endmacro()
 
+# Creates a unit tests executable, labelled unit_test for ctest -L.
+#
+#   im3e_add_unit_tests_executable(
+#     TARGET <target>
+#     SOURCES <sources>...
+#     [SHADERS <.slang files with entry points>...]
+#   )
+#
+# SHADERS are compiled and embedded in the executable (see im3e_target_shaders in cmake/im3e_shaders.cmake).
 function(im3e_add_unit_tests_executable)
     set(options)
     set(oneValueArgs TARGET)
-    set(multiValueArgs SOURCES)
+    set(multiValueArgs SOURCES SHADERS)
     cmake_parse_arguments(ARG
         "${options}" 
         "${oneValueArgs}"
@@ -28,6 +37,9 @@ function(im3e_add_unit_tests_executable)
     endif()
 
     add_executable(${ARG_TARGET} ${ARG_SOURCES})
+    if (ARG_SHADERS)
+        im3e_target_shaders(TARGET ${ARG_TARGET} SHADERS ${ARG_SHADERS})
+    endif()
     im3e_copy_runtime_dlls(${ARG_TARGET})
     set_property(GLOBAL APPEND PROPERTY IM3E_COVERAGE_TEST_TARGETS ${ARG_TARGET})
 
@@ -40,10 +52,12 @@ function(im3e_add_unit_tests_executable)
     im3e_exclude_from_coverage()
 endfunction()
 
+# Creates an integration tests executable, labelled integration_test. Takes the same arguments as
+# im3e_add_unit_tests_executable.
 function(im3e_add_integration_tests_executable)
     set(options)
     set(oneValueArgs TARGET)
-    set(multiValueArgs SOURCES)
+    set(multiValueArgs SOURCES SHADERS)
     cmake_parse_arguments(ARG
         "${options}" 
         "${oneValueArgs}"
@@ -60,6 +74,9 @@ function(im3e_add_integration_tests_executable)
     endif()
 
     add_executable(${ARG_TARGET} ${ARG_SOURCES})
+    if (ARG_SHADERS)
+        im3e_target_shaders(TARGET ${ARG_TARGET} SHADERS ${ARG_SHADERS})
+    endif()
     im3e_copy_runtime_dlls(${ARG_TARGET})
     set_property(GLOBAL APPEND PROPERTY IM3E_COVERAGE_TEST_TARGETS ${ARG_TARGET})
 

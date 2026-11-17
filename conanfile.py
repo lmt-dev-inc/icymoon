@@ -18,11 +18,13 @@ class IcyMoonEngineRecipe(ConanFile):
     requires = {
         "anari/0.14.1",
         "cimg/3.3.2",
+        "cli11/2.7.2",
         "fmt/11.0.2",
         "gdal/3.10.3",
         "glfw/3.4",
         "glm/1.0.1",
         "proj/9.3.1",  # required by GDAL
+        "slang/2026.22",
         "vulkan-headers/1.3.243.0",  # version depended on by vulkan-memory-allocator
         "vulkan-memory-allocator/cci.20231120",
         "whereami/cci.20220112",

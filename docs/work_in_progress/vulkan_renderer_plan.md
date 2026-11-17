@@ -43,13 +43,13 @@ Out of scope: ray tracing, real-time simulation, Python bindings, and large-terr
 
 ### Libraries
 
-| Library              | Folder                | Content                                                                | Created in milestone |
-| -------------------- | --------------------- | ---------------------------------------------------------------------- | -------------------- |
+| Library              | Folder                | Content                                                                   | Created in milestone |
+| -------------------- | --------------------- | ------------------------------------------------------------------------- | -------------------- |
 | `im3e_shader`        | `im3e/shader/`        | C++ types for compiled shaders and reflection data, shared Slang modules. | 1                    |
-| `im3e_vulkan`        | `im3e/vulkan/`        | Gains shader modules, pipelines, depth images and buffers.             | exists               |
-| `im3e_render_vulkan` | `im3e/render/vulkan/` | Frame pipeline, object renderers and their shaders.                    | 2                    |
-| `im3e_scene`         | `im3e/scene/`         | Gains scene content: planes, terrains, light.                          | exists               |
-| `im3e_terrain`       | `im3e/terrain/`       | Tile mesh generation, then tile selection and cache.                   | 5                    |
+| `im3e_vulkan`        | `im3e/vulkan/`        | Gains shader modules, pipelines, depth images and buffers.                | exists               |
+| `im3e_render_vulkan` | `im3e/render/vulkan/` | Frame pipeline, object renderers and their shaders.                       | 2                    |
+| `im3e_scene`         | `im3e/scene/`         | Gains scene content: planes, terrains, light.                             | exists               |
+| `im3e_terrain`       | `im3e/terrain/`       | Tile mesh generation, then tile selection and cache.                      | 5                    |
 
 All follow the [library folder rules](../development/code_standards.md#library-folders). `render/` is a group folder, as described in [Families of libraries](../development/code_standards.md#families-of-libraries), so headers are included as `<im3e/render/vulkan/...>`.
 
@@ -60,24 +60,24 @@ All follow the [library folder rules](../development/code_standards.md#library-f
 ### Shaders
 
 - **Compiled at build time, through CMake.** The Slang library is used by a build tool only. It is not shipped with the project or its future Python module.
-- **Compiled by a small tool of ours, `im3e_shader_compiler`,** in `im3e/shader/compiler/`, built on the Slang compilation API. It writes generated C++ with the SPIR-V and the reflection data, and a dependency file for Ninja. This is preferred over `slangc` because reflection needs the API (see [Reflection](#reflection)), and it replaces a separate embedding step. The same code can later become a runtime compiler in `im3e_shader`, if hot reload or user-written shaders are wanted.
-- **Listed like C++ files.** A `.slang` file with entry points goes in the `SOURCES` of its target, and the CMake function adds the build step. CMake has no global rule per file type, and one would not work here anyway, because only some `.slang` files have entry points.
-- **Entry-point files are like `.cpp` files, imported modules are like headers.** Imported modules are not listed: the dependency file makes their users rebuild when they change.
-- **Shaders live where they are used.** Entry-point files go in the `src/` folder of their library. Only modules shared between libraries go in `im3e_shader`, under `include/im3e/shader/`.
-- **Imports follow the link graph.** A target can only import the shared modules of libraries it links.
+- **Compiled by a small tool of ours, `im3e_shader_compiler`,** in `im3e/shader/compiler/`, built on the Slang compilation API. It writes generated C++ with the SPIR-V and the reflection data, and a dependency file, which CMake passes to the build system through `add_custom_command(DEPFILE)`. This is preferred over `slangc` because reflection needs the API (see [Reflection](#reflection)), and it replaces a separate embedding step. The same code can later become a runtime compiler in `im3e_shader`, if hot reload or user-written shaders are wanted.
+- **Entry-point files are like `.cpp` files, imported modules are like headers.** A `.slang` file with entry points goes in the `SHADERS` of its target, and the CMake function adds the build step. Imported modules go in `SOURCES`, like headers: they are shown in IDEs but not compiled on their own, and the dependency file makes their users rebuild when they change.
+- **Why a separate `SHADERS` list.** Both kinds of files must have the `.slang` extension, since `import` only finds modules by that name, so the extension can't tell them apart as it does for C++. Detecting entry points in CMake would read every shader at configure time and rerun CMake on each edit. Letting the tool decide doesn't work either, as the outputs of a build step must be known at configure time. The tool fails on a file without entry points, so a module listed in `SHADERS` by mistake is reported.
+- **Shaders live where they are used.** Entry-point files go in the `src/` folder of their library. Modules shared between libraries go in the `include/` folder of the library that owns them, and general-purpose ones in `im3e_shader`, under `include/im3e/shader/`.
+- **Imports follow the link graph.** The import paths of a shader are the include directories of its target, so a target can only import the shared modules of libraries it links, as for headers.
 - **Shaders are embedded in the binaries**, so that no shader file has to be found at run time (finding X3 of the review).
 
 ### Reflection
 
 Reflection data is produced at build time and embedded with the SPIR-V, as plain C++ data. Code creating a pipeline only states what the shader can't know: the render state and the attachment formats.
 
-| Written by hand today                  | Comes from reflection                                     | Milestone |
-| -------------------------------------- | --------------------------------------------------------- | --------- |
-| Shader stages and entry point names    | Entry points of the compiled shader                       | 3         |
-| Pipeline layout, push constant ranges  | Parameters of the shader                                  | 3         |
-| C++ struct matching the push constants | Generated struct, with `static_assert`s on its offsets    | 3         |
-| Vertex input attributes                | Vertex inputs of the entry point                          | 5         |
-| Descriptor set layouts                 | `ParameterBlock<T>` parameters of the shader              | 6         |
+| Written by hand today                  | Comes from reflection                                  | Milestone |
+| -------------------------------------- | ------------------------------------------------------ | --------- |
+| Shader stages and entry point names    | Entry points of the compiled shader                    | 3         |
+| Pipeline layout, push constant ranges  | Parameters of the shader                               | 3         |
+| C++ struct matching the push constants | Generated struct, with `static_assert`s on its offsets | 3         |
+| Vertex input attributes                | Vertex inputs of the entry point                       | 5         |
+| Descriptor set layouts                 | `ParameterBlock<T>` parameters of the shader           | 6         |
 
 The tool uses the Slang reflection API rather than `slangc -reflection-json`. The JSON would need a parser for a format we found no specification for, and the Slang user guide directs reflection users to the API.
 
@@ -103,7 +103,7 @@ The tool uses the Slang reflection API rather than `slangc -reflection-json`. Th
 | Review                                                                       | This plan                                                                                                                                                         |
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Step 5: renderer-neutral interfaces replace `IAnari*`, ANARI is one backend. | No neutral interfaces and no `im3e_render_api` until a second backend exists. The review's own argument against early abstractions applies.                       |
-| Step 5: the new renderer is validated by image comparison with ANARI.        | ANARI uses ray tracers (`visrtx`, `helide`), so a rasterizer can't match it pixel for pixel. Comparison is visual, and tests check the new renderer's own output.  |
+| Step 5: the new renderer is validated by image comparison with ANARI.        | ANARI uses ray tracers (`visrtx`, `helide`), so a rasterizer can't match it pixel for pixel. Comparison is visual, and tests check the new renderer's own output. |
 | Step 4: logic moves out of `AnariHeightField` and `AnariWorld`.              | The logic is rewritten in new libraries, and ANARI is left as it is until it is deleted.                                                                          |
 | Target architecture: `im3e_render_anari`.                                    | Never created.                                                                                                                                                    |
 | Target architecture: quad tree in `im3e_terrain`.                            | Kept, but only moved in milestone 8, as ANARI uses it until then.                                                                                                 |
@@ -130,15 +130,23 @@ Milestones 6 and 7 can be done in either order. Milestones 9 and 10 are not need
 
 ### 1. Shader compilation
 
-**Goal:** a `.slang` file listed in a target's sources is compiled to SPIR-V and embedded in that target, with the same incremental behaviour as a `.cpp` file.
+**Goal:** a `.slang` file listed in a target's shaders is compiled to SPIR-V and embedded in that target, with the same incremental behaviour as a `.cpp` file.
 
 Work:
 
-1. Make the Slang library available through Conan. No ConanCenter package was found during planning, so this probably means a `recipes/slang` recipe that packages the official release binaries for Windows and Linux, next to `recipes/anari`.
-2. Create `im3e_shader_compiler`, which compiles a file with the Slang API and writes the SPIR-V as generated C++. Confirm early that the API reports the imported files needed for the dependency file. The tool has to find the Slang shared library when it runs during the build.
-3. Add `cmake/im3e_shaders.cmake`, and have `im3e_add_library` and the test target functions accept `.slang` files in their sources. Debug builds keep shader debug information.
-4. Create `im3e_shader`, with the C++ type that gives access to a compiled shader, and one shared module.
-5. Pass the shared module folders of linked libraries to the tool as import paths.
+1. Make the Slang library available through Conan: `recipes/slang` packages the official release binaries for Windows and Linux.
+2. Create `im3e_shader`, with the C++ type that gives access to a compiled shader.
+3. Create `im3e_shader_compiler` in `im3e/shader/compiler/app/` (see [Executables](../development/code_standards.md#executables)), which compiles one file with the Slang API, with all its entry points in one SPIR-V module.
+   - It writes a `.h` and a `.cpp` that give access to the SPIR-V through the type of `im3e_shader`, and a dependency file listing the imported modules. Outputs are only rewritten when their content changes.
+   - It prints the diagnostics of Slang as they are, with the file, line and column of each error, and returns non-zero on error.
+   - `test_im3e_shader_compiler` tests it, with an `add_custom_command` written by hand for now. The command runs the tool with the `bin/` folder of Slang on the `PATH`, as Slang loads `slang-glslang` and its modules from its own folder.
+   - The tests also read the dependency file: it must list the shader and the module it imports, with the generated files as targets. Escaping is tested in work item 4, with folders whose names have a space.
+   - CTest tests run the tool on invalid inputs (a missing file, a module without entry points, a Slang error, an invalid function name), and check that it prints the error and returns non-zero. Two more run it successfully, with a function in a namespace and in the global namespace.
+   - The tool is in the coverage report, from its runs under CTest. Its runs during the build aren't reported, as the coverage data of the build is deleted before the tests run.
+   - Its arguments are parsed with CLI11, which also reads them as UTF-8 on Windows, where `argv` uses the process code page.
+4. Add `cmake/im3e_shaders.cmake`, and give `im3e_add_library` and the test target functions a `SHADERS` argument for the `.slang` files with entry points. It replaces the command written by hand. Debug builds keep shader debug information.
+   - A CTest test builds a small CMake project with two shaders, one importing a module, changes the module, and checks that only the importing shader is compiled again. The project has no C++ language, so the function must also be able to add the build step without a C++ target. Its folders have a space in their names, so that the build tool reads escaped paths from the dependency files.
+5. Add a shared module to `im3e_shader`, and pass the include directories of the target to the tool as import paths, which hold the shared module folders of linked libraries.
 6. Describe where shaders go in the [code standards](../development/code_standards.md).
 
 **Done when:**

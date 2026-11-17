@@ -1,0 +1,484 @@
+// Compiles a Slang file to SPIR-V, embedded in generated C++ code. Run by the build:
+//
+//   im3e_shader_compiler <input .slang>
+//     --header <output .h>
+//     --source <output .cpp>
+//     --depfile <output dependency file>
+//     --function <qualified name of the generated function, e.g. im3e::test::getTestShader>
+//     [--debug-info | --no-debug-info]
+//     [--import-paths <folders where import looks for modules, separated by ";">]
+//
+// --debug-info keeps the debug information in the SPIR-V, and disables optimizations, which lose most of the mapping
+// to source lines. The build passes it in Debug builds, and --no-debug-info otherwise: a generator expression that
+// evaluates to nothing would still pass an empty argument.
+//
+// --import-paths takes all the folders in one argument, as a CMake list, so that the build can pass a generator
+// expression evaluating to a list: it stays one argument, and an empty list is still a valid value. Empty entries are
+// ignored. Modules are also found in the folder of the importing file.
+//
+// Arguments are read as UTF-8 on every OS. On Windows, argv uses the code page of the process, so CLI11 reads them
+// from the UTF-16 command line instead.
+#include <im3e/utils/core/path_utils.h>
+#include <im3e/utils/core/throw_utils.h>
+
+#include <fmt/format.h>
+#include <fmt/std.h>
+#include <slang-com-ptr.h>
+#include <slang.h>
+#include <CLI/CLI.hpp>
+
+#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <optional>
+#include <regex>
+#include <set>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include <vector>
+
+using namespace im3e;
+using namespace fmt::literals;
+
+namespace {
+
+struct Arguments
+{
+    std::filesystem::path input;
+    std::filesystem::path header;
+    std::filesystem::path source;
+    std::filesystem::path depfile;
+    std::string function;
+    bool debugInfo{false};
+    std::vector<std::filesystem::path> importPaths;
+};
+
+/// Splits a list of folders separated by ";", ignoring empty entries
+auto splitImportPaths(std::string_view pathsStr) -> std::vector<std::filesystem::path>
+{
+    std::vector<std::filesystem::path> paths;
+    while (!pathsStr.empty())
+    {
+        const auto separatorPos = pathsStr.find(';');
+        const auto entry = pathsStr.substr(0U, separatorPos);
+        if (!entry.empty())
+        {
+            paths.emplace_back(path::fromUtf8(entry));
+        }
+        pathsStr = (separatorPos == pathsStr.npos)  //
+                       ? std::string_view()
+                       : pathsStr.substr(separatorPos + 1U);
+    }
+    return paths;
+}
+
+struct ParseResults
+{
+    std::optional<Arguments> arguments;
+    int exitCode{};
+};
+
+auto parseCliArguments(int argc, char* argv[]) -> ParseResults
+{
+    CLI::App app("Compiles a Slang file to SPIR-V, embedded in generated C++ code", "im3e_shader_compiler");
+    argv = app.ensure_utf8(argv);
+
+    std::string input;
+    std::string header;
+    std::string source;
+    std::string depfile;
+    std::string function;
+    app.add_option("input", input, "Slang file with the entry points")->required();
+    app.add_option("--header", header, "Generated header")->required();
+    app.add_option("--source", source, "Generated source file, which includes the header by its file name")->required();
+    app.add_option("--depfile", depfile, "Dependency file listing the files read, for the build system")->required();
+    app.add_option("--function", function, "Qualified name of the generated function, e.g. im3e::getShader")
+        ->required()
+        ->check(CLI::Validator(
+            [](const std::string& name) {
+                static const std::regex QualifiedName(R"([A-Za-z_]\w*(::[A-Za-z_]\w*)*)");
+                return std::regex_match(name, QualifiedName) ? std::string() : "not a qualified C++ name";
+            },
+            "QUALIFIED_NAME"));
+    bool debugInfo{false};
+    app.add_flag("--debug-info,!--no-debug-info", debugInfo, "Keep debug information and disable optimizations");
+    std::string importPaths;
+    app.add_option("--import-paths", importPaths, "Folders where import looks for modules, separated by \";\"")
+        ->expected(0, 1);  // CLI11 reads "--import-paths=" as no value rather than an empty one
+
+    try
+    {
+        app.parse(argc, argv);
+    }
+    catch (const CLI::ParseError& e)
+    {
+        // Prints the help, or the error with the usage, and returns the matching exit code
+        return ParseResults{.exitCode = app.exit(e)};
+    }
+
+    return ParseResults{
+        .arguments =
+            Arguments{
+                .input = path::fromUtf8(input),
+                .header = path::fromUtf8(header),
+                .source = path::fromUtf8(source),
+                .depfile = path::fromUtf8(depfile),
+                .function = function,
+                .debugInfo = debugInfo,
+                .importPaths = splitImportPaths(importPaths),
+            },
+        .exitCode = 0,
+    };
+}
+
+void logIfExists(slang::IBlob* diagnostics)
+{
+    if (diagnostics && diagnostics->getBufferSize() > 0U)
+    {
+        const auto text = std::string_view(static_cast<const char*>(diagnostics->getBufferPointer()),
+                                           diagnostics->getBufferSize());
+        fmt::print(stderr, "{}{}", text, text.ends_with("\n") ? "" : "\n");
+    }
+}
+
+void throwIfSlangFailed(SlangResult result, std::string_view stepName)
+{
+    if (SLANG_FAILED(result))
+    {
+        throw std::runtime_error(fmt::format("error: failed to {}", stepName));
+    }
+}
+
+auto createSlangGlobalSession()
+{
+    Slang::ComPtr<slang::IGlobalSession> globalSession;
+    throwIfSlangFailed(slang::createGlobalSession(globalSession.writeRef()), "create global session");
+    return globalSession;
+}
+
+auto createSlangSession(Slang::ComPtr<slang::IGlobalSession> globalSession, const Arguments& args)
+{
+    const std::array debugOptions{
+        slang::CompilerOptionEntry{
+            .name = slang::CompilerOptionName::DebugInformation,
+            .value = {.intValue0 = SLANG_DEBUG_INFO_LEVEL_STANDARD},
+        },
+        slang::CompilerOptionEntry{
+            .name = slang::CompilerOptionName::Optimization,
+            .value = {.intValue0 = SLANG_OPTIMIZATION_LEVEL_NONE},
+        },
+    };
+    slang::TargetDesc target{
+        .format = SLANG_SPIRV,
+        .profile = globalSession->findProfile("spirv_1_5"),
+        .compilerOptionEntries = args.debugInfo ? debugOptions.data() : nullptr,
+        .compilerOptionEntryCount = args.debugInfo ? static_cast<uint32_t>(debugOptions.size()) : 0U,
+    };
+
+    // Slang takes the paths as UTF-8 strings, which must live until the session is created
+    std::vector<std::string> searchPaths;
+    std::ranges::transform(args.importPaths, std::back_inserter(searchPaths),
+                           [](const auto& importPath) { return path::toUtf8(std::filesystem::absolute(importPath)); });
+    std::vector<const char*> searchPathPointers;
+    std::ranges::transform(searchPaths, std::back_inserter(searchPathPointers),
+                           [](const auto& searchPath) { return searchPath.c_str(); });
+
+    slang::SessionDesc sessionDesc{
+        .targets = &target,
+        .targetCount = 1,
+        .searchPaths = searchPathPointers.data(),
+        .searchPathCount = static_cast<SlangInt>(searchPathPointers.size()),
+    };
+    Slang::ComPtr<slang::ISession> session;
+    throwIfSlangFailed(globalSession->createSession(sessionDesc, session.writeRef()), "create session");
+    return session;
+}
+
+auto readFile(const std::filesystem::path& filePath)
+{
+    std::ifstream file(filePath, std::ios::binary);
+    throwIfFalse<std::runtime_error>(!!file, fmt::format("{:g}: error: cannot open file", filePath));
+    return std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+}
+
+auto loadModule(Slang::ComPtr<slang::ISession> session, const std::filesystem::path& filePath)
+{
+    // Named after the full path rather than the stem, so that no import can name the shader by mistake: Slang finds
+    // loaded modules by name, and "import lighting;" in lighting.slang could otherwise resolve to the shader itself
+    const auto moduleName = path::toUtf8(std::filesystem::absolute(filePath));
+    const auto sourceCode = readFile(filePath);
+
+    Slang::ComPtr<slang::IBlob> diagnostics;
+    Slang::ComPtr<slang::IModule> module(session->loadModuleFromSourceString(
+        moduleName.c_str(), path::toUtf8(filePath).c_str(), sourceCode.c_str(), diagnostics.writeRef()));
+    logIfExists(diagnostics);
+    throwIfFalse<std::runtime_error>(module != nullptr, fmt::format("error: failed to load module {}", moduleName));
+    return module;
+}
+
+struct FunctionName
+{
+    explicit FunctionName(std::string_view fullName)
+    {
+        const auto findPos = fullName.rfind("::");
+        if (findPos != fullName.npos)
+        {
+            namespaces = fullName.substr(0U, findPos);
+            name = fullName.substr(findPos + 2U);
+        }
+        else
+        {
+            name = fullName;
+        }
+    }
+
+    std::string_view namespaces;  // Empty for global namespace
+    std::string_view name;
+};
+
+auto getEntryPoints(const std::filesystem::path& filePath, Slang::ComPtr<slang::IModule> module)
+{
+    const auto entryPointCount = module->getDefinedEntryPointCount();
+    throwIfFalse<std::runtime_error>(
+        entryPointCount > 0,
+        fmt::format(
+            "{:g}: error: no entry points found; modules without entry points are imported, not listed in SHADERS",
+            filePath));
+
+    std::vector<Slang::ComPtr<slang::IEntryPoint>> entryPoints;
+    entryPoints.reserve(static_cast<size_t>(entryPointCount));
+    for (SlangInt32 i = 0; i < entryPointCount; i++)
+    {
+        throwIfSlangFailed(module->getDefinedEntryPoint(i, entryPoints.emplace_back().writeRef()),
+                           fmt::format("get entry point {}", i));
+    }
+    return entryPoints;
+}
+
+auto composeAndLinkProgram(Slang::ComPtr<slang::ISession> session, Slang::ComPtr<slang::IModule> module,
+                           const std::vector<Slang::ComPtr<slang::IEntryPoint>>& entryPoints)
+{
+    std::vector<slang::IComponentType*> components;
+    components.reserve(entryPoints.size() + 1U);
+    components.emplace_back(module.get());
+    std::ranges::transform(entryPoints, std::back_inserter(components),
+                           [](const auto& entryPoint) { return entryPoint.get(); });
+
+    Slang::ComPtr<slang::IBlob> diagnostics;
+    Slang::ComPtr<slang::IComponentType> program;
+    auto result = session->createCompositeComponentType(components.data(), static_cast<SlangInt>(components.size()),
+                                                        program.writeRef(), diagnostics.writeRef());
+    logIfExists(diagnostics);
+    throwIfSlangFailed(result, "compose program");
+
+    Slang::ComPtr<slang::IComponentType> linkedProgram;
+    result = program->link(linkedProgram.writeRef(), diagnostics.writeRef());
+    logIfExists(diagnostics);
+    throwIfSlangFailed(result, "link program");
+
+    return linkedProgram;
+}
+
+auto generateSpirVCode(Slang::ComPtr<slang::IComponentType> program)
+{
+    Slang::ComPtr<slang::IBlob> spirVCode;
+    Slang::ComPtr<slang::IBlob> diagnostics;
+    const auto result = program->getTargetCode(0, spirVCode.writeRef(), diagnostics.writeRef());
+    logIfExists(diagnostics);
+    throwIfSlangFailed(result, "generate SPIR-V");
+    return spirVCode;
+}
+
+void writeFileIfChanged(const std::filesystem::path& filePath, std::string_view content)
+{
+    // Keeps the timestamp of an unchanged file, so that the build system doesn't rebuild what depends on it. Comparing
+    // the sizes first avoids reading files that changed size.
+    std::error_code error;
+    const auto existingSize = std::filesystem::file_size(filePath, error);
+    if (!error && existingSize == content.size() && readFile(filePath) == content)
+    {
+        return;
+    }
+
+    // Make sure that all parent folders exist:
+    if (filePath.has_parent_path())
+    {
+        std::filesystem::create_directories(filePath.parent_path());
+    }
+
+    std::ofstream file(filePath, std::ios::binary | std::ios::trunc);
+    throwIfFalse<std::runtime_error>(!!file, fmt::format("{:g}: error: cannot open file", filePath));
+
+    file.write(content.data(), static_cast<std::streamsize>(content.size()));
+    file.close();
+    throwIfFalse<std::runtime_error>(!!file, fmt::format("{:g}: error: cannot write file", filePath));
+}
+
+void createHeaderFile(const std::filesystem::path& shaderPath, const std::filesystem::path& filePath,
+                      const FunctionName& functionName)
+{
+    constexpr auto HeaderSource = R"(// Generated by im3e_shader_compiler
+// Source file: "{shaderFile}"
+// Do not edit.
+#pragma once
+
+#include <im3e/shader/compiled_shader.h>
+
+{namespaceBegin}[[nodiscard]] auto {functionName}() -> const im3e::CompiledShader&;{namespaceEnd}
+)";
+
+    const auto hasNamespace = !functionName.namespaces.empty();
+    const auto namespaceBegin = hasNamespace ? fmt::format("namespace {} {{\n\n", functionName.namespaces) : "";
+    const auto namespaceEnd = hasNamespace ? fmt::format("\n\n}}  // namespace {}", functionName.namespaces) : "";
+
+    writeFileIfChanged(filePath, fmt::format(HeaderSource, "shaderFile"_a = path::toUtf8(shaderPath.filename()),
+                                             "namespaceBegin"_a = namespaceBegin, "namespaceEnd"_a = namespaceEnd,
+                                             "functionName"_a = functionName.name));
+}
+
+auto convertSpirVToString(Slang::ComPtr<slang::IBlob> spirVCode) -> std::string
+{
+    throwIfFalse<std::runtime_error>(
+        reinterpret_cast<uintptr_t>(spirVCode->getBufferPointer()) % alignof(uint32_t) == 0U,
+        "error: generated SPIR-V address is not aligned to 4 bytes");
+    throwIfFalse<std::runtime_error>(spirVCode->getBufferSize() % sizeof(uint32_t) == 0,
+                                     "error: generated SPIR-V size is not a multiple of 4 bytes");
+
+    constexpr auto HexWordSize = 12U;  // Hex words are of the form " 0xAABBCCDD," i.e. 12 chars.
+    constexpr auto LineSize = 120U;    // Our C++ standard is 120 chars per line.
+    constexpr auto HexWordsPerLine = (LineSize - 4U) / HexWordSize;  // Remove 4 chars for indentation
+
+    const auto words = std::span{static_cast<const uint32_t*>(spirVCode->getBufferPointer()),
+                                 spirVCode->getBufferSize() / sizeof(uint32_t)};
+    const auto lineCount = (words.size() + HexWordsPerLine - 1U) / HexWordsPerLine;  // round up
+
+    std::string text;
+    text.reserve(lineCount * LineSize);
+    for (size_t i = 0U; i < words.size(); i++)
+    {
+        fmt::format_to(std::back_inserter(text), "{}0x{:08x},", i % HexWordsPerLine == 0U ? "\n    " : " ", words[i]);
+    }
+    return fmt::format("std::array<uint32_t, {wordCount}>{{{text}\n}}", "wordCount"_a = words.size(), "text"_a = text);
+}
+
+void createSourceFile(const Arguments& args, Slang::ComPtr<slang::IBlob> spirVCode)
+{
+    constexpr auto Source = R"(// Generated by im3e_shader_compiler
+// Source file: "{shaderFile}"
+// Do not edit.
+#include "{headerFile}"
+
+#include <array>
+#include <cstdint>
+
+namespace {{
+
+constexpr auto SpirVCode = {spirVCode};
+
+}}  // namespace
+
+auto {functionName}() -> const im3e::CompiledShader&
+{{
+    static const im3e::CompiledShader shader{{SpirVCode}};
+    return shader;
+}}
+)";
+
+    writeFileIfChanged(args.source,
+                       fmt::format(Source, "shaderFile"_a = path::toUtf8(args.input.filename()),
+                                   "headerFile"_a = path::toUtf8(args.header.filename()),
+                                   "spirVCode"_a = convertSpirVToString(spirVCode), "functionName"_a = args.function));
+}
+
+// Absolute path in generic form ("/" separators on every OS), escaped for the Makefile syntax of depfiles, which CMake
+// and Ninja read: spaces and "#" are escaped with "\", "$" is doubled.
+auto toDepfilePath(const std::filesystem::path& filePath) -> std::string
+{
+    const auto genericPath = std::filesystem::absolute(filePath).lexically_normal().generic_u8string();
+
+    std::string escaped;
+    escaped.reserve(genericPath.size());
+    for (const auto character : genericPath)
+    {
+        switch (character)
+        {
+            // White spaces are treated as separators between paths in depfile targets:
+            case u8' ': escaped += "\\ "; break;
+            // '#' are treated as comments in depfiles:
+            case u8'#': escaped += "\\#"; break;
+            // '$' are used to create variables in depfiles:
+            case u8'$': escaped += "$$"; break;
+            default: escaped += static_cast<char>(character); break;
+        }
+    }
+    return escaped;
+}
+
+// Lists the outputs, which depend on the input and the files it imports, so that the build system compiles the shader
+// again when one of them changes.
+void createDepfile(const Arguments& args, Slang::ComPtr<slang::IModule> module)
+{
+    // Use a set to avoid duplicate paths:
+    std::set<std::string> dependencies{toDepfilePath(args.input)};
+    for (SlangInt32 i = 0; i < module->getDependencyFileCount(); ++i)
+    {
+        const auto dependency = path::fromUtf8(module->getDependencyFilePath(i));
+        dependencies.insert(toDepfilePath(dependency));
+    }
+
+    auto content = fmt::format("{} \\\n{}:", toDepfilePath(args.header), toDepfilePath(args.source));
+    for (const auto& dependency : dependencies)
+    {
+        fmt::format_to(std::back_inserter(content), " \\\n  {}", dependency);
+    }
+    content += '\n';
+    writeFileIfChanged(args.depfile, content);
+}
+
+}  // namespace
+
+int main(int argc, char* argv[])
+{
+    try
+    {
+        auto [argumentsOpt, exitCode] = parseCliArguments(argc, argv);
+        if (exitCode || !argumentsOpt)
+        {
+            return exitCode;
+        }
+        const auto& arguments = argumentsOpt.value();
+
+        if (!std::filesystem::is_regular_file(arguments.input))
+        {
+            fmt::print(stderr, "{:g}: error: file not found\n", arguments.input);
+            return 1;
+        }
+
+        auto globalSession = createSlangGlobalSession();
+        auto session = createSlangSession(globalSession, arguments);
+        auto module = loadModule(session, arguments.input);
+
+        const auto entryPoints = getEntryPoints(arguments.input, module);
+        const auto program = composeAndLinkProgram(session, module, entryPoints);
+        const auto spirVCode = generateSpirVCode(program);
+
+        FunctionName functionName{arguments.function};
+        createHeaderFile(arguments.input, arguments.header, functionName);
+        createSourceFile(arguments, spirVCode);
+        createDepfile(arguments, module);
+    }
+    catch (const std::exception& exception)
+    {
+        fmt::print(stderr, "{}\n", exception.what());
+        return 1;
+    }
+
+    return 0;
+}
