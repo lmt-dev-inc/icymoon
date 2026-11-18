@@ -1,5 +1,7 @@
 #include "vulkan_physical_devices.h"
 
+#include "vulkan_instance.h"
+
 #include <im3e/utils/core/throw_utils.h>
 #include <im3e/vulkan/utils.h>
 
@@ -13,7 +15,7 @@ using namespace im3e;
 
 namespace {
 
-std::string toString(VkPhysicalDeviceType deviceType)
+auto toString(VkPhysicalDeviceType deviceType) -> std::string
 {
     switch (deviceType)
     {
@@ -27,50 +29,70 @@ std::string toString(VkPhysicalDeviceType deviceType)
     return "Unknow";
 }
 
-bool doesDeviceSupportExtensions(const ILogger& rLogger, const VulkanInstanceFcts& rFcts,
-                                 const VulkanPhysicalDevice& rDevice, const VulkanExtensions& rExtensions)
+auto doesDeviceSupportExtensions(const ILogger& logger, const VulkanInstanceFcts& fcts,
+                                 const VulkanPhysicalDevice& device, const IVulkanExtensions& extensions) -> bool
 {
-    rLogger.info(
-        fmt::format(R"(Checking support for device extensions of "{}")", rDevice.vkDeviceProperties.deviceName));
+    logger.info(fmt::format(R"(Checking support for device extensions of "{}")", device.vkDeviceProperties.deviceName));
 
     auto supportedExtensions = getVkList<VkExtensionProperties>(
-        rFcts.vkEnumerateDeviceExtensionProperties,
-        fmt::format("device extensions for {}", rDevice.vkDeviceProperties.deviceName), rDevice.vkPhysicalDevice,
+        fcts.vkEnumerateDeviceExtensionProperties,
+        fmt::format("device extensions for {}", device.vkDeviceProperties.deviceName), device.vkPhysicalDevice,
         nullptr);
 
     bool allSupported = true;
-    for (const auto& rExtension : rExtensions.getDeviceExtensions())
+    for (const auto& extension : extensions.getDeviceExtensions())
     {
-        auto itFind = std::ranges::find_if(supportedExtensions, [&](const auto& rSupportedExtension) {
-            return strcmp(rExtension, &rSupportedExtension.extensionName[0]) == 0;
+        auto itFind = std::ranges::find_if(supportedExtensions, [&](const auto& supportedExtension) {
+            return strcmp(extension, &supportedExtension.extensionName[0]) == 0;
         });
 
         if (itFind != supportedExtensions.end())
         {
-            rLogger.info(fmt::format("OK - {} v{}", itFind->extensionName, itFind->specVersion));
+            logger.info(fmt::format("OK - {} v{}", itFind->extensionName, itFind->specVersion));
         }
         else
         {
-            rLogger.info(fmt::format("FAILED - {}", rExtension));
+            logger.info(fmt::format("FAILED - {}", extension));
             allSupported = false;
         }
     }
     return allSupported;
 }
 
-uint32_t getDeviceScore(const ILogger& logger, const VulkanInstanceFcts& rFcts, const VulkanPhysicalDevice& rDevice,
-                        const VulkanExtensions& rExtensions, bool presentationRequired)
+auto getDeviceScore(const ILogger& logger, const VulkanInstanceFcts& fcts, const VulkanPhysicalDevice& device,
+                    const IVulkanExtensions& extensions, bool presentationRequired) -> uint32_t
 {
-    if (!doesDeviceSupportExtensions(logger, rFcts, rDevice, rExtensions) ||  // Extensions always required
-        rDevice.queueFamilies.graphicsFamilyIndices.empty() ||                // Graphics support always required
-        rDevice.queueFamilies.transferFamilyIndices.empty())                  // Transfer support always required
+    const auto supportedApiVersion = device.vkDeviceProperties.apiVersion;
+    const auto supportedApiVariant = VK_API_VERSION_VARIANT(supportedApiVersion);
+    if (supportedApiVariant != 0U)
+    {
+        logger.info(fmt::format(R"(Device "{}" implements Vulkan variant {} (only the core variant 0 is supported))",
+                                device.vkDeviceProperties.deviceName, supportedApiVariant));
+        return 0U;
+    }
+
+    // With the same variant, comparing the raw values compares major, minor and patch versions:
+    const auto requiredApiVersion = VulkanInstance::getVulkanApiVersion();
+    if (supportedApiVersion < requiredApiVersion)
+    {
+        logger.info(fmt::format(R"(Device "{}" only supports Vulkan {}.{} ({}.{} is required))",
+                                device.vkDeviceProperties.deviceName, VK_API_VERSION_MAJOR(supportedApiVersion),
+                                VK_API_VERSION_MINOR(supportedApiVersion), VK_API_VERSION_MAJOR(requiredApiVersion),
+                                VK_API_VERSION_MINOR(requiredApiVersion)));
+        return 0U;
+    }
+
+    if (!doesDeviceSupportExtensions(logger, fcts, device, extensions) ||  // Extensions always required
+        device.queueFamilies.graphicsFamilyIndices.empty() ||              // Graphics support always required
+        device.queueFamilies.transferFamilyIndices.empty())                // Transfer support always required
     {
         return 0U;
     }
 
     // Presentation support may be required:
-    if (presentationRequired && rDevice.queueFamilies.presentationFamilyIndices.empty())
+    if (presentationRequired && device.queueFamilies.presentationFamilyIndices.empty())
     {
+        logger.info(fmt::format(R"(Device "{}" does not support presentation)", device.vkDeviceProperties.deviceName));
         return 0U;
     }
 
@@ -80,11 +102,11 @@ uint32_t getDeviceScore(const ILogger& logger, const VulkanInstanceFcts& rFcts, 
     uint32_t score{};
 
     // Discrete GPUs have a significant performance advantage:
-    if (rDevice.vkDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+    if (device.vkDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
     {
         score += DiscreteGpuScore;
     }
-    else if (rDevice.vkDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+    else if (device.vkDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
     {
         score += IntegratedGpuScore;
     }
@@ -96,34 +118,34 @@ uint32_t getDeviceScore(const ILogger& logger, const VulkanInstanceFcts& rFcts, 
     return score;
 }
 
-auto getQueueFamilyProperties(const VulkanInstanceFcts& rFcts, VkInstance vkInstance, VkPhysicalDevice vkPhysicalDevice,
-                              const IsPresentationSupportedFct& rIsPresentationSupported)
+auto getQueueFamilyProperties(const VulkanInstanceFcts& fcts, VkInstance vkInstance, VkPhysicalDevice vkPhysicalDevice,
+                              const IsPresentationSupportedFct& isPresentationSupported)
 {
     VulkanPhysicalDevice::QueueFamilies queueFamilies{};
 
     uint32_t queueFamilyCount{};
-    rFcts.vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
+    fcts.vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
 
     queueFamilies.vkQueueFamilyProperties.resize(queueFamilyCount);
-    rFcts.vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount,
-                                                   queueFamilies.vkQueueFamilyProperties.data());
+    fcts.vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount,
+                                                  queueFamilies.vkQueueFamilyProperties.data());
 
     for (uint32_t i = 0U; i < queueFamilies.vkQueueFamilyProperties.size(); i++)
     {
-        const auto& rProperties = queueFamilies.vkQueueFamilyProperties[i];
-        if (vkFlagsContain(rProperties.queueFlags, VK_QUEUE_COMPUTE_BIT))
+        const auto& properties = queueFamilies.vkQueueFamilyProperties[i];
+        if (vkFlagsContain(properties.queueFlags, VK_QUEUE_COMPUTE_BIT))
         {
             queueFamilies.computeFamilyIndices.push_back(i);
         }
-        if (vkFlagsContain(rProperties.queueFlags, VK_QUEUE_GRAPHICS_BIT))
+        if (vkFlagsContain(properties.queueFlags, VK_QUEUE_GRAPHICS_BIT))
         {
             queueFamilies.graphicsFamilyIndices.push_back(i);
         }
-        if (vkFlagsContain(rProperties.queueFlags, VK_QUEUE_TRANSFER_BIT))
+        if (vkFlagsContain(properties.queueFlags, VK_QUEUE_TRANSFER_BIT))
         {
             queueFamilies.transferFamilyIndices.push_back(i);
         }
-        if (!!rIsPresentationSupported && rIsPresentationSupported(vkInstance, vkPhysicalDevice, i))
+        if (!!isPresentationSupported && isPresentationSupported(vkInstance, vkPhysicalDevice, i))
         {
             queueFamilies.presentationFamilyIndices.push_back(i);
         }
@@ -132,19 +154,18 @@ auto getQueueFamilyProperties(const VulkanInstanceFcts& rFcts, VkInstance vkInst
     return queueFamilies;
 }
 
-auto enumerateDevices(const ILogger& rLogger, const VulkanInstanceFcts& rFcts, VkInstance vkInstance)
+auto enumerateDevices(const ILogger& logger, const VulkanInstanceFcts& fcts, VkInstance vkInstance)
 {
-    const auto devices = getVkList<VkPhysicalDevice>(rFcts.vkEnumeratePhysicalDevices, "physical devices", vkInstance);
+    const auto devices = getVkList<VkPhysicalDevice>(fcts.vkEnumeratePhysicalDevices, "physical devices", vkInstance);
     throwIfFalse<std::runtime_error>(!devices.empty(), "Could not detect any physical device");
-    rLogger.info(fmt::format("Detected {} device(s)", devices.size()));
+    logger.info(fmt::format("Detected {} device(s)", devices.size()));
     return devices;
 }
 
-auto enumerateAndRankDevices(const ILogger& rLogger, const VulkanInstanceFcts& rFcts,
-                             const VulkanExtensions& rExtensions, VkInstance vkInstance,
-                             const IsPresentationSupportedFct& rIsPresentationSupported)
+auto enumerateAndRankDevices(const ILogger& logger, const VulkanInstanceFcts& fcts, const IVulkanExtensions& extensions,
+                             VkInstance vkInstance, const IsPresentationSupportedFct& isPresentationSupported)
 {
-    const auto vkPhysicalDevices = enumerateDevices(rLogger, rFcts, vkInstance);
+    const auto vkPhysicalDevices = enumerateDevices(logger, fcts, vkInstance);
 
     std::multimap<uint32_t, VulkanPhysicalDevice> scoresToDevices;
     for (const auto vkPhysicalDevice : vkPhysicalDevices)
@@ -152,12 +173,12 @@ auto enumerateAndRankDevices(const ILogger& rLogger, const VulkanInstanceFcts& r
         VulkanPhysicalDevice device{
             .vkPhysicalDevice = vkPhysicalDevice,
         };
-        rFcts.vkGetPhysicalDeviceProperties(vkPhysicalDevice, &device.vkDeviceProperties);
-        rFcts.vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &device.vkDeviceMemoryProperties);
-        rFcts.vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &device.vkDeviceFeatures);
-        device.queueFamilies = getQueueFamilyProperties(rFcts, vkInstance, vkPhysicalDevice, rIsPresentationSupported);
+        fcts.vkGetPhysicalDeviceProperties(vkPhysicalDevice, &device.vkDeviceProperties);
+        fcts.vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &device.vkDeviceMemoryProperties);
+        fcts.vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &device.vkDeviceFeatures);
+        device.queueFamilies = getQueueFamilyProperties(fcts, vkInstance, vkPhysicalDevice, isPresentationSupported);
 
-        if (const auto deviceScore = getDeviceScore(rLogger, rFcts, device, rExtensions, !!rIsPresentationSupported))
+        if (const auto deviceScore = getDeviceScore(logger, fcts, device, extensions, !!isPresentationSupported))
         {
             scoresToDevices.insert(std::make_pair(deviceScore, std::move(device)));
         }
@@ -166,33 +187,33 @@ auto enumerateAndRankDevices(const ILogger& rLogger, const VulkanInstanceFcts& r
     return scoresToDevices;
 }
 
-void logDeviceRanks(const ILogger& rLogger, const std::multimap<uint32_t, VulkanPhysicalDevice>& rScoresToDevices)
+void logDeviceRanks(const ILogger& logger, const std::multimap<uint32_t, VulkanPhysicalDevice>& scoresToDevices)
 {
-    for (const auto& scoreToDevice : rScoresToDevices)
+    for (const auto& scoreToDevice : scoresToDevices)
     {
         const auto& device = scoreToDevice.second;
-        rLogger.info(fmt::format("Score {} - Device #{} - {} - {}", scoreToDevice.first,
-                                 device.vkDeviceProperties.deviceID, device.vkDeviceProperties.deviceName,
-                                 toString(device.vkDeviceProperties.deviceType)));
+        logger.info(fmt::format("Score {} - Device #{} - {} - {}", scoreToDevice.first,
+                                device.vkDeviceProperties.deviceID, device.vkDeviceProperties.deviceName,
+                                toString(device.vkDeviceProperties.deviceType)));
     }
 }
 
 }  // namespace
 
-VulkanPhysicalDevices::VulkanPhysicalDevices(const ILogger& logger, const VulkanInstanceFcts& rFcts,
-                                             const VulkanExtensions& rExtensions, VkInstance vkInstance,
-                                             const IsPresentationSupportedFct& rIsPresentationSupported)
-  : m_pLogger(logger.createChild("Physical Devices"))
+VulkanPhysicalDevices::VulkanPhysicalDevices(const ILogger& logger, const VulkanInstanceFcts& fcts,
+                                             const IVulkanExtensions& extensions, VkInstance vkInstance,
+                                             const IsPresentationSupportedFct& isPresentationSupported)
+  : m_logger(logger.createChild("Physical Devices"))
   , m_vkInstance(throwIfArgNull(vkInstance, "Physical Devices require an instance"))
-  , m_scoresToDevices(enumerateAndRankDevices(*m_pLogger, rFcts, rExtensions, m_vkInstance, rIsPresentationSupported))
+  , m_scoresToDevices(enumerateAndRankDevices(*m_logger, fcts, extensions, m_vkInstance, isPresentationSupported))
 {
-    logDeviceRanks(*m_pLogger, m_scoresToDevices);
+    logDeviceRanks(*m_logger, m_scoresToDevices);
 }
 
 auto VulkanPhysicalDevices::choosePhysicalDevice() const -> const VulkanPhysicalDevice&
 {
-    const auto& rDevice = m_scoresToDevices.rbegin()->second;
-    const auto& deviceName = rDevice.vkDeviceProperties.deviceName;
-    m_pLogger->info(fmt::format(R"(Choosing device: "{}")", deviceName));
-    return rDevice;
+    const auto& device = m_scoresToDevices.rbegin()->second;
+    const auto& deviceName = device.vkDeviceProperties.deviceName;
+    m_logger->info(fmt::format(R"(Choosing device: "{}")", deviceName));
+    return device;
 }

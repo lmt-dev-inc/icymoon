@@ -3,27 +3,25 @@
 #include <im3e/utils/loggers.h>
 #include <im3e/vulkan/vulkan_functions.h>
 
+#include <memory>
 #include <vector>
 
 namespace im3e {
 
-class VulkanExtensions
+class IVulkanExtensions
 {
 public:
-    VulkanExtensions(const ILogger& logger, const VulkanGlobalFcts& rFcts, bool isDebugEnabled,
-                     const std::vector<const char*>& rRequiredInstanceExtensions = {});
+    virtual ~IVulkanExtensions() = default;
 
-    const auto& getInstanceExtensions() const { return m_instanceExtensions; }
-    const auto& getDeviceExtensions() const { return m_deviceExtensions; }
-    const auto& getLayers() const { return m_layers; }
+    virtual auto getInstanceExtensions() const -> const std::vector<const char*>& = 0;
+    virtual auto getDeviceExtensions() const -> const std::vector<const char*>& = 0;
+    virtual auto getLayers() const -> const std::vector<const char*>& = 0;
 
-    auto areDebugUtilsEnabled() const { return m_debugUtilsEnabled; }
-
-private:
-    const bool m_debugUtilsEnabled = false;
-    std::vector<const char*> m_instanceExtensions;
-    std::vector<const char*> m_deviceExtensions;
-    std::vector<const char*> m_layers;
+    virtual auto areDebugUtilsEnabled() const -> bool = 0;
 };
+
+auto createVulkanExtensions(const ILogger& logger, const VulkanGlobalFcts& fcts, bool isDebugEnabled,
+                            const std::vector<const char*>& requiredInstanceExtensions = {})
+    -> std::unique_ptr<IVulkanExtensions>;
 
 }  // namespace im3e

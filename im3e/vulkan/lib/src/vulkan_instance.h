@@ -22,7 +22,7 @@ public:
 
     static auto getVulkanApiVersion() -> uint32_t { return VK_API_VERSION_1_3; }
     auto getFcts() const -> const VulkanInstanceFcts& { return m_fcts; }
-    auto getExtensions() const -> const VulkanExtensions& { return m_extensions; }
+    auto getExtensions() const -> const IVulkanExtensions& { return *m_extensions; }
     auto getVkInstance() const -> VkInstance { return m_pVkInstance.get(); }
 
 private:
@@ -30,7 +30,7 @@ private:
     std::unique_ptr<IVulkanLoader> m_pLoader;
     VulkanGlobalFcts m_globalFcts;
 
-    VulkanExtensions m_extensions;
+    std::unique_ptr<IVulkanExtensions> m_extensions;
 
     VulkanInstanceFcts m_fcts;
     VkUniquePtr<VkInstance> m_pVkInstance;

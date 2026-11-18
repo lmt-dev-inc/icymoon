@@ -56,8 +56,8 @@ Public headers are included through `<im3e/vulkan/...>`:
 `createDevice(logger, DeviceConfig)` creates the whole Vulkan stack. `DeviceConfig` carries the debug flag, a callback to check presentation support (provided by GLFW) and the instance extensions the window system needs. Applications currently get the device from `GlfwWindowApplication`, which calls `createDevice` itself.
 
 - `VulkanInstance` creates a Vulkan 1.3 instance. When debug is enabled, it adds the `VK_LAYER_KHRONOS_validation` layer and a `VulkanDebugMessageHandler`, which forwards validation messages to the logger at their severity. Validation errors are therefore logged as errors, which make integration tests fail.
-- `VulkanPhysicalDevices` ranks the physical devices. A device needs all the required extensions, a graphics queue and a transfer queue, and a presentation queue when a presentation check is given. Discrete GPUs come first, then integrated GPUs, then other types, such as CPU implementations.
-- `VulkanDevice` creates the logical device with the required extensions: swapchain, ray tracing (acceleration structures, deferred host operations, ray queries, ray tracing pipelines) and non-semantic shader info. It enables Vulkan 1.1 to 1.3 features, among which `synchronization2`, `bufferDeviceAddress`, descriptor indexing and `scalarBlockLayout`. It owns a single `VulkanCommandQueue`, the memory allocator and the image factory.
+- `VulkanPhysicalDevices` ranks the physical devices. A device needs Vulkan 1.3, all the required extensions, a graphics queue and a transfer queue, and a presentation queue when a presentation check is given. Discrete GPUs come first, then integrated GPUs, then other types, such as CPU implementations.
+- `VulkanDevice` creates the logical device with the only required extension, swapchain. It enables Vulkan 1.1 to 1.3 features, among which `synchronization2`, `bufferDeviceAddress`, descriptor indexing and `scalarBlockLayout`. It owns a single `VulkanCommandQueue`, the memory allocator and the image factory.
 
 ## Function loading
 
@@ -94,7 +94,6 @@ This keeps Vulkan an optional run-time dependency, and makes every Vulkan call m
 
 ## Known limitations
 
-- **Ray tracing is required.** A device without the ray tracing extensions is rejected, which excludes many GPUs and CPU implementations such as Mesa's lavapipe, which CI could use to run integration tests.
 - **`IDevice` exposes raw Vulkan handles and function tables.** Users call Vulkan directly, so the interfaces don't hide Vulkan from them.
 - **Single queue.** `IDevice` has one command queue, used for graphics, transfers and presentation.
 - **The window application creates the device.** A host application can't provide its own device, nor create one without GLFW (see `GlfwWindowApplication`).

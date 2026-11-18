@@ -18,7 +18,7 @@ auto createVulkanAppInfo()
     };
 }
 
-auto createVulkanInstanceCreateInfo(const VkApplicationInfo& rVkAppInfo, const VulkanExtensions& rExtensions)
+auto createVulkanInstanceCreateInfo(const VkApplicationInfo& rVkAppInfo, const IVulkanExtensions& rExtensions)
 {
     const auto& rInstanceExtensions = rExtensions.getInstanceExtensions();
     const auto& rLayers = rExtensions.getLayers();
@@ -33,7 +33,7 @@ auto createVulkanInstanceCreateInfo(const VkApplicationInfo& rVkAppInfo, const V
     };
 }
 
-auto createVkInstance(ILogger& rLogger, const VulkanGlobalFcts& rFcts, const VulkanExtensions& rExtensions,
+auto createVkInstance(ILogger& rLogger, const VulkanGlobalFcts& rFcts, const IVulkanExtensions& rExtensions,
                       bool isDebugEnabled)
 {
     const auto vkAppInfo = createVulkanAppInfo();
@@ -58,9 +58,9 @@ VulkanInstance::VulkanInstance(const ILogger& rLogger, bool isDebugEnabled,
   : m_pLogger(rLogger.createChild("VulkanInstance"))
   , m_pLoader(throwIfArgNull(std::move(pLoader), "Vulkan instance requires a Vulkan loader"))
   , m_globalFcts(m_pLoader->loadGlobalFcts())
-  , m_extensions(rLogger, m_globalFcts, isDebugEnabled, rRequiredInstanceExtensions)
+  , m_extensions(createVulkanExtensions(rLogger, m_globalFcts, isDebugEnabled, rRequiredInstanceExtensions))
 {
-    auto vkInstance = createVkInstance(*m_pLogger, m_globalFcts, m_extensions, isDebugEnabled);
+    auto vkInstance = createVkInstance(*m_pLogger, m_globalFcts, *m_extensions, isDebugEnabled);
     m_fcts = m_pLoader->loadInstanceFcts(vkInstance);
     m_pVkInstance = VkUniquePtr<VkInstance>(vkInstance,
                                             [this](auto vkInst) { m_fcts.vkDestroyInstance(vkInst, nullptr); });
@@ -84,7 +84,7 @@ auto VulkanInstance::loadVmaFcts(VkDevice vkDevice) const -> VmaVulkanFunctions
 auto VulkanInstance::choosePhysicalDevice(const IsPresentationSupportedFct& rIsPresentationSupported) const
     -> VulkanPhysicalDevice
 {
-    VulkanPhysicalDevices physicalDevices(*m_pLogger, m_fcts, m_extensions, m_pVkInstance.get(),
+    VulkanPhysicalDevices physicalDevices(*m_pLogger, m_fcts, *m_extensions, m_pVkInstance.get(),
                                           rIsPresentationSupported);
     return physicalDevices.choosePhysicalDevice();
 }

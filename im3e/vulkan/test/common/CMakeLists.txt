@@ -1,8 +1,10 @@
 # Helpers shared by the test types of im3e_vulkan: mocks of its private interfaces.
 add_library(test_common_im3e_vulkan STATIC
+    include/im3e/vulkan/test/mock_vulkan_extensions.h
     include/im3e/vulkan/test/mock_vulkan_helper.h
     include/im3e/vulkan/test/mock_vulkan_loader.h
     include/im3e/vulkan/test/mock_vulkan_memory_allocator.h
+    src/mock_vulkan_extensions.cpp
     src/mock_vulkan_loader.cpp
     src/mock_vulkan_memory_allocator.cpp
 )

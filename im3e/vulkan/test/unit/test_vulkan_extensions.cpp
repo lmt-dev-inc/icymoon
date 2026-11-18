@@ -19,16 +19,10 @@ TEST_F(VulkanExtensionsTest, constructor)
     constexpr bool DebubDisabled = false;
     expectInstanceExtensionsEnumerated(m_mockVk.getMockGlobalFcts(), DebubDisabled);
 
-    VulkanExtensions extensions(m_mockLogger, m_globalFcts, DebubDisabled);
-    EXPECT_THAT(extensions.getInstanceExtensions(), IsSupersetOf(std::vector<std::string>{
-                                                        VK_KHR_SURFACE_EXTENSION_NAME,
-                                                    }));
-    EXPECT_THAT(extensions.getDeviceExtensions(), IsSupersetOf(std::vector<std::string>{
-                                                      VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-                                                      VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-                                                      VK_KHR_RAY_QUERY_EXTENSION_NAME,
-                                                      VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-                                                      VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
-                                                  }));
-    EXPECT_THAT(extensions.getLayers(), ContainerEq(std::vector<const char*>{}));
+    auto extensions = createVulkanExtensions(m_mockLogger, m_globalFcts, DebubDisabled);
+    EXPECT_THAT(extensions->getInstanceExtensions(), IsSupersetOf(std::vector<std::string>{
+                                                         VK_KHR_SURFACE_EXTENSION_NAME,
+                                                     }));
+    EXPECT_THAT(extensions->getDeviceExtensions(), ElementsAre(StrEq(VK_KHR_SWAPCHAIN_EXTENSION_NAME)));
+    EXPECT_THAT(extensions->getLayers(), ContainerEq(std::vector<const char*>{}));
 }

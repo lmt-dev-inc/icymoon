@@ -299,11 +299,12 @@ im3e/shader/
 - Headers use `#pragma once`.
 - Includes are grouped, with a blank line between groups:
   1. the header of the current `.cpp` file,
-  2. private headers of the same target, from its `src/` folder (`"..."`),
+  2. private headers of the same target, from its `src/` folder (`"..."`). In a library's `test/common/` helpers, this group also holds the private headers of the library they mock, e.g. `#include "vulkan_extensions.h"` in `mock_vulkan_extensions.h` (see [Libraries](#libraries)),
   3. IcyMoon public headers (`<im3e/...>`), including those of the same library: a public header is always included through its full path, never with `"..."`,
   4. third-party headers (`<fmt/format.h>`, `<imgui.h>`...),
   5. standard library headers (`<filesystem>`, `<string>`...).
 - Include what you use: every file includes the headers of everything it uses, even when another header already happens to include them. Standard libraries differ in which headers they include internally, so code relying on indirect includes compiles with one standard library and fails with another (libstdc++ on Linux vs Microsoft's on Windows).
+- The exception is a type used in the signature of a function the file overrides: the header of the base class declares the same signature, so it already provides that type. A mock of `IVulkanExtensions` doesn't include `<vector>` again for `getDeviceExtensions()`. Types used elsewhere in the file, e.g. in the body of the override, still need their own include.
 
 *Automated:* no.
 

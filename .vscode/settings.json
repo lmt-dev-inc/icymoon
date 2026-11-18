@@ -19,6 +19,9 @@
     "coverage-gutters.coverageFileNames": [
         "lcov.info"
     ],
+    "coverage-gutters.showGutterCoverage": true,
+    "coverage-gutters.showLineCoverage": false,
+    "coverage-gutters.showRulerCoverage": false,
     "coverage-gutters.watchOnActivate": true,
     // Don't re-run configure when a CMakeLists.txt / *.cmake file changes
     "cmake.configureOnEdit": false,

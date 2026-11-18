@@ -10,6 +10,7 @@ im3e_add_unit_tests_executable(
     test_vulkan_images.cpp
     test_vulkan_instance.cpp
     test_vulkan_loader.cpp
+    test_vulkan_physical_devices.cpp
 )
 
 target_link_libraries(test_im3e_vulkan
