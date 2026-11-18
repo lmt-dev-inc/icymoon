@@ -354,7 +354,7 @@ The [README](../../README.md) has the build instructions.
 Observations on the current state of the code, as input for future plans:
 
 - **Library packaging.** There is no install or export of the `im3e_*` targets, no versioned public API and no language bindings yet. `resources.h` hard-codes source-tree paths for assets, which will not work once the library is installed elsewhere. `getGdalInstance` registers GDAL drivers process-wide, which a host process that also uses GDAL may not expect.
-- **Vulkan.** The limitations of `im3e_vulkan` (required ray tracing, raw handles in `IDevice`, single queue, device created by the window application) are listed in [Vulkan](vulkan.md#known-limitations).
+- **Vulkan.** The limitations of `im3e_vulkan` (raw handles in `IDevice`, single queue, device created by the window application) are listed in [Vulkan](vulkan.md#known-limitations).
 - **Interfaces that leak implementations.** `anari.h` includes `<anari/anari.h>`. `GlfwWindowApplication::createWindow` only accepts `ImguiWorkspace`s (checked with a `dynamic_pointer_cast`).
 - **ANARI to Vulkan transfer.** Frames go through a CPU copy every frame. GPU interop (e.g. VisRTX's CUDA or Vulkan frame output) would remove it.
 - **Threading.** `updateAsync` is synchronous: visible tiles are loaded from disk on the main thread, which stalls frames while streaming. `AnariInstanceSet` is already guarded by a mutex in preparation.

@@ -74,30 +74,6 @@ auto makeVk13Features()
     };
 }
 
-auto makeRayTracingPipelineFeatures()
-{
-    return VkPhysicalDeviceRayTracingPipelineFeaturesKHR{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR,  //
-        .rayTracingPipeline = VK_TRUE,
-    };
-}
-
-auto makeAccelerationStructureFeatures()
-{
-    return VkPhysicalDeviceAccelerationStructureFeaturesKHR{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR,
-        .accelerationStructure = VK_TRUE,
-    };
-}
-
-auto makeRayQueryFeatures()
-{
-    return VkPhysicalDeviceRayQueryFeaturesKHR{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR,
-        .rayQuery = VK_TRUE,
-    };
-}
-
 auto createVkDevice(const VulkanInstanceFcts& rInstFcts, const VulkanExtensions& rExtensions,
                     const VulkanPhysicalDevice& rPhysicalDevice)
 {
@@ -131,15 +107,6 @@ auto createVkDevice(const VulkanInstanceFcts& rInstFcts, const VulkanExtensions&
 
     auto vk13Features = makeVk13Features();
     vk12Features.pNext = &vk13Features;
-
-    auto vkRayTracingPipelineFeatures = makeRayTracingPipelineFeatures();
-    vk13Features.pNext = &vkRayTracingPipelineFeatures;
-
-    auto vkAccelerationStructureFeatures = makeAccelerationStructureFeatures();
-    vkRayTracingPipelineFeatures.pNext = &vkAccelerationStructureFeatures;
-
-    auto vkRayQueryFeatures = makeRayQueryFeatures();
-    vkAccelerationStructureFeatures.pNext = &vkRayQueryFeatures;
 
     VkDevice vkDevice{};
     throwIfVkFailed(rInstFcts.vkCreateDevice(rPhysicalDevice.vkPhysicalDevice, &vkCreateInfo, nullptr, &vkDevice),

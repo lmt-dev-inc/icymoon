@@ -1,5 +1,7 @@
 #include "vulkan_physical_devices.h"
 
+#include "vulkan_instance.h"
+
 #include <im3e/utils/core/throw_utils.h>
 #include <im3e/vulkan/utils.h>
 
@@ -58,19 +60,31 @@ bool doesDeviceSupportExtensions(const ILogger& rLogger, const VulkanInstanceFct
     return allSupported;
 }
 
-uint32_t getDeviceScore(const ILogger& logger, const VulkanInstanceFcts& rFcts, const VulkanPhysicalDevice& rDevice,
-                        const VulkanExtensions& rExtensions, bool presentationRequired)
+uint32_t getDeviceScore(const ILogger& logger, const VulkanInstanceFcts& fcts, const VulkanPhysicalDevice& device,
+                        const VulkanExtensions& extensions, bool presentationRequired)
 {
-    if (!doesDeviceSupportExtensions(logger, rFcts, rDevice, rExtensions) ||  // Extensions always required
-        rDevice.queueFamilies.graphicsFamilyIndices.empty() ||                // Graphics support always required
-        rDevice.queueFamilies.transferFamilyIndices.empty())                  // Transfer support always required
+    const auto supportedApiVersion = device.vkDeviceProperties.apiVersion;
+    const auto requiredApiVersion = VulkanInstance::getVulkanApiVersion();
+    if (supportedApiVersion < requiredApiVersion)
+    {
+        logger.info(fmt::format(R"(Device "{}" only supports Vulkan {}.{} ({}.{} is required))",
+                                device.vkDeviceProperties.deviceName, VK_API_VERSION_MAJOR(supportedApiVersion),
+                                VK_API_VERSION_MINOR(supportedApiVersion), VK_API_VERSION_MAJOR(requiredApiVersion),
+                                VK_API_VERSION_MINOR(requiredApiVersion)));
+        return 0U;
+    }
+
+    if (!doesDeviceSupportExtensions(logger, fcts, device, extensions) ||  // Extensions always required
+        device.queueFamilies.graphicsFamilyIndices.empty() ||              // Graphics support always required
+        device.queueFamilies.transferFamilyIndices.empty())                // Transfer support always required
     {
         return 0U;
     }
 
     // Presentation support may be required:
-    if (presentationRequired && rDevice.queueFamilies.presentationFamilyIndices.empty())
+    if (presentationRequired && device.queueFamilies.presentationFamilyIndices.empty())
     {
+        logger.info(fmt::format(R"(Device "{}" does not support presentation)", device.vkDeviceProperties.deviceName));
         return 0U;
     }
 
@@ -80,11 +94,11 @@ uint32_t getDeviceScore(const ILogger& logger, const VulkanInstanceFcts& rFcts, 
     uint32_t score{};
 
     // Discrete GPUs have a significant performance advantage:
-    if (rDevice.vkDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+    if (device.vkDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
     {
         score += DiscreteGpuScore;
     }
-    else if (rDevice.vkDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+    else if (device.vkDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
     {
         score += IntegratedGpuScore;
     }

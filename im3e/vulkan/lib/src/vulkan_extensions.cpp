@@ -26,14 +26,6 @@ auto generateDeviceExtensions()
     // For presentation:
     insertIfUnique(VK_KHR_SWAPCHAIN_EXTENSION_NAME, deviceExtensions);
 
-    // For ray tracing:
-    insertIfUnique(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, deviceExtensions);
-    insertIfUnique(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, deviceExtensions);
-    insertIfUnique(VK_KHR_RAY_QUERY_EXTENSION_NAME, deviceExtensions);
-    insertIfUnique(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, deviceExtensions);
-
-    insertIfUnique(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, deviceExtensions);
-
     return deviceExtensions;
 }
 

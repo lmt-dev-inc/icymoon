@@ -161,7 +161,7 @@ Work:
 
 Work:
 
-1. Make the ray tracing extensions optional. A rasterizer doesn't need them, and requiring them rejects many GPUs and CPU implementations such as lavapipe.
+1. Remove the ray tracing extensions. A rasterizer doesn't need them, and requiring them rejects many GPUs and CPU implementations such as lavapipe. Nothing uses them, so they are added back with their first user. Device selection checks instead that the device supports Vulkan 1.3.
 2. Enable `dynamicRendering`, and add the Vulkan functions this milestone uses to the loader tables and `MockVulkanFunctions`.
 3. Add shader modules and a minimal graphics pipeline to `im3e_vulkan`: no vertex input, no depth, empty pipeline layout.
 4. Create `im3e/render/vulkan/`, with a frame pipeline implementing `IFramePipeline` that draws the triangle in its own color image and blits it to the output image. Handle `resize`.
@@ -313,7 +313,7 @@ Work:
 ## Testing
 
 - **Integration tests are headless, from milestone 2.** `createDevice` works without a window, and `DeviceIntegrationTest` already uses it that way. `PipelineIntegrationTest` runs an `IFramePipeline` into an image and checks pixels and pixel regions with a tolerance. Validation errors are logged as errors, which fail the tests.
-- **Integration tests don't run in CI yet:** the workflows only run the `unit_test` label. Once ray tracing is optional (milestone 2), they could run on lavapipe. This is worth a separate small issue right after that milestone, so that each following milestone is covered.
+- **Integration tests don't run in CI yet:** the workflows only run the `unit_test` label. Once ray tracing is no longer required (milestone 2), they could run on lavapipe. This is worth a separate small issue right after that milestone, so that each following milestone is covered.
 - **Unit tests** use `MockVulkanFunctions` and the mocks of each library, and run without a GPU.
 - `im3e_test_utils` is used as it is. Splitting it (finding T1 of the review) is a separate topic.
 - Comparing whole images against stored references can be added if pixel checks turn out not to be enough.
