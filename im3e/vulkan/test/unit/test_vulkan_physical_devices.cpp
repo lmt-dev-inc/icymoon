@@ -4,6 +4,7 @@
 #include <im3e/utils/mock/mock_logger.h>
 #include <im3e/vulkan/mock_vulkan_functions.h>
 #include <im3e/vulkan/test/mock_vulkan_extensions.h>
+#include <im3e/vulkan/test/mock_vulkan_helper.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -48,21 +49,32 @@ auto createValidDevice(uint32_t id, std::string_view name) -> FakePhysicalDevice
     return device;
 }
 
-/// @brief Implement the two-call pattern of Vulkan enumeration functions: return the count when items is null, and
-/// copy up to count items otherwise.
-template <class T>
-auto fillVkList(const std::vector<T>& list, uint32_t* count, T* items) -> VkResult
+/// @brief Match a VulkanPhysicalDevice created from the given fake device.
+auto IsFakeDevice(const FakePhysicalDevice& device) -> ::testing::Matcher<const VulkanPhysicalDevice&>
 {
-    const auto size = static_cast<uint32_t>(list.size());
-    if (items == nullptr)
-    {
-        *count = size;
-        return VK_SUCCESS;
-    }
-    const auto copiedCount = std::min(*count, size);
-    std::copy_n(list.begin(), copiedCount, items);
-    *count = copiedCount;
-    return copiedCount < size ? VK_INCOMPLETE : VK_SUCCESS;
+    return Field("vkPhysicalDevice", &VulkanPhysicalDevice::vkPhysicalDevice, Eq(device.vkPhysicalDevice));
+}
+
+/// @brief Queue family indices expected by HasQueueFamilies(). Omitted fields expect no family.
+struct ExpectedQueueFamilies
+{
+    std::vector<uint32_t> graphics;
+    std::vector<uint32_t> compute;
+    std::vector<uint32_t> transfer;
+    std::vector<uint32_t> presentation;
+};
+
+/// @brief Match the queue family indices of a VulkanPhysicalDevice.
+auto HasQueueFamilies(const ExpectedQueueFamilies& expected) -> ::testing::Matcher<const VulkanPhysicalDevice&>
+{
+    using QueueFamilies = VulkanPhysicalDevice::QueueFamilies;
+    return Field(
+        "queueFamilies", &VulkanPhysicalDevice::queueFamilies,
+        AllOf(Field("graphicsFamilyIndices", &QueueFamilies::graphicsFamilyIndices, ContainerEq(expected.graphics)),
+              Field("computeFamilyIndices", &QueueFamilies::computeFamilyIndices, ContainerEq(expected.compute)),
+              Field("transferFamilyIndices", &QueueFamilies::transferFamilyIndices, ContainerEq(expected.transfer)),
+              Field("presentationFamilyIndices", &QueueFamilies::presentationFamilyIndices,
+                    ContainerEq(expected.presentation))));
 }
 
 struct VulkanPhysicalDevicesTest : public Test
@@ -84,10 +96,10 @@ struct VulkanPhysicalDevicesTest : public Test
                 *vkProperties = findDevice(vkPhysicalDevice).vkProperties;
             }));
         ON_CALL(mockFcts, vkGetPhysicalDeviceQueueFamilyProperties(_, NotNull(), _))
-            .WillByDefault(Invoke([this](VkPhysicalDevice vkPhysicalDevice, uint32_t* count,
-                                         VkQueueFamilyProperties* vkQueueFamilies) {
-                fillVkList(findDevice(vkPhysicalDevice).vkQueueFamilies, count, vkQueueFamilies);
-            }));
+            .WillByDefault(Invoke(
+                [this](VkPhysicalDevice vkPhysicalDevice, uint32_t* count, VkQueueFamilyProperties* vkQueueFamilies) {
+                    fillVkList(findDevice(vkPhysicalDevice).vkQueueFamilies, count, vkQueueFamilies);
+                }));
         ON_CALL(mockFcts, vkEnumerateDeviceExtensionProperties(_, IsNull(), NotNull(), _))
             .WillByDefault(Invoke([this](VkPhysicalDevice vkPhysicalDevice, Unused, uint32_t* count,
                                          VkExtensionProperties* vkExtensions) {
@@ -130,12 +142,12 @@ TEST_F(VulkanPhysicalDevicesTest, constructor_withValidDevice)
     const auto device = createValidDevice(1U, "Valid device");
     const auto devices = createDevices({device});
 
-    const auto& chosenDevice = devices.choosePhysicalDevice();
-    EXPECT_THAT(chosenDevice.vkPhysicalDevice, Eq(device.vkPhysicalDevice));
-    EXPECT_THAT(chosenDevice.queueFamilies.graphicsFamilyIndices, ElementsAre(0U));
-    EXPECT_THAT(chosenDevice.queueFamilies.computeFamilyIndices, ElementsAre(0U));
-    EXPECT_THAT(chosenDevice.queueFamilies.transferFamilyIndices, ElementsAre(0U));
-    EXPECT_THAT(chosenDevice.queueFamilies.presentationFamilyIndices, ElementsAre(0U));
+    EXPECT_THAT(devices.choosePhysicalDevice(), AllOf(IsFakeDevice(device), HasQueueFamilies({
+                                                                                .graphics = {0U},
+                                                                                .compute = {0U},
+                                                                                .transfer = {0U},
+                                                                                .presentation = {0U},
+                                                                            })));
 }
 
 TEST_F(VulkanPhysicalDevicesTest, constructor_withNoDevice)
@@ -152,7 +164,7 @@ TEST_F(VulkanPhysicalDevicesTest, constructor_withOldDevice)
     // Both devices have the same score, so the last one would be chosen if its version weren't checked:
     const auto devices = createDevices({device13, device12});
 
-    EXPECT_THAT(devices.choosePhysicalDevice().vkPhysicalDevice, Eq(device13.vkPhysicalDevice));
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(device13));
 }
 
 TEST_F(VulkanPhysicalDevicesTest, constructor_withoutVkInstance)
