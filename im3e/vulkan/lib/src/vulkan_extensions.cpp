@@ -13,7 +13,8 @@ namespace {
 
 void insertIfUnique(const char* item, std::vector<const char*>& items)
 {
-    if (std::ranges::find(items, item) == items.end())
+    const auto toStringView = [](const char* item) { return std::string_view{item}; };
+    if (std::ranges::find(items, std::string_view{item}, toStringView) == items.end())
     {
         items.push_back(item);
     }

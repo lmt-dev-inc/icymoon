@@ -23,7 +23,6 @@ TEST_F(VulkanExtensionsTest, constructor)
     EXPECT_THAT(extensions->getInstanceExtensions(), IsSupersetOf(std::vector<std::string>{
                                                          VK_KHR_SURFACE_EXTENSION_NAME,
                                                      }));
-    EXPECT_THAT(extensions->getDeviceExtensions(),
-                ContainerEq(std::vector<const char*>{VK_KHR_SWAPCHAIN_EXTENSION_NAME}));
+    EXPECT_THAT(extensions->getDeviceExtensions(), ElementsAre(StrEq(VK_KHR_SWAPCHAIN_EXTENSION_NAME)));
     EXPECT_THAT(extensions->getLayers(), ContainerEq(std::vector<const char*>{}));
 }
