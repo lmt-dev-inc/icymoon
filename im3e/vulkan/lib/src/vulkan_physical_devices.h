@@ -32,13 +32,13 @@ struct VulkanPhysicalDevice
 class VulkanPhysicalDevices
 {
 public:
-    VulkanPhysicalDevices(const ILogger& rLogger, const VulkanInstanceFcts& rFcts, const VulkanExtensions& rExtensions,
-                          VkInstance vkInstance, const IsPresentationSupportedFct& rIsPresentationSupported = {});
+    VulkanPhysicalDevices(const ILogger& logger, const VulkanInstanceFcts& fcts, const VulkanExtensions& extensions,
+                          VkInstance vkInstance, const IsPresentationSupportedFct& isPresentationSupported = {});
 
     auto choosePhysicalDevice() const -> const VulkanPhysicalDevice&;
 
 private:
-    std::unique_ptr<ILogger> m_pLogger;
+    std::unique_ptr<ILogger> m_logger;
     VkInstance m_vkInstance;
 
     std::vector<VkPhysicalDevice> m_physicalDevices;
