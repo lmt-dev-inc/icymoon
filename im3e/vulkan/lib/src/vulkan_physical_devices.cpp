@@ -63,6 +63,15 @@ auto getDeviceScore(const ILogger& logger, const VulkanInstanceFcts& fcts, const
                     const IVulkanExtensions& extensions, bool presentationRequired) -> uint32_t
 {
     const auto supportedApiVersion = device.vkDeviceProperties.apiVersion;
+    const auto supportedApiVariant = VK_API_VERSION_VARIANT(supportedApiVersion);
+    if (supportedApiVariant != 0U)
+    {
+        logger.info(fmt::format(R"(Device "{}" implements Vulkan variant {} (only the core variant 0 is supported))",
+                                device.vkDeviceProperties.deviceName, supportedApiVariant));
+        return 0U;
+    }
+
+    // With the same variant, comparing the raw values compares major, minor and patch versions:
     const auto requiredApiVersion = VulkanInstance::getVulkanApiVersion();
     if (supportedApiVersion < requiredApiVersion)
     {

@@ -199,6 +199,19 @@ TEST_F(VulkanPhysicalDevicesTest, constructor_withOldDevice)
     EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(device13));
 }
 
+TEST_F(VulkanPhysicalDevicesTest, constructor_withNonCoreVariantDevice)
+{
+    const auto coreDevice = createValidDevice(1U, "Vulkan 1.3 device");
+    auto scDevice = createValidDevice(2U, "Vulkan SC 1.0 device");
+    scDevice.vkProperties.apiVersion = VK_MAKE_API_VERSION(1U, 1U, 0U, 0U);
+
+    // The variant bits make the raw version of the SC device greater than Vulkan 1.3. Both devices have the same
+    // score, so the last one would be chosen if its variant weren't checked:
+    const auto devices = createDevices({coreDevice, scDevice});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(coreDevice));
+}
+
 TEST_F(VulkanPhysicalDevicesTest, constructor_withoutPresentationFct)
 {
     const auto device = createValidDevice(1U, "Valid device");
