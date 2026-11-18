@@ -3,6 +3,7 @@
 #include <im3e/utils/loggers.h>
 #include <im3e/vulkan/vulkan_functions.h>
 
+#include <memory>
 #include <vector>
 
 namespace im3e {

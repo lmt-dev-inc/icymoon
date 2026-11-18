@@ -11,6 +11,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 using namespace im3e;

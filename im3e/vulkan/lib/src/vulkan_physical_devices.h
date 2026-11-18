@@ -41,7 +41,6 @@ private:
     std::unique_ptr<ILogger> m_logger;
     VkInstance m_vkInstance;
 
-    std::vector<VkPhysicalDevice> m_physicalDevices;
     std::multimap<uint32_t, VulkanPhysicalDevice> m_scoresToDevices;
 };
 
