@@ -26,6 +26,14 @@ struct FakePhysicalDevice
     std::vector<VkExtensionProperties> vkExtensions;
 };
 
+auto createQueueFamily(VkQueueFlags vkQueueFlags) -> VkQueueFamilyProperties
+{
+    return VkQueueFamilyProperties{
+        .queueFlags = vkQueueFlags,
+        .queueCount = 1U,
+    };
+}
+
 /// @brief Create a device meeting all requirements: Vulkan 1.3 discrete GPU, with one queue family supporting
 /// graphics, compute and transfer. Tests change the fields they are about.
 /// @param id Non-zero identifier, used as the device handle and ID.
@@ -39,10 +47,7 @@ auto createValidDevice(uint32_t id, std::string_view name) -> FakePhysicalDevice
             .deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
         },
         .vkQueueFamilies{
-            VkQueueFamilyProperties{
-                .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
-                .queueCount = 1U,
-            },
+            createQueueFamily(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT),
         },
     };
     name.copy(&device.vkProperties.deviceName[0], VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1U);
@@ -108,11 +113,31 @@ struct VulkanPhysicalDevicesTest : public Test
     }
 
     /// @brief Create VulkanPhysicalDevices with the given devices served by the mocked Vulkan functions.
+    /// @details Presentation is required, and supported by default (see m_mockIsPresentationSupported).
     auto createDevices(std::vector<FakePhysicalDevice> devices) -> VulkanPhysicalDevices
+    {
+        return createDevices(std::move(devices), m_mockIsPresentationSupported.AsStdFunction());
+    }
+
+    /// @brief Create VulkanPhysicalDevices with the given devices, and without a presentation support function, so
+    /// that presentation isn't required.
+    auto createDevicesWithoutPresentation(std::vector<FakePhysicalDevice> devices) -> VulkanPhysicalDevices
+    {
+        return createDevices(std::move(devices), IsPresentationSupportedFct{});
+    }
+
+    auto createDevices(std::vector<FakePhysicalDevice> devices,
+                       const IsPresentationSupportedFct& isPresentationSupported) -> VulkanPhysicalDevices
     {
         m_devices = std::move(devices);
         return VulkanPhysicalDevices(m_mockLogger, m_mockVk.getInstanceFcts(), m_mockExtensions, m_vkInstance,
-                                     m_mockIsPresentationSupported.AsStdFunction());
+                                     isPresentationSupported);
+    }
+
+    /// @brief Make the presentation support function return false for all queue families of the given device.
+    void disablePresentation(const FakePhysicalDevice& device)
+    {
+        ON_CALL(m_mockIsPresentationSupported, Call(_, device.vkPhysicalDevice, _)).WillByDefault(Return(false));
     }
 
     auto findDevice(VkPhysicalDevice vkPhysicalDevice) const -> const FakePhysicalDevice&
@@ -136,6 +161,13 @@ struct VulkanPhysicalDevicesTest : public Test
 };
 
 }  // namespace
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withoutVkInstance)
+{
+    EXPECT_THROW(VulkanPhysicalDevices(m_mockLogger, m_mockVk.getInstanceFcts(), m_mockExtensions, VK_NULL_HANDLE,
+                                       m_mockIsPresentationSupported.AsStdFunction()),
+                 std::invalid_argument);
+}
 
 TEST_F(VulkanPhysicalDevicesTest, constructor_withValidDevice)
 {
@@ -167,9 +199,240 @@ TEST_F(VulkanPhysicalDevicesTest, constructor_withOldDevice)
     EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(device13));
 }
 
-TEST_F(VulkanPhysicalDevicesTest, constructor_withoutVkInstance)
+TEST_F(VulkanPhysicalDevicesTest, constructor_withoutPresentationFct)
 {
-    EXPECT_THROW(VulkanPhysicalDevices(m_mockLogger, m_mockVk.getInstanceFcts(), m_mockExtensions, VK_NULL_HANDLE,
-                                       m_mockIsPresentationSupported.AsStdFunction()),
-                 std::invalid_argument);
+    const auto device = createValidDevice(1U, "Valid device");
+    const auto devices = createDevicesWithoutPresentation({device});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), AllOf(IsFakeDevice(device), HasQueueFamilies({
+                                                                                .graphics = {0U},
+                                                                                .compute = {0U},
+                                                                                .transfer = {0U},
+                                                                            })));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withDeviceNotSupportingPresentation)
+{
+    auto discreteDevice = createValidDevice(1U, "Discrete device without presentation");
+    discreteDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    disablePresentation(discreteDevice);
+
+    auto integratedDevice = createValidDevice(2U, "Integrated device with presentation");
+    integratedDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+
+    const auto devices = createDevices({discreteDevice, integratedDevice});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(integratedDevice));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withNoDeviceSupportingPresentation)
+{
+    const auto device1 = createValidDevice(1U, "Device 1");
+    disablePresentation(device1);
+    const auto device2 = createValidDevice(2U, "Device 2");
+    disablePresentation(device2);
+
+    EXPECT_THROW(createDevices({device1, device2}), std::runtime_error);
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withPresentationOnSomeQueueFamilies)
+{
+    auto device = createValidDevice(1U, "Valid device");
+    device.vkQueueFamilies = {
+        createQueueFamily(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT),
+        createQueueFamily(VK_QUEUE_TRANSFER_BIT),
+    };
+    ON_CALL(m_mockIsPresentationSupported, Call(m_vkInstance, device.vkPhysicalDevice, 1U))
+        .WillByDefault(Return(false));
+
+    const auto devices = createDevices({device});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), HasQueueFamilies({
+                                                    .graphics = {0U},
+                                                    .compute = {0U},
+                                                    .transfer = {0U, 1U},
+                                                    .presentation = {0U},
+                                                }));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_prefersDiscreteGpu)
+{
+    auto discreteDevice = createValidDevice(1U, "Discrete GPU");
+    discreteDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    auto integratedDevice = createValidDevice(2U, "Integrated GPU");
+    integratedDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+    auto virtualDevice = createValidDevice(3U, "Virtual GPU");
+    virtualDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU;
+    auto cpuDevice = createValidDevice(4U, "CPU");
+    cpuDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;
+
+    // The preferred device is in the middle of the list, so that it isn't chosen for being the first or last one:
+    const auto devices = createDevices({integratedDevice, virtualDevice, discreteDevice, cpuDevice});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(discreteDevice));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_prefersIntegratedGpuWithoutDiscreteGpu)
+{
+    auto integratedDevice = createValidDevice(1U, "Integrated GPU");
+    integratedDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+    auto virtualDevice = createValidDevice(2U, "Virtual GPU");
+    virtualDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU;
+    auto cpuDevice = createValidDevice(3U, "CPU");
+    cpuDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;
+
+    const auto devices = createDevices({virtualDevice, integratedDevice, cpuDevice});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(integratedDevice));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withVirtualGpu)
+{
+    auto device = createValidDevice(1U, "Virtual GPU");
+    device.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU;
+
+    const auto devices = createDevices({device});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(device));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withCpu)
+{
+    auto device = createValidDevice(1U, "CPU");
+    device.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;
+
+    const auto devices = createDevices({device});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(device));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withUnknownDeviceType)
+{
+    auto unknownDevice = createValidDevice(1U, "Unknown device type");
+    unknownDevice.vkProperties.deviceType = static_cast<VkPhysicalDeviceType>(1000);
+
+    const auto devices = createDevices({unknownDevice});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(unknownDevice));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_prefersIntegratedGpuOverUnknownDeviceType)
+{
+    auto integratedDevice = createValidDevice(1U, "Integrated GPU");
+    integratedDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+    auto unknownDevice = createValidDevice(2U, "Unknown device type");
+    unknownDevice.vkProperties.deviceType = static_cast<VkPhysicalDeviceType>(1000);
+
+    const auto devices = createDevices({integratedDevice, unknownDevice});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(integratedDevice));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withRequiredExtensions)
+{
+    m_requiredDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME};
+    auto device = createValidDevice(1U, "Device with extensions");
+    device.vkExtensions = {
+        VkExtensionProperties{.extensionName = VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, .specVersion = 1U},
+        VkExtensionProperties{.extensionName = VK_KHR_RAY_QUERY_EXTENSION_NAME, .specVersion = 1U},
+        VkExtensionProperties{.extensionName = VK_KHR_SWAPCHAIN_EXTENSION_NAME, .specVersion = 1U},
+    };
+
+    const auto devices = createDevices({device});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(device));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withDeviceMissingRequiredExtensions)
+{
+    m_requiredDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME};
+    const std::vector<VkExtensionProperties> allExtensions{
+        VkExtensionProperties{.extensionName = VK_KHR_SWAPCHAIN_EXTENSION_NAME, .specVersion = 1U},
+        VkExtensionProperties{.extensionName = VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, .specVersion = 1U},
+    };
+
+    auto discreteDevice = createValidDevice(1U, "Discrete GPU with some extensions");
+    discreteDevice.vkExtensions = {allExtensions[0]};
+    auto integratedDevice = createValidDevice(2U, "Integrated GPU with all extensions");
+    integratedDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+    integratedDevice.vkExtensions = allExtensions;
+
+    const auto devices = createDevices({discreteDevice, integratedDevice});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(integratedDevice));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withNoDeviceSupportingRequiredExtensions)
+{
+    m_requiredDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    const auto device1 = createValidDevice(1U, "Device 1");
+    const auto device2 = createValidDevice(2U, "Device 2");
+
+    EXPECT_THROW(createDevices({device1, device2}), std::runtime_error);
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withSeparateQueueFamilies)
+{
+    auto device = createValidDevice(1U, "Device with separate queue families");
+    device.vkQueueFamilies = {
+        createQueueFamily(VK_QUEUE_GRAPHICS_BIT),
+        createQueueFamily(VK_QUEUE_COMPUTE_BIT),
+        createQueueFamily(VK_QUEUE_TRANSFER_BIT),
+    };
+
+    const auto devices = createDevices({device});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), AllOf(IsFakeDevice(device), HasQueueFamilies({
+                                                                                .graphics = {0U},
+                                                                                .compute = {1U},
+                                                                                .transfer = {2U},
+                                                                                .presentation = {0U, 1U, 2U},
+                                                                            })));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withDeviceMissingGraphicsQueue)
+{
+    auto discreteDevice = createValidDevice(1U, "Discrete GPU without graphics");
+    discreteDevice.vkQueueFamilies = {createQueueFamily(VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT)};
+    auto integratedDevice = createValidDevice(2U, "Integrated GPU");
+    integratedDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+
+    const auto devices = createDevices({discreteDevice, integratedDevice});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(integratedDevice));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withDeviceMissingTransferQueue)
+{
+    auto discreteDevice = createValidDevice(1U, "Discrete GPU without transfer");
+    discreteDevice.vkQueueFamilies = {createQueueFamily(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)};
+    auto integratedDevice = createValidDevice(2U, "Integrated GPU");
+    integratedDevice.vkProperties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+
+    const auto devices = createDevices({discreteDevice, integratedDevice});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), IsFakeDevice(integratedDevice));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withDeviceMissingComputeQueue)
+{
+    // Compute support isn't required:
+    auto device = createValidDevice(1U, "Device without compute");
+    device.vkQueueFamilies = {createQueueFamily(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT)};
+
+    const auto devices = createDevices({device});
+
+    EXPECT_THAT(devices.choosePhysicalDevice(), AllOf(IsFakeDevice(device), HasQueueFamilies({
+                                                                                .graphics = {0U},
+                                                                                .transfer = {0U},
+                                                                                .presentation = {0U},
+                                                                            })));
+}
+
+TEST_F(VulkanPhysicalDevicesTest, constructor_withDeviceWithoutQueueFamilies)
+{
+    auto device = createValidDevice(1U, "Device without queue families");
+    device.vkQueueFamilies.clear();
+
+    EXPECT_THROW(createDevices({device}), std::runtime_error);
 }
