@@ -74,7 +74,7 @@ auto makeVk13Features()
     };
 }
 
-auto createVkDevice(const VulkanInstanceFcts& rInstFcts, const VulkanExtensions& rExtensions,
+auto createVkDevice(const VulkanInstanceFcts& rInstFcts, const IVulkanExtensions& rExtensions,
                     const VulkanPhysicalDevice& rPhysicalDevice)
 {
     const auto vkQueueCreateInfos = makeQueueCreateInfos(rPhysicalDevice);

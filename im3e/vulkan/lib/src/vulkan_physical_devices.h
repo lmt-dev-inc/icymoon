@@ -32,7 +32,7 @@ struct VulkanPhysicalDevice
 class VulkanPhysicalDevices
 {
 public:
-    VulkanPhysicalDevices(const ILogger& logger, const VulkanInstanceFcts& fcts, const VulkanExtensions& extensions,
+    VulkanPhysicalDevices(const ILogger& logger, const VulkanInstanceFcts& fcts, const IVulkanExtensions& extensions,
                           VkInstance vkInstance, const IsPresentationSupportedFct& isPresentationSupported = {});
 
     auto choosePhysicalDevice() const -> const VulkanPhysicalDevice&;

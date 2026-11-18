@@ -19,11 +19,11 @@ TEST_F(VulkanExtensionsTest, constructor)
     constexpr bool DebubDisabled = false;
     expectInstanceExtensionsEnumerated(m_mockVk.getMockGlobalFcts(), DebubDisabled);
 
-    VulkanExtensions extensions(m_mockLogger, m_globalFcts, DebubDisabled);
-    EXPECT_THAT(extensions.getInstanceExtensions(), IsSupersetOf(std::vector<std::string>{
-                                                        VK_KHR_SURFACE_EXTENSION_NAME,
-                                                    }));
-    EXPECT_THAT(extensions.getDeviceExtensions(),
+    auto extensions = createVulkanExtensions(m_mockLogger, m_globalFcts, DebubDisabled);
+    EXPECT_THAT(extensions->getInstanceExtensions(), IsSupersetOf(std::vector<std::string>{
+                                                         VK_KHR_SURFACE_EXTENSION_NAME,
+                                                     }));
+    EXPECT_THAT(extensions->getDeviceExtensions(),
                 ContainerEq(std::vector<const char*>{VK_KHR_SWAPCHAIN_EXTENSION_NAME}));
-    EXPECT_THAT(extensions.getLayers(), ContainerEq(std::vector<const char*>{}));
+    EXPECT_THAT(extensions->getLayers(), ContainerEq(std::vector<const char*>{}));
 }

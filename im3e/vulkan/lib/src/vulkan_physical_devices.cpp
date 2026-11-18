@@ -30,7 +30,7 @@ auto toString(VkPhysicalDeviceType deviceType) -> std::string
 }
 
 auto doesDeviceSupportExtensions(const ILogger& logger, const VulkanInstanceFcts& fcts,
-                                 const VulkanPhysicalDevice& device, const VulkanExtensions& extensions) -> bool
+                                 const VulkanPhysicalDevice& device, const IVulkanExtensions& extensions) -> bool
 {
     logger.info(fmt::format(R"(Checking support for device extensions of "{}")", device.vkDeviceProperties.deviceName));
 
@@ -60,7 +60,7 @@ auto doesDeviceSupportExtensions(const ILogger& logger, const VulkanInstanceFcts
 }
 
 auto getDeviceScore(const ILogger& logger, const VulkanInstanceFcts& fcts, const VulkanPhysicalDevice& device,
-                    const VulkanExtensions& extensions, bool presentationRequired) -> uint32_t
+                    const IVulkanExtensions& extensions, bool presentationRequired) -> uint32_t
 {
     const auto supportedApiVersion = device.vkDeviceProperties.apiVersion;
     const auto requiredApiVersion = VulkanInstance::getVulkanApiVersion();
@@ -153,7 +153,7 @@ auto enumerateDevices(const ILogger& logger, const VulkanInstanceFcts& fcts, VkI
     return devices;
 }
 
-auto enumerateAndRankDevices(const ILogger& logger, const VulkanInstanceFcts& fcts, const VulkanExtensions& extensions,
+auto enumerateAndRankDevices(const ILogger& logger, const VulkanInstanceFcts& fcts, const IVulkanExtensions& extensions,
                              VkInstance vkInstance, const IsPresentationSupportedFct& isPresentationSupported)
 {
     const auto vkPhysicalDevices = enumerateDevices(logger, fcts, vkInstance);
@@ -192,7 +192,7 @@ void logDeviceRanks(const ILogger& logger, const std::multimap<uint32_t, VulkanP
 }  // namespace
 
 VulkanPhysicalDevices::VulkanPhysicalDevices(const ILogger& logger, const VulkanInstanceFcts& fcts,
-                                             const VulkanExtensions& extensions, VkInstance vkInstance,
+                                             const IVulkanExtensions& extensions, VkInstance vkInstance,
                                              const IsPresentationSupportedFct& isPresentationSupported)
   : m_logger(logger.createChild("Physical Devices"))
   , m_vkInstance(throwIfArgNull(vkInstance, "Physical Devices require an instance"))
