@@ -87,6 +87,8 @@ Names don't encode whether a variable is a pointer or a reference: `device`, not
 
 Existing code still uses `p` and `r` prefixes (`pDevice`, `m_rDevice`, `rpChild`...). It's migrated progressively; new code doesn't use them.
 
+The exception is code that repeats the signature of a Vulkan function, such as the mocks and lambdas of `mock_vulkan_functions.h`: it keeps Vulkan's parameter names (`pCreateInfo`, `pAllocator`...), so that it can be copied from the Vulkan headers and compared with them.
+
 *Automated:* no. clang-tidy's `readability-identifier-naming` can enforce it later (see [Enforcement](#enforcement)).
 
 ## Functions

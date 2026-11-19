@@ -57,7 +57,7 @@ Public headers are included through `<im3e/vulkan/...>`:
 
 - `VulkanInstance` creates a Vulkan 1.3 instance. When debug is enabled, it adds the `VK_LAYER_KHRONOS_validation` layer and a `VulkanDebugMessageHandler`, which forwards validation messages to the logger at their severity. Validation errors are therefore logged as errors, which make integration tests fail.
 - `VulkanPhysicalDevices` ranks the physical devices. A device needs Vulkan 1.3, all the required extensions, a graphics queue and a transfer queue, and a presentation queue when a presentation check is given. Discrete GPUs come first, then integrated GPUs, then other types, such as CPU implementations.
-- `VulkanDevice` creates the logical device with the only required extension, swapchain. It enables Vulkan 1.1 to 1.3 features, among which `synchronization2`, `bufferDeviceAddress`, descriptor indexing and `scalarBlockLayout`. It owns a single `VulkanCommandQueue`, the memory allocator and the image factory.
+- `VulkanDevice` creates the logical device with the only required extension, swapchain. It enables Vulkan 1.1 to 1.3 features, among which `synchronization2`, `dynamicRendering`, `bufferDeviceAddress`, descriptor indexing and `scalarBlockLayout`. New pipelines use dynamic rendering (`vkCmdBeginRendering`) rather than `VkRenderPass` objects, which only the ImGui back-end still uses. It owns a single `VulkanCommandQueue`, the memory allocator and the image factory.
 
 ## Function loading
 
