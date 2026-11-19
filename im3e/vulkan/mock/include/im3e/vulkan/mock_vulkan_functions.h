@@ -11,11 +11,11 @@ public:
     MockVulkanGlobalFcts();
     virtual ~MockVulkanGlobalFcts();
 
-    MOCK_METHOD(VkResult, vkEnumerateInstanceVersion, (uint32_t * pApiVersion));
+    MOCK_METHOD(VkResult, vkEnumerateInstanceVersion, (uint32_t* pApiVersion));
     MOCK_METHOD(VkResult, vkEnumerateInstanceExtensionProperties,
                 (const char* pLayerName, uint32_t* pPropertyCount, VkExtensionProperties* pProperties));
     MOCK_METHOD(VkResult, vkEnumerateInstanceLayerProperties,
-                (uint32_t * pPropertyCount, VkLayerProperties* pProperties));
+                (uint32_t* pPropertyCount, VkLayerProperties* pProperties));
     MOCK_METHOD(VkResult, vkCreateInstance,
                 (const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                  VkInstance* pInstance));
@@ -100,10 +100,21 @@ public:
     MOCK_METHOD(VkResult, vkBeginCommandBuffer,
                 (VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo));
     MOCK_METHOD(VkResult, vkEndCommandBuffer, (VkCommandBuffer commandBuffer));
+    MOCK_METHOD(void, vkCmdSetViewport,
+                (VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                 const VkViewport* pViewports));
+    MOCK_METHOD(void, vkCmdSetScissor,
+                (VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
+                 const VkRect2D* pScissors));
+    MOCK_METHOD(void, vkCmdBindPipeline,
+                (VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline));
     MOCK_METHOD(void, vkCmdPipelineBarrier2, (VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo));
     MOCK_METHOD(void, vkCmdClearColorImage,
                 (VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                  const VkClearColorValue* pColor, uint32_t rangeCount, const VkImageSubresourceRange* pRanges));
+    MOCK_METHOD(void, vkCmdDraw,
+                (VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+                 uint32_t firstInstance));
     MOCK_METHOD(void, vkCmdBlitImage,
                 (VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                  VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions, VkFilter filter));
@@ -114,6 +125,25 @@ public:
                 (VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                  VkSubpassContents contents));
     MOCK_METHOD(void, vkCmdEndRenderPass, (VkCommandBuffer commandBuffer));
+    MOCK_METHOD(void, vkCmdBeginRendering, (VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo));
+    MOCK_METHOD(void, vkCmdEndRendering, (VkCommandBuffer commandBuffer));
+
+    MOCK_METHOD(VkResult, vkCreateShaderModule,
+                (VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                 VkShaderModule* pShaderModule));
+    MOCK_METHOD(void, vkDestroyShaderModule,
+                (VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator));
+    MOCK_METHOD(VkResult, vkCreatePipelineLayout,
+                (VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                 const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout));
+    MOCK_METHOD(void, vkDestroyPipelineLayout,
+                (VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks* pAllocator));
+    MOCK_METHOD(VkResult, vkCreateGraphicsPipelines,
+                (VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                 const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
+                 VkPipeline* pPipelines));
+    MOCK_METHOD(void, vkDestroyPipeline,
+                (VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator));
 
     MOCK_METHOD(VkResult, vkCreateFence,
                 (VkDevice device, const VkFenceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,

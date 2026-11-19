@@ -217,6 +217,22 @@ MockVulkanFunctions::MockVulkanFunctions()
                 assertMockExists();
                 return g_pMock->getMockDeviceFcts().vkEndCommandBuffer(commandBuffer);
             },
+        .vkCmdSetViewport =
+            [](VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+               const VkViewport* pViewports) {
+                assertMockExists();
+                g_pMock->getMockDeviceFcts().vkCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
+            },
+        .vkCmdSetScissor =
+            [](VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) {
+                assertMockExists();
+                g_pMock->getMockDeviceFcts().vkCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
+            },
+        .vkCmdBindPipeline =
+            [](VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) {
+                assertMockExists();
+                g_pMock->getMockDeviceFcts().vkCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
+            },
         .vkCmdPipelineBarrier2 =
             [](VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo) {
                 assertMockExists();
@@ -228,6 +244,13 @@ MockVulkanFunctions::MockVulkanFunctions()
                 assertMockExists();
                 g_pMock->getMockDeviceFcts().vkCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount,
                                                                   pRanges);
+            },
+        .vkCmdDraw =
+            [](VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+               uint32_t firstInstance) {
+                assertMockExists();
+                g_pMock->getMockDeviceFcts().vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex,
+                                                       firstInstance);
             },
         .vkCmdBlitImage =
             [](VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
@@ -253,6 +276,54 @@ MockVulkanFunctions::MockVulkanFunctions()
             [](VkCommandBuffer commandBuffer) {
                 assertMockExists();
                 g_pMock->getMockDeviceFcts().vkCmdEndRenderPass(commandBuffer);
+            },
+        .vkCmdBeginRendering =
+            [](VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) {
+                assertMockExists();
+                g_pMock->getMockDeviceFcts().vkCmdBeginRendering(commandBuffer, pRenderingInfo);
+            },
+        .vkCmdEndRendering =
+            [](VkCommandBuffer commandBuffer) {
+                assertMockExists();
+                g_pMock->getMockDeviceFcts().vkCmdEndRendering(commandBuffer);
+            },
+
+        .vkCreateShaderModule =
+            [](VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+               VkShaderModule* pShaderModule) {
+                assertMockExists();
+                return g_pMock->getMockDeviceFcts().vkCreateShaderModule(device, pCreateInfo, pAllocator,
+                                                                         pShaderModule);
+            },
+        .vkDestroyShaderModule =
+            [](VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator) {
+                assertMockExists();
+                g_pMock->getMockDeviceFcts().vkDestroyShaderModule(device, shaderModule, pAllocator);
+            },
+        .vkCreatePipelineLayout =
+            [](VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+               VkPipelineLayout* pPipelineLayout) {
+                assertMockExists();
+                return g_pMock->getMockDeviceFcts().vkCreatePipelineLayout(device, pCreateInfo, pAllocator,
+                                                                           pPipelineLayout);
+            },
+        .vkDestroyPipelineLayout =
+            [](VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks* pAllocator) {
+                assertMockExists();
+                g_pMock->getMockDeviceFcts().vkDestroyPipelineLayout(device, pipelineLayout, pAllocator);
+            },
+        .vkCreateGraphicsPipelines =
+            [](VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+               const VkGraphicsPipelineCreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
+               VkPipeline* pPipelines) {
+                assertMockExists();
+                return g_pMock->getMockDeviceFcts().vkCreateGraphicsPipelines(device, pipelineCache, createInfoCount,
+                                                                              pCreateInfos, pAllocator, pPipelines);
+            },
+        .vkDestroyPipeline =
+            [](VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator) {
+                assertMockExists();
+                g_pMock->getMockDeviceFcts().vkDestroyPipeline(device, pipeline, pAllocator);
             },
 
         .vkCreateFence =
