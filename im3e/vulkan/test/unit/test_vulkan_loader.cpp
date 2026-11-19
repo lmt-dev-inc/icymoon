@@ -193,12 +193,25 @@ TEST_F(VulkanLoaderTest, loadDeviceFcts)
     expectDeviceFctLoaded(vkDevice, "vkResetCommandBuffer");
     expectDeviceFctLoaded(vkDevice, "vkBeginCommandBuffer");
     expectDeviceFctLoaded(vkDevice, "vkEndCommandBuffer");
+    expectDeviceFctLoaded(vkDevice, "vkCmdSetViewport");
+    expectDeviceFctLoaded(vkDevice, "vkCmdSetScissor");
+    expectDeviceFctLoaded(vkDevice, "vkCmdBindPipeline");
     expectDeviceFctLoaded(vkDevice, "vkCmdPipelineBarrier2");
     expectDeviceFctLoaded(vkDevice, "vkCmdClearColorImage");
+    expectDeviceFctLoaded(vkDevice, "vkCmdDraw");
     expectDeviceFctLoaded(vkDevice, "vkCmdBlitImage");
     expectDeviceFctLoaded(vkDevice, "vkCmdCopyImage");
     expectDeviceFctLoaded(vkDevice, "vkCmdBeginRenderPass");
     expectDeviceFctLoaded(vkDevice, "vkCmdEndRenderPass");
+    expectDeviceFctLoaded(vkDevice, "vkCmdBeginRendering");
+    expectDeviceFctLoaded(vkDevice, "vkCmdEndRendering");
+
+    expectDeviceFctLoaded(vkDevice, "vkCreateShaderModule");
+    expectDeviceFctLoaded(vkDevice, "vkDestroyShaderModule");
+    expectDeviceFctLoaded(vkDevice, "vkCreatePipelineLayout");
+    expectDeviceFctLoaded(vkDevice, "vkDestroyPipelineLayout");
+    expectDeviceFctLoaded(vkDevice, "vkCreateGraphicsPipelines");
+    expectDeviceFctLoaded(vkDevice, "vkDestroyPipeline");
 
     expectDeviceFctLoaded(vkDevice, "vkCreateFence");
     expectDeviceFctLoaded(vkDevice, "vkDestroyFence");
@@ -242,12 +255,25 @@ TEST_F(VulkanLoaderTest, loadDeviceFcts)
     EXPECT_THAT(deviceFcts.vkResetCommandBuffer, NotNull());
     EXPECT_THAT(deviceFcts.vkBeginCommandBuffer, NotNull());
     EXPECT_THAT(deviceFcts.vkEndCommandBuffer, NotNull());
+    EXPECT_THAT(deviceFcts.vkCmdSetViewport, NotNull());
+    EXPECT_THAT(deviceFcts.vkCmdSetScissor, NotNull());
+    EXPECT_THAT(deviceFcts.vkCmdBindPipeline, NotNull());
     EXPECT_THAT(deviceFcts.vkCmdPipelineBarrier2, NotNull());
     EXPECT_THAT(deviceFcts.vkCmdClearColorImage, NotNull());
+    EXPECT_THAT(deviceFcts.vkCmdDraw, NotNull());
     EXPECT_THAT(deviceFcts.vkCmdBlitImage, NotNull());
     EXPECT_THAT(deviceFcts.vkCmdCopyImage, NotNull());
     EXPECT_THAT(deviceFcts.vkCmdBeginRenderPass, NotNull());
     EXPECT_THAT(deviceFcts.vkCmdEndRenderPass, NotNull());
+    EXPECT_THAT(deviceFcts.vkCmdBeginRendering, NotNull());
+    EXPECT_THAT(deviceFcts.vkCmdEndRendering, NotNull());
+
+    EXPECT_THAT(deviceFcts.vkCreateShaderModule, NotNull());
+    EXPECT_THAT(deviceFcts.vkDestroyShaderModule, NotNull());
+    EXPECT_THAT(deviceFcts.vkCreatePipelineLayout, NotNull());
+    EXPECT_THAT(deviceFcts.vkDestroyPipelineLayout, NotNull());
+    EXPECT_THAT(deviceFcts.vkCreateGraphicsPipelines, NotNull());
+    EXPECT_THAT(deviceFcts.vkDestroyPipeline, NotNull());
 
     EXPECT_THAT(deviceFcts.vkCreateFence, NotNull());
     EXPECT_THAT(deviceFcts.vkDestroyFence, NotNull());

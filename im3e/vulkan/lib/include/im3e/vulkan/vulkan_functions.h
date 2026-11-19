@@ -55,12 +55,25 @@ struct VulkanDeviceFcts
     PFN_vkResetCommandBuffer vkResetCommandBuffer{};
     PFN_vkBeginCommandBuffer vkBeginCommandBuffer{};
     PFN_vkEndCommandBuffer vkEndCommandBuffer{};
+    PFN_vkCmdSetViewport vkCmdSetViewport{};
+    PFN_vkCmdSetScissor vkCmdSetScissor{};
+    PFN_vkCmdBindPipeline vkCmdBindPipeline{};
     PFN_vkCmdPipelineBarrier2 vkCmdPipelineBarrier2{};
     PFN_vkCmdClearColorImage vkCmdClearColorImage{};
+    PFN_vkCmdDraw vkCmdDraw{};
     PFN_vkCmdBlitImage vkCmdBlitImage{};
     PFN_vkCmdCopyImage vkCmdCopyImage{};
     PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass{};
     PFN_vkCmdEndRenderPass vkCmdEndRenderPass{};
+    PFN_vkCmdBeginRendering vkCmdBeginRendering{};
+    PFN_vkCmdEndRendering vkCmdEndRendering{};
+
+    PFN_vkCreateShaderModule vkCreateShaderModule{};
+    PFN_vkDestroyShaderModule vkDestroyShaderModule{};
+    PFN_vkCreatePipelineLayout vkCreatePipelineLayout{};
+    PFN_vkDestroyPipelineLayout vkDestroyPipelineLayout{};
+    PFN_vkCreateGraphicsPipelines vkCreateGraphicsPipelines{};
+    PFN_vkDestroyPipeline vkDestroyPipeline{};
 
     PFN_vkCreateFence vkCreateFence{};
     PFN_vkDestroyFence vkDestroyFence{};
