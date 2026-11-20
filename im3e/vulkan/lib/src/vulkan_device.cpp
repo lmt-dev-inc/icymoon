@@ -158,7 +158,7 @@ auto findCommandQueueInfo(const VulkanDeviceFcts& fcts, VkDevice vkDevice,
 }  // namespace
 
 VulkanDevice::VulkanDevice(const ILogger& logger, DeviceConfig config, std::shared_ptr<IStatsProvider> stats,
-                           std::unique_ptr<IVulkanInstance> instance)
+                           std::unique_ptr<IVulkanInstance> instance, MemoryAllocatorFactory memoryAllocatorFactory)
   : m_logger(logger.createChild("VulkanDevice"))
   , m_statsProvider(throwIfArgNull(std::move(stats), "Vulkan device requires a stats provider"))
   , m_config(std::move(config))
@@ -167,7 +167,10 @@ VulkanDevice::VulkanDevice(const ILogger& logger, DeviceConfig config, std::shar
   , m_physicalDevice(m_instance->choosePhysicalDevice(m_config.isPresentationSupported))
   , m_vkDevice(createDeviceAndLoadFcts(*m_instance, m_physicalDevice, m_fcts))
   , m_commandQueueInfo(findCommandQueueInfo(m_fcts, m_vkDevice.get(), m_physicalDevice.queueFamilies))
-  , m_memoryAllocator(createVulkanMemoryAllocator(*this, m_instance->loadVmaFcts(m_vkDevice.get())))
+  , m_memoryAllocator([&] {
+      throwIfArgNull(memoryAllocatorFactory, "Vulkan device requires a memory allocator factory");
+      return memoryAllocatorFactory(*this, m_instance->loadVmaFcts(m_vkDevice.get()));
+  }())
   , m_commandQueue(createVulkanCommandQueue(*this, m_commandQueueInfo, "MainQueue"))
 {
     m_logger->info("Successfully initialized");
@@ -235,5 +238,6 @@ auto im3e::createDevice(const ILogger& logger, DeviceConfig config) -> std::shar
     });
     auto instance = createVulkanInstance(logger, config.isDebugEnabled, config.requiredInstanceExtensions,
                                          std::move(loader));
-    return std::make_shared<VulkanDevice>(logger, std::move(config), createStatsProvider(), std::move(instance));
+    return std::make_shared<VulkanDevice>(logger, std::move(config), createStatsProvider(), std::move(instance),
+                                          &createVulkanMemoryAllocator);
 }

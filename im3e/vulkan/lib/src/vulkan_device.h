@@ -9,6 +9,7 @@
 #include <im3e/vulkan/device.h>
 #include <im3e/vulkan/image.h>
 
+#include <functional>
 #include <memory>
 #include <string_view>
 
@@ -17,8 +18,11 @@ namespace im3e {
 class VulkanDevice : public IDevice, public std::enable_shared_from_this<VulkanDevice>
 {
 public:
+    using MemoryAllocatorFactory =
+        std::function<std::unique_ptr<IVulkanMemoryAllocator>(const IDevice&, VmaVulkanFunctions)>;
+
     VulkanDevice(const ILogger& logger, DeviceConfig config, std::shared_ptr<IStatsProvider> stats,
-                 std::unique_ptr<IVulkanInstance> instance);
+                 std::unique_ptr<IVulkanInstance> instance, MemoryAllocatorFactory memoryAllocatorFactory);
     ~VulkanDevice() override;
 
     auto createVkSemaphore() const -> VkUniquePtr<VkSemaphore> override;
