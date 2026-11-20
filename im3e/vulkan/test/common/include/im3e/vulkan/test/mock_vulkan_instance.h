@@ -25,12 +25,14 @@ public:
     auto createMockProxy() -> std::unique_ptr<IVulkanInstance>;
     auto getMockFunctions() -> MockVulkanFunctions& { return m_mockFcts; }
     auto getMockExtensions() -> MockVulkanExtensions& { return m_mockExtensions; }
+    auto getFakeVkInstance() -> VkInstance { return m_fakeVkInstance; }
     auto getFakePhysicalDevice() -> VulkanPhysicalDevice& { return m_physicalDevice; }
 
 private:
     ::testing::NiceMock<MockVulkanFunctions> m_mockFcts;
     ::testing::NiceMock<MockVulkanExtensions> m_mockExtensions;
 
+    VkInstance m_fakeVkInstance = reinterpret_cast<VkInstance>(0xdef425a);
     VulkanPhysicalDevice m_physicalDevice{
         .vkPhysicalDevice = reinterpret_cast<VkPhysicalDevice>(0xa4b3c7f),
         .vkDeviceProperties{

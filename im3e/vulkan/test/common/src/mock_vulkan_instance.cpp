@@ -39,6 +39,7 @@ MockVulkanInstance::MockVulkanInstance()
     ON_CALL(*this, choosePhysicalDevice(_)).WillByDefault(InvokeWithoutArgs([this] { return m_physicalDevice; }));
     ON_CALL(*this, getFcts()).WillByDefault(ReturnRef(m_mockFcts.getInstanceFcts()));
     ON_CALL(*this, getExtensions()).WillByDefault(ReturnRef(m_mockExtensions));
+    ON_CALL(*this, getVkInstance()).WillByDefault(Return(m_fakeVkInstance));
 }
 
 MockVulkanInstance::~MockVulkanInstance() = default;
