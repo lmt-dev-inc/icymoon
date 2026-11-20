@@ -13,8 +13,8 @@ auto createVulkanAppInfo()
         .pApplicationName = "IcyMoonEngine",
         .applicationVersion = VK_MAKE_VERSION(1, 0, 0),  // NOLINT warning due to Vulkan macro
         .pEngineName = "IcyMoonEngine",
-        .engineVersion = VK_MAKE_VERSION(0, 1, 0),            // NOLINT warning due to Vulkan macro
-        .apiVersion = VulkanInstance::getVulkanApiVersion(),  // NOLINT warning due to Vulkan macro
+        .engineVersion = VK_MAKE_VERSION(0, 1, 0),             // NOLINT warning due to Vulkan macro
+        .apiVersion = IVulkanInstance::getVulkanApiVersion(),  // NOLINT warning due to Vulkan macro
     };
 }
 
@@ -50,7 +50,32 @@ auto createVkInstance(ILogger& rLogger, const VulkanGlobalFcts& rFcts, const IVu
     return vkInstance;
 }
 
-}  // namespace
+class VulkanInstance : public IVulkanInstance
+{
+public:
+    VulkanInstance(const ILogger& logger, bool isDebugEnabled,
+                   const std::vector<const char*>& requiredInstanceExtensions, std::unique_ptr<IVulkanLoader> loader);
+
+    auto loadDeviceFcts(VkDevice vkDevice) const -> VulkanDeviceFcts override;
+    auto loadVmaFcts(VkDevice vkDevice) const -> VmaVulkanFunctions override;
+    auto choosePhysicalDevice(const IsPresentationSupportedFct& isPresentationSupportedFct) const
+        -> VulkanPhysicalDevice override;
+
+    auto getFcts() const -> const VulkanInstanceFcts& override { return m_fcts; }
+    auto getExtensions() const -> const IVulkanExtensions& override { return *m_extensions; }
+    auto getVkInstance() const -> VkInstance override { return m_pVkInstance.get(); }
+
+private:
+    std::unique_ptr<ILogger> m_pLogger;
+    std::unique_ptr<IVulkanLoader> m_pLoader;
+    VulkanGlobalFcts m_globalFcts;
+
+    std::unique_ptr<IVulkanExtensions> m_extensions;
+
+    VulkanInstanceFcts m_fcts;
+    VkUniquePtr<VkInstance> m_pVkInstance;
+    std::unique_ptr<VulkanDebugMessageHandler> m_pDebugMessageHandler;
+};
 
 VulkanInstance::VulkanInstance(const ILogger& rLogger, bool isDebugEnabled,
                                const std::vector<const char*>& rRequiredInstanceExtensions,
@@ -87,4 +112,13 @@ auto VulkanInstance::choosePhysicalDevice(const IsPresentationSupportedFct& rIsP
     VulkanPhysicalDevices physicalDevices(*m_pLogger, m_fcts, *m_extensions, m_pVkInstance.get(),
                                           rIsPresentationSupported);
     return physicalDevices.choosePhysicalDevice();
+}
+
+}  // namespace
+
+auto im3e::createVulkanInstance(const ILogger& logger, bool isDebugEnabled,
+                                const std::vector<const char*>& requiredInstanceExtensions,
+                                std::unique_ptr<IVulkanLoader> loader) -> std::unique_ptr<IVulkanInstance>
+{
+    return std::make_unique<VulkanInstance>(logger, isDebugEnabled, requiredInstanceExtensions, std::move(loader));
 }

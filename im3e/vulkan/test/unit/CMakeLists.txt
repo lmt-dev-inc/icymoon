@@ -6,6 +6,7 @@ im3e_add_unit_tests_executable(
     test_vulkan_command_buffer.cpp
     test_vulkan_command_queue.cpp
     test_vulkan_debug_message_handler.cpp
+    test_vulkan_device.cpp
     test_vulkan_extensions.cpp
     test_vulkan_images.cpp
     test_vulkan_instance.cpp

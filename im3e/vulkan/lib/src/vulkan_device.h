@@ -14,7 +14,8 @@ namespace im3e {
 class VulkanDevice : public IDevice, public std::enable_shared_from_this<VulkanDevice>
 {
 public:
-    VulkanDevice(const ILogger& rLogger, DeviceConfig config);
+    VulkanDevice(const ILogger& logger, DeviceConfig config, std::shared_ptr<IStatsProvider> stats,
+                 std::unique_ptr<IVulkanInstance> instance);
     ~VulkanDevice() override;
 
     auto createVkSemaphore() const -> VkUniquePtr<VkSemaphore> override;
@@ -25,11 +26,11 @@ public:
 
     auto getStatsProvider() -> std::shared_ptr<IStatsProvider> override { return m_pStatsProvider; }
 
-    auto getVkInstance() const -> VkInstance override { return m_instance.getVkInstance(); }
+    auto getVkInstance() const -> VkInstance override { return m_instance->getVkInstance(); }
     auto getVkPhysicalDevice() const -> VkPhysicalDevice override { return m_physicalDevice.vkPhysicalDevice; }
     auto getVkDevice() const -> VkDevice override { return m_pVkDevice.get(); }
     auto getFcts() const -> const VulkanDeviceFcts& override { return m_fcts; }
-    auto getInstanceFcts() const -> const VulkanInstanceFcts& override { return m_instance.getFcts(); }
+    auto getInstanceFcts() const -> const VulkanInstanceFcts& override { return m_instance->getFcts(); }
     auto getImageFactory() const -> std::shared_ptr<const IImageFactory> override;
     auto getCommandQueue() const -> std::shared_ptr<const ICommandQueue> override { return m_pCommandQueue; }
     auto getCommandQueue() -> std::shared_ptr<ICommandQueue> override { return m_pCommandQueue; }
@@ -39,7 +40,7 @@ private:
     std::shared_ptr<IStatsProvider> m_pStatsProvider;
     const DeviceConfig m_config;
 
-    const VulkanInstance m_instance;
+    std::unique_ptr<IVulkanInstance> m_instance;
     const VulkanPhysicalDevice m_physicalDevice;
     VulkanDeviceFcts m_fcts;
     VkUniquePtr<VkDevice> m_pVkDevice;

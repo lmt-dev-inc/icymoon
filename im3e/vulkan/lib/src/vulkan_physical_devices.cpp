@@ -72,7 +72,7 @@ auto getDeviceScore(const ILogger& logger, const VulkanInstanceFcts& fcts, const
     }
 
     // With the same variant, comparing the raw values compares major, minor and patch versions:
-    const auto requiredApiVersion = VulkanInstance::getVulkanApiVersion();
+    const auto requiredApiVersion = IVulkanInstance::getVulkanApiVersion();
     if (supportedApiVersion < requiredApiVersion)
     {
         logger.info(fmt::format(R"(Device "{}" only supports Vulkan {}.{} ({}.{} is required))",

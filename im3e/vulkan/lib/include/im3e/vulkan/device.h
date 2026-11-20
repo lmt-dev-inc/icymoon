@@ -44,6 +44,6 @@ struct DeviceConfig
     IsPresentationSupportedFct isPresentationSupported{};
     std::vector<const char*> requiredInstanceExtensions{};
 };
-auto createDevice(const ILogger& rLogger, DeviceConfig config = {}) -> std::shared_ptr<IDevice>;
+auto createDevice(const ILogger& logger, DeviceConfig config = {}) -> std::shared_ptr<IDevice>;
 
 }  // namespace im3e

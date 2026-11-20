@@ -20,7 +20,7 @@ auto createVmaAllocator(VkInstance vkInstance, VkPhysicalDevice vkPhysicalDevice
         .device = vkDevice,
         .pVulkanFunctions = &rVmaVkFcts,
         .instance = vkInstance,
-        .vulkanApiVersion = VulkanInstance::getVulkanApiVersion(),
+        .vulkanApiVersion = IVulkanInstance::getVulkanApiVersion(),
     };
 
     VmaAllocator vmaAllocator{};

@@ -115,7 +115,7 @@ auto createVkDevice(const VulkanInstanceFcts& rInstFcts, const IVulkanExtensions
     return vkDevice;
 }
 
-auto createDeviceAndLoadFcts(const VulkanInstance& rInstance, const VulkanPhysicalDevice& rPhysicalDevice,
+auto createDeviceAndLoadFcts(const IVulkanInstance& rInstance, const VulkanPhysicalDevice& rPhysicalDevice,
                              VulkanDeviceFcts& rFcts)
 {
     const auto vkDevice = createVkDevice(rInstance.getFcts(), rInstance.getExtensions(), rPhysicalDevice);
@@ -154,19 +154,17 @@ auto findCommandQueueInfo(const VulkanDeviceFcts& rFcts, VkDevice vkDevice,
 
 }  // namespace
 
-VulkanDevice::VulkanDevice(const ILogger& rLogger, DeviceConfig config)
-  : m_pLogger(rLogger.createChild("VulkanDevice"))
-  , m_pStatsProvider(createStatsProvider())
+VulkanDevice::VulkanDevice(const ILogger& logger, DeviceConfig config, std::shared_ptr<IStatsProvider> stats,
+                           std::unique_ptr<IVulkanInstance> instance)
+  : m_pLogger(logger.createChild("VulkanDevice"))
+  , m_pStatsProvider(throwIfArgNull(std::move(stats), "Vulkan device requires a stats provider"))
   , m_config(std::move(config))
 
-  , m_instance(*m_pLogger, m_config.isDebugEnabled, m_config.requiredInstanceExtensions,
-               createVulkanLoader(VulkanLoaderConfig{
-                   .isDebugEnabled = config.isDebugEnabled,
-               }))
-  , m_physicalDevice(m_instance.choosePhysicalDevice(config.isPresentationSupported))
-  , m_pVkDevice(createDeviceAndLoadFcts(m_instance, m_physicalDevice, m_fcts))
+  , m_instance(throwIfArgNull(std::move(instance), "Vulkan device requires an instance"))
+  , m_physicalDevice(m_instance->choosePhysicalDevice(config.isPresentationSupported))
+  , m_pVkDevice(createDeviceAndLoadFcts(*m_instance, m_physicalDevice, m_fcts))
   , m_commandQueueInfo(findCommandQueueInfo(m_fcts, m_pVkDevice.get(), m_physicalDevice.queueFamilies))
-  , m_pMemoryAllocator(createVulkanMemoryAllocator(*this, m_instance.loadVmaFcts(m_pVkDevice.get())))
+  , m_pMemoryAllocator(createVulkanMemoryAllocator(*this, m_instance->loadVmaFcts(m_pVkDevice.get())))
   , m_pCommandQueue(createVulkanCommandQueue(*this, m_commandQueueInfo, "MainQueue"))
 {
     m_pLogger->info("Successfully initialized");
@@ -227,7 +225,12 @@ auto VulkanDevice::getImageFactory() const -> std::shared_ptr<const IImageFactor
     return m_pImageFactory;
 }
 
-auto im3e::createDevice(const ILogger& rLogger, DeviceConfig config) -> std::shared_ptr<IDevice>
+auto im3e::createDevice(const ILogger& logger, DeviceConfig config) -> std::shared_ptr<IDevice>
 {
-    return std::make_shared<VulkanDevice>(rLogger, std::move(config));
+    auto loader = createVulkanLoader(VulkanLoaderConfig{
+        .isDebugEnabled = config.isDebugEnabled,
+    });
+    auto instance = createVulkanInstance(logger, config.isDebugEnabled, config.requiredInstanceExtensions,
+                                         std::move(loader));
+    return std::make_shared<VulkanDevice>(logger, std::move(config), createStatsProvider(), std::move(instance));
 }
