@@ -25,10 +25,34 @@ public:
     auto createMockProxy() -> std::unique_ptr<IVulkanInstance>;
     auto getMockFunctions() -> MockVulkanFunctions& { return m_mockFcts; }
     auto getMockExtensions() -> MockVulkanExtensions& { return m_mockExtensions; }
+    auto getFakePhysicalDevice() -> VulkanPhysicalDevice& { return m_physicalDevice; }
 
 private:
     ::testing::NiceMock<MockVulkanFunctions> m_mockFcts;
     ::testing::NiceMock<MockVulkanExtensions> m_mockExtensions;
+
+    VulkanPhysicalDevice m_physicalDevice{
+        .vkPhysicalDevice = reinterpret_cast<VkPhysicalDevice>(0xa4b3c7f),
+        .vkDeviceProperties{
+            .apiVersion = VK_API_VERSION_1_3,
+            .deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+            .deviceName = "Mock Device",
+        },
+        .vkDeviceMemoryProperties{},
+        .vkDeviceFeatures{},
+        .queueFamilies{
+            .vkQueueFamilyProperties{
+                VkQueueFamilyProperties{
+                    .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
+                    .queueCount = 1U,
+                },
+            },
+            .computeFamilyIndices{0U},
+            .graphicsFamilyIndices{0U},
+            .transferFamilyIndices{0U},
+            .presentationFamilyIndices{0U},
+        },
+    };
 };
 
 }  // namespace im3e
