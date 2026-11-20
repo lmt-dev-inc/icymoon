@@ -1,12 +1,14 @@
 #pragma once
 
-#include "vulkan_debug_message_handler.h"
 #include "vulkan_extensions.h"
 #include "vulkan_loader.h"
 #include "vulkan_physical_devices.h"
 
-#include <im3e/utils/core/types.h>
 #include <im3e/utils/loggers.h>
+
+#include <cstdint>
+#include <memory>
+#include <vector>
 
 namespace im3e {
 

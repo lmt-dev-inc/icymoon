@@ -9,6 +9,9 @@
 #include <im3e/vulkan/device.h>
 #include <im3e/vulkan/image.h>
 
+#include <memory>
+#include <string_view>
+
 namespace im3e {
 
 class VulkanDevice : public IDevice, public std::enable_shared_from_this<VulkanDevice>
@@ -24,31 +27,31 @@ public:
 
     auto createLogger(std::string_view name) const -> std::unique_ptr<ILogger> override;
 
-    auto getStatsProvider() -> std::shared_ptr<IStatsProvider> override { return m_pStatsProvider; }
+    auto getStatsProvider() -> std::shared_ptr<IStatsProvider> override { return m_statsProvider; }
 
     auto getVkInstance() const -> VkInstance override { return m_instance->getVkInstance(); }
     auto getVkPhysicalDevice() const -> VkPhysicalDevice override { return m_physicalDevice.vkPhysicalDevice; }
-    auto getVkDevice() const -> VkDevice override { return m_pVkDevice.get(); }
+    auto getVkDevice() const -> VkDevice override { return m_vkDevice.get(); }
     auto getFcts() const -> const VulkanDeviceFcts& override { return m_fcts; }
     auto getInstanceFcts() const -> const VulkanInstanceFcts& override { return m_instance->getFcts(); }
     auto getImageFactory() const -> std::shared_ptr<const IImageFactory> override;
-    auto getCommandQueue() const -> std::shared_ptr<const ICommandQueue> override { return m_pCommandQueue; }
-    auto getCommandQueue() -> std::shared_ptr<ICommandQueue> override { return m_pCommandQueue; }
+    auto getCommandQueue() const -> std::shared_ptr<const ICommandQueue> override { return m_commandQueue; }
+    auto getCommandQueue() -> std::shared_ptr<ICommandQueue> override { return m_commandQueue; }
 
 private:
-    std::unique_ptr<ILogger> m_pLogger;
-    std::shared_ptr<IStatsProvider> m_pStatsProvider;
+    std::unique_ptr<ILogger> m_logger;
+    std::shared_ptr<IStatsProvider> m_statsProvider;
     const DeviceConfig m_config;
 
     std::unique_ptr<IVulkanInstance> m_instance;
     const VulkanPhysicalDevice m_physicalDevice;
     VulkanDeviceFcts m_fcts;
-    VkUniquePtr<VkDevice> m_pVkDevice;
+    VkUniquePtr<VkDevice> m_vkDevice;
     const VulkanCommandQueueInfo m_commandQueueInfo;
 
-    std::shared_ptr<IVulkanMemoryAllocator> m_pMemoryAllocator;
-    mutable std::shared_ptr<IImageFactory> m_pImageFactory;
-    std::shared_ptr<ICommandQueue> m_pCommandQueue;
+    std::shared_ptr<IVulkanMemoryAllocator> m_memoryAllocator;
+    mutable std::shared_ptr<IImageFactory> m_imageFactory;
+    std::shared_ptr<ICommandQueue> m_commandQueue;
 };
 
 }  // namespace im3e
