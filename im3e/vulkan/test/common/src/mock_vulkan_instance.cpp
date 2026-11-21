@@ -9,22 +9,25 @@ namespace {
 class MockProxyVulkanInstance : public IVulkanInstance
 {
 public:
-    MockProxyVulkanInstance(MockVulkanInstance& mock)
+    explicit MockProxyVulkanInstance(MockVulkanInstance& mock)
       : m_mock(mock)
     {
     }
 
-    auto loadDeviceFcts(VkDevice vkDevice) const -> VulkanDeviceFcts { return m_mock.loadDeviceFcts(vkDevice); }
-    auto loadVmaFcts(VkDevice vkDevice) const -> VmaVulkanFunctions { return m_mock.loadVmaFcts(vkDevice); }
+    auto loadDeviceFcts(VkDevice vkDevice) const -> VulkanDeviceFcts override
+    {
+        return m_mock.loadDeviceFcts(vkDevice);
+    }
+    auto loadVmaFcts(VkDevice vkDevice) const -> VmaVulkanFunctions override { return m_mock.loadVmaFcts(vkDevice); }
     auto choosePhysicalDevice(const IsPresentationSupportedFct& isPresentationSupportedFct) const
-        -> VulkanPhysicalDevice
+        -> VulkanPhysicalDevice override
     {
         return m_mock.choosePhysicalDevice(isPresentationSupportedFct);
     }
 
-    auto getFcts() const -> const VulkanInstanceFcts& { return m_mock.getFcts(); }
-    auto getExtensions() const -> const IVulkanExtensions& { return m_mock.getExtensions(); }
-    auto getVkInstance() const -> VkInstance { return m_mock.getVkInstance(); }
+    auto getFcts() const -> const VulkanInstanceFcts& override { return m_mock.getFcts(); }
+    auto getExtensions() const -> const IVulkanExtensions& override { return m_mock.getExtensions(); }
+    auto getVkInstance() const -> VkInstance override { return m_mock.getVkInstance(); }
 
 private:
     MockVulkanInstance& m_mock;

@@ -3,6 +3,7 @@
 #include "vulkan_images.h"
 
 #include <im3e/utils/core/throw_utils.h>
+#include <im3e/utils/stats.h>
 #include <im3e/vulkan/utils.h>
 
 #include <algorithm>
@@ -11,7 +12,6 @@
 #include <limits>
 #include <memory>
 #include <set>
-#include <stdexcept>
 #include <vector>
 
 using namespace im3e;

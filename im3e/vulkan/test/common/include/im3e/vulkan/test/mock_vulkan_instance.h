@@ -1,9 +1,13 @@
+#pragma once
+
 #include "vulkan_instance.h"
 
 #include <im3e/vulkan/mock_vulkan_functions.h>
 #include <im3e/vulkan/test/mock_vulkan_extensions.h>
 
 #include <gmock/gmock.h>
+
+#include <memory>
 
 namespace im3e {
 

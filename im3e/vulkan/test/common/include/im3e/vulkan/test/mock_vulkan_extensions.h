@@ -18,6 +18,13 @@ public:
 
     MOCK_METHOD(bool, areDebugUtilsEnabled, (), (const, override));
 
+    void setFakeInstanceExtensions(std::vector<const char*> extensions)
+    {
+        m_instanceExtensions = std::move(extensions);
+    }
+    void setFakeDeviceExtensions(std::vector<const char*> extensions) { m_deviceExtensions = std::move(extensions); }
+    void setFakeLayers(std::vector<const char*> layers) { m_layers = std::move(layers); }
+
 private:
     std::vector<const char*> m_instanceExtensions;
     std::vector<const char*> m_deviceExtensions;
