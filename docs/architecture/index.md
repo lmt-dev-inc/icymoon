@@ -16,6 +16,7 @@ This document describes how IcyMoon is structured: the libraries it is made of, 
     - [Shaders: `im3e_shader`](#shaders-im3e_shader)
     - [Windows and GUI: `im3e_guis`](#windows-and-gui-im3e_guis)
     - [Rendering: `im3e_anari`](#rendering-im3e_anari)
+    - [Vulkan renderer: `im3e_render_vulkan`](#vulkan-renderer-im3e_render_vulkan)
     - [Resources: `im3e_resources`](#resources-im3e_resources)
     - [OpenUSD: `im3e/usd`](#openusd-im3eusd)
     - [Test support: `im3e_test_utils` and mocks](#test-support-im3e_test_utils-and-mocks)
@@ -56,7 +57,7 @@ Every header is included through its path from the repository root, e.g. `#inclu
 
 ## Libraries
 
-Libraries are moving to the layout of [Library folders](../development/code_standards.md#library-folders) in the code standards, where each library is a group of targets (`lib/`, `mock/`, `test/...`) and only exposes its own `include/` folder. `im3e_property`, `im3e_scene`, `im3e_shader` and `im3e_vulkan` follow it. The older libraries (`im3e_utils`, `im3e_api`, `im3e_geo`, `im3e_guis`, `im3e_anari`, `im3e_test_utils`) still use the previous layout:
+Libraries are moving to the layout of [Library folders](../development/code_standards.md#library-folders) in the code standards, where each library is a group of targets (`lib/`, `mock/`, `test/...`) and only exposes its own `include/` folder. `im3e_property`, `im3e_scene`, `im3e_shader`, `im3e_vulkan` and `im3e_render_vulkan` follow it. The older libraries (`im3e_utils`, `im3e_api`, `im3e_geo`, `im3e_guis`, `im3e_anari`, `im3e_test_utils`) still use the previous layout:
 
 ```
 im3e/<module>/
@@ -85,6 +86,7 @@ flowchart BT
     resources[im3e_resources]
     guis[im3e_guis]
     anari[im3e_anari]
+    rvulkan[im3e_render_vulkan]
 
     utils --> core
     props --> core
@@ -103,6 +105,8 @@ flowchart BT
     anari --> geo
     anari --> props
     anari --> scene
+    rvulkan --> utils
+    rvulkan --> vulkan
 
     gdal([GDAL]) -.- geo
     anarisdk([ANARI SDK]) --- anari
@@ -118,21 +122,22 @@ There are no cycles. Modules talk to each other through interfaces: the Vulkan c
 
 ### Summary
 
-| Target            | Kind      | Role                                                                                         | Key third-party dependencies |
-| ----------------- | --------- | -------------------------------------------------------------------------------------------- | ---------------------------- |
-| `im3e_utils_core` | static    | Lowest-level helpers with no graphics dependency: flags, paths, errors, platform.            | fmt, whereami                |
-| `im3e_property`   | static    | Property interfaces and implementations, groups, change notification.                        | fmt                          |
-| `im3e_utils`      | static    | Logging, stats, math, rays, view frustum.                                                    | glm                          |
-| `im3e_api`        | interface | Abstract interfaces shared between modules: GUI and windows.                                 | glm                          |
-| `im3e_vulkan`     | static    | Vulkan interfaces (device, images, commands, frame pipeline) and their implementation.       | Vulkan headers, VMA, CImg    |
-| `im3e_geo`        | static    | Height maps from GeoTIFF files, tile pyramid, quad tree for visibility.                      | GDAL                         |
-| `im3e_scene`      | static    | Renderer-independent camera: projection, view transform, map camera controller.              | glm                          |
-| `im3e_shader`     | static    | Shaders compiled at build time, as plain data independent of Vulkan and Slang.               |                              |
-| `im3e_guis`       | static    | GLFW windows, swapchain presentation, ImGui workspace and panels.                            | GLFW, ImGui                  |
-| `im3e_anari`      | static    | ANARI engine, world, camera, renderer and frame pipeline.                                    | ANARI SDK                    |
-| `im3e_resources`  | interface | Generated header giving the paths of fonts and assets; copies the GUI font next to binaries. |                              |
-| `im3e_test_utils` | static    | Test fixtures and GoogleTest printers/matchers for Vulkan and GLM types.                     | GoogleTest                   |
-| `mock_im3e*`      | static    | GoogleMock implementations of the interfaces.                                                | GoogleMock                   |
+| Target               | Kind      | Role                                                                                         | Key third-party dependencies |
+| -------------------- | --------- | -------------------------------------------------------------------------------------------- | ---------------------------- |
+| `im3e_utils_core`    | static    | Lowest-level helpers with no graphics dependency: flags, paths, errors, platform.            | fmt, whereami                |
+| `im3e_property`      | static    | Property interfaces and implementations, groups, change notification.                        | fmt                          |
+| `im3e_utils`         | static    | Logging, stats, math, rays, view frustum.                                                    | glm                          |
+| `im3e_api`           | interface | Abstract interfaces shared between modules: GUI and windows.                                 | glm                          |
+| `im3e_vulkan`        | static    | Vulkan interfaces (device, images, commands, frame pipeline) and their implementation.       | Vulkan headers, VMA, CImg    |
+| `im3e_geo`           | static    | Height maps from GeoTIFF files, tile pyramid, quad tree for visibility.                      | GDAL                         |
+| `im3e_scene`         | static    | Renderer-independent camera: projection, view transform, map camera controller.              | glm                          |
+| `im3e_shader`        | static    | Shaders compiled at build time, as plain data independent of Vulkan and Slang.               |                              |
+| `im3e_guis`          | static    | GLFW windows, swapchain presentation, ImGui workspace and panels.                            | GLFW, ImGui                  |
+| `im3e_anari`         | static    | ANARI engine, world, camera, renderer and frame pipeline.                                    | ANARI SDK                    |
+| `im3e_render_vulkan` | static    | Native Vulkan renderer, replacing ANARI: render engine and frame pipelines. In progress.     |                              |
+| `im3e_resources`     | interface | Generated header giving the paths of fonts and assets; copies the GUI font next to binaries. |                              |
+| `im3e_test_utils`    | static    | Test fixtures and GoogleTest printers/matchers for Vulkan and GLM types.                     | GoogleTest                   |
+| `mock_im3e*`         | static    | GoogleMock implementations of the interfaces.                                                | GoogleMock                   |
 
 ### Foundation: `im3e_utils_core`, `im3e_utils`, `im3e_property`
 
@@ -246,6 +251,26 @@ Internal classes:
 - `AnariPlane` is a simple scalable plane, e.g. for a ground.
 
 The ANARI image reaches Vulkan through the CPU: `AnariFramePipeline` maps the ANARI color channel, copies it row by row (flipping it, as ANARI images start at the bottom) into a host-visible Vulkan image, and records a blit to the output image. See [Run-time flow of a frame](#run-time-flow-of-a-frame).
+
+### Vulkan renderer: `im3e_render_vulkan`
+
+[im3e/render/vulkan/](../../im3e/render/vulkan/) is the native Vulkan renderer that will replace ANARI, as planned in the [Vulkan Renderer Plan](../work_in_progress/vulkan_renderer_plan.md). It is the first library of the `render/` family (see [Families of libraries](../development/code_standards.md#families-of-libraries)). Only its structure exists so far: the `prepareExecution` and `resize` of its frame pipeline throw.
+
+Its public header, `<im3e/render/vulkan/vulkan_render_engine.h>`, declares `IVulkanRenderEngine`, created by `createVulkanRenderEngine(device)`. Rendering involves three objects:
+
+| Object                 | Visibility                               | Owned by                                   | Role                                                     |
+| ---------------------- | ---------------------------------------- | ------------------------------------------ | -------------------------------------------------------- |
+| `IVulkanRenderEngine`  | public                                   | the application (`unique_ptr`)             | Entry point: creates the frame pipelines.                |
+| `IVulkanRenderContext` | private interface, in `lib/src/`         | the engine and its frame pipelines, shared | Holds what the frame pipelines share. Today, the device. |
+| `VulkanFramePipeline`  | private, returned as an `IFramePipeline` | its user, e.g. `ImguiRenderPanel`          | Renders one view.                                        |
+
+- **One frame pipeline per view.** Each window or render panel has its own frame pipeline, with its own size and frames in flight, even when several views show the same scene.
+- **Frame pipelines can outlive the engine.** They share the context, not the engine, as `AnariFramePipeline`s share the `AnariDevice` of `AnariEngine`. The engine stays a factory.
+- **Frame pipelines get the device through the context**, so that they and the resources they share use the same device. The context doesn't wrap the API of `IDevice`: it adds what the device can't do.
+- **Each object creates its logger from the device** (`IDevice::createLogger`).
+- **"Render engine", not "engine".** Other engines may come later, such as physics. They would share the `IDevice`, not the render engine.
+
+The context will create and own the resources shared between views, as they are added: shader modules, pipelines and their layouts, samplers. It will return them as `shared_ptr`s and cache them by `weak_ptr`, so that a resource lives as long as a frame pipeline uses it. Their deleters will delay destruction until no frame in flight can use them, and a `VkPipelineCache` will make recreating a released pipeline cheap. Resources that a single view uses, such as its color and depth images, come from the `IDevice` directly. Scenes will be separate objects, so that views can share them.
 
 ### Resources: `im3e_resources`
 

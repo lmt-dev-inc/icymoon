@@ -19,6 +19,7 @@ This document describes `im3e_vulkan`, the library that holds the Vulkan code of
 
 - `im3e_guis` presents to windows (`Presenter`, swapchains) and draws ImGui with its Vulkan back-end.
 - `im3e_anari` copies the frames rendered by ANARI into Vulkan images.
+- `im3e_render_vulkan`, the native renderer that will replace ANARI, renders with the device (see [Vulkan renderer](index.md#vulkan-renderer-im3e_render_vulkan)).
 - `im3e_api` declares the GUI contracts, which take an `ICommandBuffer` (`IGuiPanel::draw`) and return an `IDevice` (`IWindowApplication::getDevice`).
 - `im3e_test_utils` creates a device for integration tests.
 
@@ -85,7 +86,7 @@ This keeps Vulkan an optional run-time dependency, and makes every Vulkan call m
 
 ## Frame pipelines
 
-`IFramePipeline` is the central abstraction for rendering: `prepareExecution(commandBuffer, viewportSize, outputImage)` records the commands that render a frame into an output image, and `resize(extent, frameInFlightCount)` adapts to a new size. The ImGui GUI (`ImguiPipeline`), the ANARI renderer (`AnariFramePipeline`) and the test pipelines implement it, and they can be nested: the ImGui pipeline draws a render panel, which runs an ANARI pipeline into an offscreen image. See [Run-time flow of a frame](index.md#run-time-flow-of-a-frame).
+`IFramePipeline` is the central abstraction for rendering: `prepareExecution(commandBuffer, viewportSize, outputImage)` records the commands that render a frame into an output image, and `resize(extent, frameInFlightCount)` adapts to a new size. The ImGui GUI (`ImguiPipeline`), the ANARI renderer (`AnariFramePipeline`), the Vulkan renderer (`VulkanFramePipeline`, not implemented yet) and the test pipelines implement it, and they can be nested: the ImGui pipeline draws a render panel, which runs an ANARI pipeline into an offscreen image. See [Run-time flow of a frame](index.md#run-time-flow-of-a-frame).
 
 ## Tests
 

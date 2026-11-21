@@ -5,6 +5,8 @@
 
 #include <im3e/utils/core/throw_utils.h>
 
+#include <utility>
+
 using namespace im3e;
 
 namespace {
