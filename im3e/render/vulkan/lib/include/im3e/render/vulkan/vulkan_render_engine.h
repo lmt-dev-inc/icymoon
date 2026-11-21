@@ -21,7 +21,6 @@ public:
     virtual auto createFramePipeline() -> std::unique_ptr<IFramePipeline> = 0;
 };
 
-auto createVulkanRenderEngine(const ILogger& logger, std::shared_ptr<IDevice> device)
-    -> std::unique_ptr<IVulkanRenderEngine>;
+auto createVulkanRenderEngine(std::shared_ptr<IDevice> device) -> std::unique_ptr<IVulkanRenderEngine>;
 
 }  // namespace im3e

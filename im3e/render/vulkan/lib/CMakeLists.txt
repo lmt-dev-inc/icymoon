@@ -5,6 +5,8 @@ im3e_add_library(
     include/im3e/render/vulkan/vulkan_render_engine.h
     src/vulkan_frame_pipeline.cpp
     src/vulkan_frame_pipeline.h
+    src/vulkan_render_context.cpp
+    src/vulkan_render_context.h
     src/vulkan_render_engine.cpp
 )
 
