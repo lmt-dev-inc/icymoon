@@ -18,7 +18,7 @@ public:
     }
 
     auto getDevice() -> std::shared_ptr<IDevice> override { return m_mock.getDevice(); }
-    auto getDevice() const -> std::shared_ptr<const IDevice> override { return m_mock.getDevice(); }
+    auto getDevice() const -> std::shared_ptr<const IDevice> override { return std::as_const(m_mock).getDevice(); }
 
 private:
     MockVulkanRenderContext& m_mock;

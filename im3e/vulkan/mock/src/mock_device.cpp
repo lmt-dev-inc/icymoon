@@ -34,7 +34,10 @@ public:
     auto getFcts() const -> const VulkanDeviceFcts& override { return m_rMock.getFcts(); }
     auto getInstanceFcts() const -> const VulkanInstanceFcts& override { return m_rMock.getInstanceFcts(); }
     auto getImageFactory() const -> std::shared_ptr<const IImageFactory> override { return m_rMock.getImageFactory(); }
-    auto getCommandQueue() const -> std::shared_ptr<const ICommandQueue> override { return m_rMock.getCommandQueue(); }
+    auto getCommandQueue() const -> std::shared_ptr<const ICommandQueue> override
+    {
+        return std::as_const(m_rMock).getCommandQueue();
+    }
     auto getCommandQueue() -> std::shared_ptr<ICommandQueue> override { return m_rMock.getCommandQueue(); }
 
 private:

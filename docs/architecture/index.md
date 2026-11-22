@@ -283,10 +283,10 @@ The context will create and own the resources shared between views, as they are 
 ### Test support: `im3e_test_utils` and mocks
 
 - [im3e/test_utils/](../../im3e/test_utils/) provides GoogleTest fixtures: `IntegrationTest` (logger whose errors fail the test), `DeviceIntegrationTest` (a real Vulkan device) and `PipelineIntegrationTest` (runs an `IFramePipeline` into an image and compares pixels). It also has printers and matchers for GLM, Vulkan and standard types.
-- `mock_im3e_vulkan` ([im3e/vulkan/mock/](../../im3e/vulkan/mock/)) mocks the interfaces of `im3e_vulkan`: device, images, command buffers, Vulkan function tables. `mock_im3e_geo` ([im3e/geo/mock/](../../im3e/geo/mock/)) mocks the height maps of `im3e_geo`, and `mock_im3e_utils` mocks loggers and stats. Mocks of private interfaces, such as `MockVulkanLoader`, are test helpers of their library, in its `test/common/` target (`test_common_im3e_vulkan`).
+- `mock_im3e_vulkan` ([im3e/vulkan/mock/](../../im3e/vulkan/mock/)) mocks the interfaces of `im3e_vulkan`: device, images, command buffers, Vulkan function tables. `mock_im3e_geo` ([im3e/geo/mock/](../../im3e/geo/mock/)) mocks the height maps of `im3e_geo`, and `mock_im3e_utils` mocks loggers and stats. Mocks of private interfaces, such as `MockVulkanLoader`, are test helpers of their library, in its `test/common/` target (`test_common_im3e_vulkan`, and `test_common_im3e_render_vulkan` for `MockVulkanRenderContext`).
 - Test executables are declared with `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` ([cmake/im3e_tests.cmake](../../cmake/im3e_tests.cmake)), which label them for `ctest -L` and exclude them from coverage.
 
-Current coverage by module: `utils`, `utils/core`, `vulkan` have unit and integration tests; `property` and `scene` have unit tests; `geo` tests the quad tree; `guis` has integration tests only; `anari` has no tests yet.
+Current coverage by module: `utils`, `utils/core`, `vulkan` have unit and integration tests; `property`, `scene` and `render/vulkan` have unit tests; `geo` tests the quad tree; `guis` has integration tests only; `anari` has no tests yet.
 
 ## Applications
 

@@ -2,6 +2,8 @@ im3e_add_unit_tests_executable(
   TARGET
     test_im3e_render_vulkan
   SOURCES
+    test_vulkan_frame_pipeline.cpp
+    test_vulkan_render_context.cpp
     test_vulkan_render_engine.cpp
 )
 
