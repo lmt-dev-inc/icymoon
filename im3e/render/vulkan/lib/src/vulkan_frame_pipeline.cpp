@@ -13,7 +13,7 @@ namespace {
 class VulkanFramePipeline : public IFramePipeline
 {
 public:
-    VulkanFramePipeline(std::shared_ptr<IVulkanRenderContext> context)
+    explicit VulkanFramePipeline(std::shared_ptr<IVulkanRenderContext> context)
       : m_context(throwIfArgNull(std::move(context), "Vulkan frame pipeline requires a context"))
       , m_device(m_context->getDevice())
       , m_logger(m_device->createLogger("VulkanFramePipeline"))

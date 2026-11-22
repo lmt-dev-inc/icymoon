@@ -2,6 +2,8 @@
 
 #include <im3e/test_utils/test_utils.h>
 
+#include <utility>
+
 using namespace im3e;
 
 namespace {
@@ -65,6 +67,9 @@ MockDevice::MockDevice()
     ON_CALL(*this, getFcts()).WillByDefault(ReturnRef(m_mockFcts.getDeviceFcts()));
     ON_CALL(*this, getImageFactory()).WillByDefault(Invoke([this] { return m_mockImageFactory.createMockProxy(); }));
     ON_CALL(*this, getCommandQueue()).WillByDefault(Invoke([this] { return m_mockCommandQueue.createMockProxy(); }));
+    ON_CALL(Const(*this), getCommandQueue()).WillByDefault(Invoke([this] {
+        return m_mockCommandQueue.createMockProxy();
+    }));
 }
 
 MockDevice::~MockDevice() = default;

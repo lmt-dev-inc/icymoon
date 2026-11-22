@@ -1,6 +1,5 @@
 #pragma once
 
-#include <im3e/utils/loggers.h>
 #include <im3e/vulkan/device.h>
 
 #include <memory>
@@ -10,6 +9,11 @@ namespace im3e {
 class IVulkanRenderContext
 {
 public:
+    IVulkanRenderContext() = default;
+    IVulkanRenderContext(const IVulkanRenderContext&) = delete;
+    IVulkanRenderContext(IVulkanRenderContext&&) = delete;
+    IVulkanRenderContext& operator=(const IVulkanRenderContext&) = delete;
+    IVulkanRenderContext& operator=(IVulkanRenderContext&&) = delete;
     virtual ~IVulkanRenderContext() = default;
 
     virtual auto getDevice() -> std::shared_ptr<IDevice> = 0;

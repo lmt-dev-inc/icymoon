@@ -15,9 +15,9 @@ public:
 
     /// @brief Schedule pipeline execution
     ///
-    /// @param rCommandBuffer Object used to record commands that will be executed.
-    /// @param rVkViewportSize Size of the content to be rendered in the output image starting from the top-left corner.
-    /// @param pOutputImage Image that the pipeline should write the final results to.
+    /// @param commandBuffer Object used to record commands that will be executed.
+    /// @param vkViewportSize Size of the content to be rendered in the output image starting from the top-left corner.
+    /// @param outputImage Image that the pipeline should write the final results to.
     virtual void prepareExecution(const ICommandBuffer& commandBuffer, const VkExtent2D& vkViewportSize,
                                   std::shared_ptr<IImage> outputImage) = 0;
 

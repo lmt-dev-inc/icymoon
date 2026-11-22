@@ -11,7 +11,7 @@ namespace {
 class VulkanRenderContext : public IVulkanRenderContext
 {
 public:
-    VulkanRenderContext(std::shared_ptr<IDevice> device)
+    explicit VulkanRenderContext(std::shared_ptr<IDevice> device)
       : m_device(throwIfArgNull(std::move(device), "Vulkan render context requires a device"))
       , m_logger(m_device->createLogger("VulkanRenderContext"))
     {

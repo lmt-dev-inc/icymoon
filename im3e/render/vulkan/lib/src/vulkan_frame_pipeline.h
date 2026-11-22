@@ -2,7 +2,6 @@
 
 #include "vulkan_render_context.h"
 
-#include <im3e/utils/loggers.h>
 #include <im3e/vulkan/frame_pipeline.h>
 
 #include <memory>

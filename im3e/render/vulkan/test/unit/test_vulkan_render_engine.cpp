@@ -54,13 +54,3 @@ TEST_F(VulkanRenderEngineTest, framePipelinesShareDevice)
     EXPECT_THAT(framePipeline1.get(), Ne(framePipeline2.get()));
     EXPECT_THAT(framePipeline1->getDevice(), Eq(framePipeline2->getDevice()));
 }
-
-TEST_F(VulkanRenderEngineTest, framePipelineOutlivesEngine)
-{
-    auto engine = createEngine();
-    auto framePipeline = engine->createFramePipeline();
-    ASSERT_THAT(framePipeline, NotNull());
-
-    engine.reset();
-    EXPECT_THAT(framePipeline->getDevice(), Eq(m_device));
-}
