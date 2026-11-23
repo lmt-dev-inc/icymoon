@@ -33,6 +33,21 @@ auto createShaderModule(const IDevice& device)
     return makeVkUniquePtr<VkShaderModule>(vkDevice, vkShaderModule, fcts.vkDestroyShaderModule);
 }
 
+auto createPipelineLayout(const IDevice& device)
+{
+    auto vkDevice = device.getVkDevice();
+    auto& fcts = device.getFcts();
+
+    VkPipelineLayoutCreateInfo vkCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+    };
+
+    VkPipelineLayout vkLayout;
+    throwIfVkFailed(fcts.vkCreatePipelineLayout(vkDevice, &vkCreateInfo, nullptr, &vkLayout),
+                    "Failed to create pipeline layout");
+    return makeVkUniquePtr<VkPipelineLayout>(vkDevice, vkLayout, fcts.vkDestroyPipelineLayout);
+}
+
 class VulkanFramePipeline : public IFramePipeline
 {
 public:
@@ -42,6 +57,7 @@ public:
       , m_logger(m_device->createLogger("VulkanFramePipeline"))
     {
         auto vkShaderModule = createShaderModule(*m_device);
+        auto vkPipelineLayout = createPipelineLayout(*m_device);
     }
 
     void prepareExecution([[maybe_unused]] const ICommandBuffer& commandBuffer,

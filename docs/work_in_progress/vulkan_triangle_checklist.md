@@ -32,7 +32,7 @@ Progress on the Vulkan objects needed to draw the triangle of milestone 2 of the
 In the constructor of the frame pipeline.
 
 - [x] `VkShaderModule` from the SPIR-V of the `CompiledShader`: one module for both entry points, destroyed once the pipeline is created.
-- [ ] `VkPipelineLayout`, empty: no descriptor set layouts, no push constant ranges.
+- [x] `VkPipelineLayout`, empty: no descriptor set layouts, no push constant ranges.
 - [ ] `VkPipeline` from `vkCreateGraphicsPipelines`:
   - [ ] Two `VkPipelineShaderStageCreateInfo` on the same module, with hard-coded entry point names until milestone 3.
   - [ ] Empty `VkPipelineVertexInputStateCreateInfo`.
