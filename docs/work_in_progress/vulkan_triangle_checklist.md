@@ -23,9 +23,9 @@ Progress on the Vulkan objects needed to draw the triangle of milestone 2 of the
 
 ## Shader
 
-- [ ] Vertex shader: a `static const float2[3]` indexed by `SV_VertexID`, returning `float4(pos, 0, 1)` as `SV_Position`.
-- [ ] Fragment shader: returns a `float4` color as `SV_Target`.
-- [ ] Keep in mind that clip-space +Y points down until milestone 3 flips Y with a negative viewport height.
+- [x] Vertex shader: a `static const float2[3]` indexed by `SV_VertexID`, returning `float4(pos, 0, 1)` as `SV_Position`.
+- [x] Fragment shader: returns a `float4` color as `SV_Target`.
+- [x] Keep in mind that clip-space +Y points down until milestone 3 flips Y with a negative viewport height.
 
 ## Created once
 
