@@ -157,14 +157,86 @@ public:
     {
         auto vkShaderModule = createShaderModule(*m_device);
         auto vkPipelineLayout = createPipelineLayout(*m_device);
-        auto vkPipeline = createGraphicsPipeline(*m_device, vkShaderModule.get(), vkPipelineLayout.get());
+        m_vkPipeline = createGraphicsPipeline(*m_device, vkShaderModule.get(), vkPipelineLayout.get());
     }
 
-    void prepareExecution([[maybe_unused]] const ICommandBuffer& commandBuffer,
-                          [[maybe_unused]] const VkExtent2D& vkViewportSize,
-                          [[maybe_unused]] std::shared_ptr<IImage> outputImage) override
+    void prepareExecution(const ICommandBuffer& commandBuffer, const VkExtent2D& vkViewportSize,
+                          std::shared_ptr<IImage> outputImage) override
     {
-        throw std::runtime_error("VulkanFramePipeline::prepareExecution() not implemented");
+        {
+            auto barrier = commandBuffer.startScopedBarrier("barrierBeforeRendering");
+            barrier->addImageBarrier(*m_image, ImageBarrierConfig{
+                                                   .vkDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                   .vkDstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                   .vkLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                               });
+        }
+
+        const auto vkCommandBuffer = commandBuffer.getVkCommandBuffer();
+        auto& fcts = m_device->getFcts();
+        {
+            const VkRenderingAttachmentInfo vkColorAttachmentInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                .imageView = m_imageView->getVkImageView(),
+                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue = VkClearValue{},
+            };
+            const VkRenderingInfo vkRenderingInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+                .renderArea = VkRect2D{.extent = vkViewportSize},
+                .layerCount = 1U,
+                .colorAttachmentCount = 1U,
+                .pColorAttachments = &vkColorAttachmentInfo,
+            };
+            fcts.vkCmdBeginRendering(vkCommandBuffer, &vkRenderingInfo);
+            fcts.vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipeline.get());
+
+            const VkViewport vkViewport{
+                .width = static_cast<float>(vkViewportSize.width),
+                .height = static_cast<float>(vkViewportSize.height),
+                .minDepth = 0.0F,
+                .maxDepth = 1.0F,
+            };
+            fcts.vkCmdSetViewport(vkCommandBuffer, 0U, 1U, &vkViewport);
+
+            const VkRect2D vkScissor{.extent = vkViewportSize};
+            fcts.vkCmdSetScissor(vkCommandBuffer, 0U, 1U, &vkScissor);
+
+            fcts.vkCmdDraw(vkCommandBuffer, 3U, 1U, 0U, 0U);
+
+            fcts.vkCmdEndRendering(vkCommandBuffer);
+        }
+
+        {
+            auto barrier = commandBuffer.startScopedBarrier("barrierAfterRendering");
+            barrier->addImageBarrier(*m_image, ImageBarrierConfig{
+                                                   .vkDstStageMask = VK_PIPELINE_STAGE_2_BLIT_BIT,
+                                                   .vkDstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+                                                   .vkLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                               });
+            barrier->addImageBarrier(*outputImage, ImageBarrierConfig{
+                                                       .vkDstStageMask = VK_PIPELINE_STAGE_2_BLIT_BIT,
+                                                       .vkDstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                                                       .vkLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                   });
+        }
+
+        const VkOffset3D vkEndOffset{
+            .x = static_cast<int32_t>(vkViewportSize.width),
+            .y = static_cast<int32_t>(vkViewportSize.height),
+            .z = 1,
+        };
+        const VkImageBlit vkRegion{
+            .srcSubresource = m_image->getVkSubresourceLayers(),
+            .srcOffsets = {VkOffset3D{}, vkEndOffset},
+            .dstSubresource = outputImage->getVkSubresourceLayers(),
+            .dstOffsets = {VkOffset3D{}, vkEndOffset},
+        };
+        fcts.vkCmdBlitImage(vkCommandBuffer, m_image->getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                            outputImage->getVkImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U, &vkRegion,
+                            VK_FILTER_NEAREST);
     }
 
     void resize(const VkExtent2D& vkExtent, [[maybe_unused]] uint32_t frameInFlightCount) override
@@ -186,6 +258,7 @@ private:
     std::unique_ptr<ILogger> m_logger;
 
     VkUniquePtr<VkShaderModule> m_vkShaderModule;
+    VkUniquePtr<VkPipeline> m_vkPipeline;
     std::unique_ptr<IImage> m_image;
     std::unique_ptr<IImageView> m_imageView;
 };
