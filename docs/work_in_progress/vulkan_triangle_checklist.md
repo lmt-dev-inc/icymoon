@@ -33,17 +33,17 @@ In the constructor of the frame pipeline.
 
 - [x] `VkShaderModule` from the SPIR-V of the `CompiledShader`: one module for both entry points, destroyed once the pipeline is created.
 - [x] `VkPipelineLayout`, empty: no descriptor set layouts, no push constant ranges.
-- [ ] `VkPipeline` from `vkCreateGraphicsPipelines`:
-  - [ ] Two `VkPipelineShaderStageCreateInfo` on the same module, with hard-coded entry point names until milestone 3.
-  - [ ] Empty `VkPipelineVertexInputStateCreateInfo`.
-  - [ ] Input assembly: `VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST`.
-  - [ ] Viewport state: `viewportCount = 1`, `scissorCount = 1`, values left null.
-  - [ ] Dynamic state: `VK_DYNAMIC_STATE_VIEWPORT` and `VK_DYNAMIC_STATE_SCISSOR`, so that `resize` doesn't rebuild the pipeline.
-  - [ ] Rasterization: `VK_POLYGON_MODE_FILL`, `VK_CULL_MODE_NONE`, `lineWidth = 1.0f`.
-  - [ ] Multisample: `VK_SAMPLE_COUNT_1_BIT`.
-  - [ ] Color blend: one attachment, blending off, `colorWriteMask` set to RGBA (nothing is written if it is zero).
-  - [ ] No depth/stencil state.
-  - [ ] `VkPipelineRenderingCreateInfo` in `pNext`, with `colorAttachmentCount = 1` and the color image's format. `renderPass` is `VK_NULL_HANDLE`.
+- [x] `VkPipeline` from `vkCreateGraphicsPipelines`:
+  - [x] Two `VkPipelineShaderStageCreateInfo` on the same module, with hard-coded entry point names until milestone 3.
+  - [x] Empty `VkPipelineVertexInputStateCreateInfo`.
+  - [x] Input assembly: `VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST`.
+  - [x] Viewport state: `viewportCount = 1`, `scissorCount = 1`, values left null.
+  - [x] Dynamic state: `VK_DYNAMIC_STATE_VIEWPORT` and `VK_DYNAMIC_STATE_SCISSOR`, so that `resize` doesn't rebuild the pipeline.
+  - [x] Rasterization: `VK_POLYGON_MODE_FILL`, `VK_CULL_MODE_NONE`, `lineWidth = 1.0f`.
+  - [x] Multisample: `VK_SAMPLE_COUNT_1_BIT`.
+  - [x] Color blend: one attachment, blending off, `colorWriteMask` set to RGBA (nothing is written if it is zero).
+  - [x] No depth/stencil state.
+  - [x] `VkPipelineRenderingCreateInfo` in `pNext`, with `colorAttachmentCount = 1` and the color image's format. `renderPass` is `VK_NULL_HANDLE`.
 
 ## Created on resize
 
