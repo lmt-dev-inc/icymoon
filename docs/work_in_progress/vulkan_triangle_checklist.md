@@ -47,8 +47,8 @@ In the constructor of the frame pipeline.
 
 ## Created on resize
 
-- [ ] Color image through `IImageFactory::createImage`, e.g. `VK_FORMAT_R8G8B8A8_UNORM`, with usage `COLOR_ATTACHMENT | TRANSFER_SRC`. Its format must match the one given to the pipeline.
-- [ ] Its `IImageView`, for the rendering attachment.
+- [x] Color image through `IImageFactory::createImage`, e.g. `VK_FORMAT_R8G8B8A8_UNORM`, with usage `COLOR_ATTACHMENT | TRANSFER_SRC`. Its format must match the one given to the pipeline.
+- [x] Its `IImageView`, for the rendering attachment.
 
 One color image is enough with several frames in flight: there is a single queue, and barriers order the frames.
 

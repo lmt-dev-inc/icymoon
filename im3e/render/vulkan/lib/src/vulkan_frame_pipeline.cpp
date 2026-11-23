@@ -167,9 +167,15 @@ public:
         throw std::runtime_error("VulkanFramePipeline::prepareExecution() not implemented");
     }
 
-    void resize([[maybe_unused]] const VkExtent2D& vkExtent, [[maybe_unused]] uint32_t frameInFlightCount) override
+    void resize(const VkExtent2D& vkExtent, [[maybe_unused]] uint32_t frameInFlightCount) override
     {
-        throw std::runtime_error("VulkanFramePipeline::resize() not implemented");
+        m_image = m_device->getImageFactory()->createImage(ImageConfig{
+            .name = "VulkanPipelineImage",
+            .vkExtent = vkExtent,
+            .vkFormat = OutputVkFormat,
+            .vkUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        });
+        m_imageView = m_image->createView();
     }
 
     auto getDevice() const -> std::shared_ptr<const IDevice> override { return m_device; }
@@ -180,6 +186,8 @@ private:
     std::unique_ptr<ILogger> m_logger;
 
     VkUniquePtr<VkShaderModule> m_vkShaderModule;
+    std::unique_ptr<IImage> m_image;
+    std::unique_ptr<IImageView> m_imageView;
 };
 
 }  // namespace
