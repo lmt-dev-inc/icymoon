@@ -23,7 +23,7 @@ auto createShaderModule(const IDevice& device)
 
     VkShaderModuleCreateInfo vkCreateInfo{
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = spirv.size(),
+        .codeSize = spirv.size() * sizeof(uint32_t),
         .pCode = spirv.data(),
     };
 

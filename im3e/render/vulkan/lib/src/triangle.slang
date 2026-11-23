@@ -11,7 +11,7 @@ static const float2 Positions[3] = {
 static const float4 Color = float4(1.0, 0.5, 0.0, 1.0);
 
 [shader("vertex")]
-float4 vertexMain(uint vertexId: SV_VertexID) : SV_Position
+float4 vertexMain(uint vertexId: SV_VulkanVertexID) : SV_Position
 {
     return float4(Positions[vertexId], 0.0, 1.0);
 }

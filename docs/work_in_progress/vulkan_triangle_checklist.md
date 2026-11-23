@@ -12,14 +12,14 @@ Progress on the Vulkan objects needed to draw the triangle of milestone 2 of the
 
 ## Device and loader
 
-- [ ] Enable `dynamicRendering` in `VkPhysicalDeviceVulkan13Features` (check that `synchronization2` is enabled too).
-- [ ] Add the missing functions to the loader tables and `MockVulkanFunctions`:
-  - [ ] `vkCreateShaderModule`, `vkDestroyShaderModule`
-  - [ ] `vkCreatePipelineLayout`, `vkDestroyPipelineLayout`
-  - [ ] `vkCreateGraphicsPipelines`, `vkDestroyPipeline`
-  - [ ] `vkCmdBeginRendering`, `vkCmdEndRendering`
-  - [ ] `vkCmdBindPipeline`, `vkCmdSetViewport`, `vkCmdSetScissor`, `vkCmdDraw`
-  - [ ] `vkCmdBlitImage` or `vkCmdBlitImage2`, if not loaded already
+- [x] Enable `dynamicRendering` in `VkPhysicalDeviceVulkan13Features` (check that `synchronization2` is enabled too).
+- [x] Add the missing functions to the loader tables and `MockVulkanFunctions`:
+  - [x] `vkCreateShaderModule`, `vkDestroyShaderModule`
+  - [x] `vkCreatePipelineLayout`, `vkDestroyPipelineLayout`
+  - [x] `vkCreateGraphicsPipelines`, `vkDestroyPipeline`
+  - [x] `vkCmdBeginRendering`, `vkCmdEndRendering`
+  - [x] `vkCmdBindPipeline`, `vkCmdSetViewport`, `vkCmdSetScissor`, `vkCmdDraw`
+  - [x] `vkCmdBlitImage`: already loaded and mocked
 
 ## Shader
 
@@ -31,7 +31,7 @@ Progress on the Vulkan objects needed to draw the triangle of milestone 2 of the
 
 In the constructor of the frame pipeline.
 
-- [ ] `VkShaderModule` from the SPIR-V of the `CompiledShader`: one module for both entry points, destroyed once the pipeline is created.
+- [x] `VkShaderModule` from the SPIR-V of the `CompiledShader`: one module for both entry points, destroyed once the pipeline is created.
 - [ ] `VkPipelineLayout`, empty: no descriptor set layouts, no push constant ranges.
 - [ ] `VkPipeline` from `vkCreateGraphicsPipelines`:
   - [ ] Two `VkPipelineShaderStageCreateInfo` on the same module, with hard-coded entry point names until milestone 3.
