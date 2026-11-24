@@ -25,10 +25,6 @@ public:
                  std::unique_ptr<IVulkanInstance> instance, MemoryAllocatorFactory memoryAllocatorFactory);
     ~VulkanDevice() override;
 
-    auto createVkSemaphore() const -> VkUniquePtr<VkSemaphore> override;
-    auto createVkFence(VkFenceCreateFlags vkFlags) const -> VkUniquePtr<VkFence> override;
-    void waitForVkFence(VkFence vkFence) const override;
-
     auto createLogger(std::string_view name) const -> std::unique_ptr<ILogger> override;
 
     auto getStatsProvider() -> std::shared_ptr<IStatsProvider> override { return m_statsProvider; }

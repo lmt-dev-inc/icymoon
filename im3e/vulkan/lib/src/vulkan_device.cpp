@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
-#include <limits>
 #include <memory>
 #include <set>
 #include <vector>
@@ -181,39 +180,6 @@ VulkanDevice::~VulkanDevice()
     m_logger->debug("Waiting for device to be idle");
     m_fcts.vkDeviceWaitIdle(m_vkDevice.get());
     m_logger->debug("Device idle, destroying");
-}
-
-auto VulkanDevice::createVkSemaphore() const -> VkUniquePtr<VkSemaphore>
-{
-    VkSemaphoreCreateInfo vkCreateInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-
-    VkSemaphore vkSemaphore{};
-    throwIfVkFailed(m_fcts.vkCreateSemaphore(m_vkDevice.get(), &vkCreateInfo, nullptr, &vkSemaphore),
-                    "Failed to create semaphore for Vulkan Device");
-
-    return makeVkUniquePtr<VkSemaphore>(m_vkDevice.get(), vkSemaphore, m_fcts.vkDestroySemaphore);
-}
-
-auto VulkanDevice::createVkFence(VkFenceCreateFlags vkFlags) const -> VkUniquePtr<VkFence>
-{
-    VkFenceCreateInfo vkCreateInfo{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = vkFlags};
-
-    VkFence vkFence{};
-    throwIfVkFailed(m_fcts.vkCreateFence(m_vkDevice.get(), &vkCreateInfo, nullptr, &vkFence),
-                    "Could not create fence for Vulkan device");
-
-    return makeVkUniquePtr<VkFence>(m_vkDevice.get(), vkFence, m_fcts.vkDestroyFence);
-}
-
-void VulkanDevice::waitForVkFence(VkFence vkFence) const
-{
-    if (!vkFence)
-    {
-        return;
-    }
-    throwIfVkFailed(
-        m_fcts.vkWaitForFences(m_vkDevice.get(), 1U, &vkFence, VK_TRUE, std::numeric_limits<uint64_t>::max()),
-        "Failed to wait for fence from Vulkan Device");
 }
 
 auto VulkanDevice::createLogger(std::string_view name) const -> std::unique_ptr<ILogger>

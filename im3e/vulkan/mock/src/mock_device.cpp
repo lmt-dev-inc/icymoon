@@ -16,13 +16,6 @@ public:
     {
     }
 
-    auto createVkSemaphore() const -> VkUniquePtr<VkSemaphore> override { return m_rMock.createVkSemaphore(); }
-    auto createVkFence(VkFenceCreateFlags vkFlags = 0U) const -> VkUniquePtr<VkFence> override
-    {
-        return m_rMock.createVkFence(vkFlags);
-    }
-    void waitForVkFence(VkFence vkFence) const override { m_rMock.waitForVkFence(vkFence); }
-
     auto createLogger(std::string_view name) const -> std::unique_ptr<ILogger> override
     {
         return m_rMock.createLogger(name);
@@ -50,13 +43,6 @@ private:
 
 MockDevice::MockDevice()
 {
-    ON_CALL(*this, createVkSemaphore()).WillByDefault(Invoke([this] {
-        return VkUniquePtr<VkSemaphore>(m_vkSemaphore, [](auto*) {});
-    }));
-    ON_CALL(*this, createVkFence(_)).WillByDefault(InvokeWithoutArgs([this] {
-        return VkUniquePtr<VkFence>(m_vkFence, [](auto*) {});
-    }));
-
     ON_CALL(*this, createLogger(_)).WillByDefault(InvokeWithoutArgs([this] { return m_mockLogger.createMockProxy(); }));
 
     ON_CALL(*this, getStatsProvider()).WillByDefault(Invoke([this] { return m_mockStatsProvider.createMockProxy(); }));

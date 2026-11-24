@@ -1,5 +1,6 @@
 #include "presenter.h"
 
+#include <im3e/vulkan/sync_utils.h>
 #include <im3e/vulkan/utils.h>
 
 #include <algorithm>
@@ -260,16 +261,16 @@ void Presenter::reset()
     m_vkExtent = vkCreateInfo.imageExtent;
     m_pImages = getSwapchainImages(*m_pDevice, m_pVkSwapchain.get(), vkCreateInfo);
 
-    auto createVkSemaphore = [&](auto& pSemaphore) { pSemaphore = m_pDevice->createVkSemaphore(); };
+    auto createSemaphore = [&](auto& pSemaphore) { pSemaphore = createVkSemaphore(*m_pDevice); };
 
     // We add 1 one more ready to write semaphore because we could start acquiring the next image while all images
     // are currently in flight.
     m_pReadyToWriteSemaphores.resize(m_pImages.size() + 1U);
-    std::ranges::for_each(m_pReadyToWriteSemaphores, createVkSemaphore);
+    std::ranges::for_each(m_pReadyToWriteSemaphores, createSemaphore);
     m_readyToWriteSemaphoreIndex = {};
 
     m_pReadyToPresentSemaphores.resize(m_pImages.size());
-    std::ranges::for_each(m_pReadyToPresentSemaphores, createVkSemaphore);
+    std::ranges::for_each(m_pReadyToPresentSemaphores, createSemaphore);
     m_pCommandFutures.resize(m_pImages.size());
     m_commandIndex = {};
 

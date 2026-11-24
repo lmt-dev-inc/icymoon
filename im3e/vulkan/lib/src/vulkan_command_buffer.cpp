@@ -1,5 +1,7 @@
 #include "vulkan_command_buffer.h"
 
+#include <im3e/vulkan/sync_utils.h>
+
 #include <algorithm>
 
 using namespace im3e;
@@ -153,7 +155,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(const ICommandQueue& rQueue, const IDev
   , m_pVkCommandBuffer(createVkCommandBuffer(m_rDevice.getVkDevice(), m_rDevice.getFcts(), vkCommandPool,
                                              fmt::format("Im3eCommandBuffer.{}", name)))
   // Create the fence signalled so that we consider the command as complete until we actually submit work to the queue
-  , m_pVkFence(m_rDevice.createVkFence(VK_FENCE_CREATE_SIGNALED_BIT))
+  , m_pVkFence(createVkFence(m_rDevice, VK_FENCE_CREATE_SIGNALED_BIT))
 {
 }
 

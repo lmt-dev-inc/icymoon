@@ -5,6 +5,7 @@ This document describes `im3e_vulkan`, the library that holds the Vulkan code of
 - [Vulkan](#vulkan)
   - [Overview](#overview)
   - [Public headers](#public-headers)
+    - [Interfaces and helper functions](#interfaces-and-helper-functions)
   - [Device creation](#device-creation)
   - [Function loading](#function-loading)
   - [Memory and images](#memory-and-images)
@@ -45,12 +46,29 @@ Public headers are included through `<im3e/vulkan/...>`:
 
 | Header               | Content                                                                                                                                                                                                 |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `device.h`           | `IDevice`: Vulkan handles and function tables, semaphores and fences, image factory, command queue, logger and stats factories. `createDevice(logger, DeviceConfig)` creates the Vulkan device.         |
+| `device.h`           | `IDevice`: Vulkan handles and function tables, image factory, command queue, logger and stats factories. `createDevice(logger, DeviceConfig)` creates the Vulkan device.                                |
 | `image.h`            | `IImage`, `IHostVisibleImage` (CPU mapping), `IImageView`, `IImageMetadata` (current layout and access, for automatic barriers), `IImageFactory`.                                                       |
 | `command_buffer.h`   | `ICommandQueue::startScopedCommand` returns a command buffer that is submitted when it goes out of scope, sync or async. `ICommandBuffer` records scoped image barriers and creates futures to wait on. |
 | `frame_pipeline.h`   | `IFramePipeline`: records the commands that render a frame into an output image, and handles resizes.                                                                                                   |
 | `vulkan_functions.h` | `VulkanGlobalFcts`, `VulkanInstanceFcts`, `VulkanDeviceFcts`: tables of the Vulkan functions the project uses.                                                                                          |
 | `utils.h`            | Helpers rather than interfaces: `VkUniquePtr`/`VkSharedPtr` for Vulkan handles, `throwIfVkFailed`, `getVkList`, `getFormatProperties`, `VkExtent2D` comparisons.                                        |
+| `sync_utils.h`       | `createVkSemaphore`, `createVkFence` and `waitForVkFence`, built on `IDevice`.                                                                                                                          |
+
+### Interfaces and helper functions
+
+An interface only declares the functions that need the state of its implementation. A function that can be written with the public functions of an interface is a free function taking the interface, rather than a member of it.
+
+For example, `createVkSemaphore(device)`, `createVkFence(device, flags)` and `waitForVkFence(device, fence)` only use `IDevice::getVkDevice()` and `getFcts()`, so they are free functions of `sync_utils.h`. `createLogger`, `getImageFactory` and `getCommandQueue` return objects the device owns or configures, so they stay members of `IDevice`.
+
+This keeps the interfaces and their mocks small, and keeps `device.h` from including the headers of every helper, such as `im3e_shader` for shader modules. Tests check the helpers through the Vulkan calls they make, with `MockVulkanFunctions`, as for any other Vulkan code.
+
+The headers form three levels, so that each one includes the headers it needs without cycles:
+
+1. `utils.h` holds what the interfaces themselves use, such as `VkUniquePtr` and `throwIfVkFailed`. It doesn't depend on any interface of `im3e_vulkan`, as `device.h`, `image.h` and `command_buffer.h` include it.
+2. The interface headers: `device.h`, `image.h`, `command_buffer.h`, `frame_pipeline.h`.
+3. Helpers built on the interfaces, in headers named after what they cover, with a `_utils` suffix: `sync_utils.h` for semaphores and fences, and later a `shader_utils.h` for shader modules and pipelines, which needs `im3e_shader`. They include the interface headers they use. A header named after the interface, such as `device_utils.h`, is avoided, as most helpers take an `IDevice` and it would collect unrelated functions.
+
+Helpers are implemented in `.cpp` files rather than inline: they call Vulkan through function pointers, which costs far more than the call itself, and they are not called in hot loops. Only trivial functions, such as `toVkExtent3D`, and templates are defined in headers.
 
 ## Device creation
 

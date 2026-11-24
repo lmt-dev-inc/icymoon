@@ -19,10 +19,6 @@ public:
     MockDevice();
     ~MockDevice() override;
 
-    MOCK_METHOD(VkUniquePtr<VkSemaphore>, createVkSemaphore, (), (const, override));
-    MOCK_METHOD(VkUniquePtr<VkFence>, createVkFence, (VkFenceCreateFlags vkFlags), (const, override));
-    MOCK_METHOD(void, waitForVkFence, (VkFence vkFence), (const, override));
-
     MOCK_METHOD(std::unique_ptr<ILogger>, createLogger, (std::string_view name), (const, override));
 
     MOCK_METHOD(std::shared_ptr<IStatsProvider>, getStatsProvider, (), (override));
@@ -51,8 +47,6 @@ private:
     const VkInstance m_vkInstance = reinterpret_cast<VkInstance>(0x35e2ca18b3e);
     const VkPhysicalDevice m_vkPhysicalDevice = reinterpret_cast<VkPhysicalDevice>(0xef45a3c4);
     const VkDevice m_vkDevice = reinterpret_cast<VkDevice>(0xbaef532f3e4a);
-    const VkSemaphore m_vkSemaphore = reinterpret_cast<VkSemaphore>(0x51e8fe9a);
-    const VkFence m_vkFence = reinterpret_cast<VkFence>(0xf52e6a);
 
     ::testing::NiceMock<MockLogger> m_mockLogger;
     ::testing::NiceMock<MockStatsProvider> m_mockStatsProvider;
