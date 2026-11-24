@@ -14,7 +14,7 @@ using namespace im3e;
 
 namespace {
 
-constexpr auto OutputVkFormat = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr auto ColorVkFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
 auto createShaderModule(const IDevice& device)
 {
@@ -26,7 +26,7 @@ auto createShaderModule(const IDevice& device)
 
     const VkShaderModuleCreateInfo vkCreateInfo{
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = spirv.size() * sizeof(uint32_t),
+        .codeSize = spirv.size_bytes(),
         .pCode = spirv.data(),
     };
 
@@ -45,34 +45,36 @@ auto createPipelineLayout(const IDevice& device)
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
     };
 
-    VkPipelineLayout vkLayout;
+    VkPipelineLayout vkLayout{};
     throwIfVkFailed(fcts.vkCreatePipelineLayout(vkDevice, &vkCreateInfo, nullptr, &vkLayout),
                     "Failed to create pipeline layout");
     return makeVkUniquePtr<VkPipelineLayout>(vkDevice, vkLayout, fcts.vkDestroyPipelineLayout);
 }
 
-auto createGraphicsPipeline(const IDevice& device, VkShaderModule vkShaderModule, VkPipelineLayout vkPipelineLayout)
+auto createGraphicsPipeline(const IDevice& device, VkPipelineLayout vkPipelineLayout)
 {
     auto vkDevice = device.getVkDevice();
     auto& fcts = device.getFcts();
 
+    auto vkShaderModule = createShaderModule(device);
+
     const VkPipelineRenderingCreateInfo vkPipelineRenderingCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
         .colorAttachmentCount = 1U,
-        .pColorAttachmentFormats = &OutputVkFormat,
+        .pColorAttachmentFormats = &ColorVkFormat,
     };
 
     const auto vkStageCreateInfos = std::to_array({
         VkPipelineShaderStageCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .module = vkShaderModule,
+            .module = vkShaderModule.get(),
             .pName = "vertexMain",
         },
         VkPipelineShaderStageCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .module = vkShaderModule,
+            .module = vkShaderModule.get(),
             .pName = "fragmentMain",
         },
     });
@@ -154,10 +156,9 @@ public:
       : m_context(throwIfArgNull(std::move(context), "Vulkan frame pipeline requires a context"))
       , m_device(m_context->getDevice())
       , m_logger(m_device->createLogger("VulkanFramePipeline"))
+      , m_vkPipelineLayout(createPipelineLayout(*m_device))
+      , m_vkPipeline(createGraphicsPipeline(*m_device, m_vkPipelineLayout.get()))
     {
-        auto vkShaderModule = createShaderModule(*m_device);
-        auto vkPipelineLayout = createPipelineLayout(*m_device);
-        m_vkPipeline = createGraphicsPipeline(*m_device, vkShaderModule.get(), vkPipelineLayout.get());
     }
 
     void prepareExecution(const ICommandBuffer& commandBuffer, const VkExtent2D& vkViewportSize,
@@ -166,8 +167,8 @@ public:
         {
             auto barrier = commandBuffer.startScopedBarrier("barrierBeforeRendering");
             barrier->addImageBarrier(*m_image, ImageBarrierConfig{
-                                                   .vkDstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                   .vkDstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                   .vkDstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                                   .vkDstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
                                                    .vkLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                                });
         }
@@ -244,7 +245,7 @@ public:
         m_image = m_device->getImageFactory()->createImage(ImageConfig{
             .name = "VulkanPipelineImage",
             .vkExtent = vkExtent,
-            .vkFormat = OutputVkFormat,
+            .vkFormat = ColorVkFormat,
             .vkUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         });
         m_imageView = m_image->createView();
@@ -257,7 +258,7 @@ private:
     std::shared_ptr<IDevice> m_device;
     std::unique_ptr<ILogger> m_logger;
 
-    VkUniquePtr<VkShaderModule> m_vkShaderModule;
+    VkUniquePtr<VkPipelineLayout> m_vkPipelineLayout;
     VkUniquePtr<VkPipeline> m_vkPipeline;
     std::unique_ptr<IImage> m_image;
     std::unique_ptr<IImageView> m_imageView;
