@@ -2,6 +2,7 @@ im3e_add_unit_tests_executable(
   TARGET
     test_im3e_vulkan
   SOURCES
+    test_shader_utils.cpp
     test_sync_utils.cpp
     test_utils.cpp
     test_vulkan_command_buffer.cpp

@@ -23,7 +23,7 @@ struct GraphicsPipelineConfig
 {
     /// Format of the color attachment the pipeline renders to, with dynamic rendering. Must match the format of the
     /// image view given to vkCmdBeginRendering.
-    VkFormat vkColorFormat;
+    VkFormat vkColorFormat{};
 };
 
 /// @brief Create a graphics pipeline for dynamic rendering, without render pass objects.

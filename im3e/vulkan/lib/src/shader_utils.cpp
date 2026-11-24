@@ -1,6 +1,7 @@
 #include <im3e/vulkan/shader_utils.h>
 
 #include <array>
+#include <cstdint>
 
 using namespace im3e;
 
@@ -72,7 +73,7 @@ auto im3e::createVkGraphicsPipeline(const IDevice& device, VkPipelineLayout vkPi
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
     };
 
-    const VkPipelineInputAssemblyStateCreateInfo vkInputAssembyStateCreateInfo{
+    const VkPipelineInputAssemblyStateCreateInfo vkInputAssemblyStateCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
         .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
     };
@@ -123,7 +124,7 @@ auto im3e::createVkGraphicsPipeline(const IDevice& device, VkPipelineLayout vkPi
         .stageCount = static_cast<uint32_t>(vkStageCreateInfos.size()),
         .pStages = vkStageCreateInfos.data(),
         .pVertexInputState = &vkVertexInputStateCreateInfo,
-        .pInputAssemblyState = &vkInputAssembyStateCreateInfo,
+        .pInputAssemblyState = &vkInputAssemblyStateCreateInfo,
         .pViewportState = &vkViewportStateCreateInfo,
         .pRasterizationState = &vkRasterizationStateCreateInfo,
         .pMultisampleState = &vkMultisampleStateCreateInfo,

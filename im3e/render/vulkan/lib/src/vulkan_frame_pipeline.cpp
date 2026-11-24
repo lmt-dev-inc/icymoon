@@ -4,11 +4,10 @@
 
 #include <im3e/utils/core/throw_utils.h>
 #include <im3e/utils/loggers.h>
+#include <im3e/vulkan/image.h>
 #include <im3e/vulkan/shader_utils.h>
 #include <im3e/vulkan/utils.h>
 
-#include <array>
-#include <stdexcept>
 #include <utility>
 
 using namespace im3e;

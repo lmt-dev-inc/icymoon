@@ -92,6 +92,7 @@ flowchart BT
     props --> core
     resources --> core
     vulkan --> utils
+    vulkan --> shader
     api --> vulkan
     geo --> utils
     scene --> props
@@ -254,7 +255,7 @@ The ANARI image reaches Vulkan through the CPU: `AnariFramePipeline` maps the AN
 
 ### Vulkan renderer: `im3e_render_vulkan`
 
-[im3e/render/vulkan/](../../im3e/render/vulkan/) is the native Vulkan renderer that will replace ANARI, as planned in the [Vulkan Renderer Plan](../work_in_progress/vulkan_renderer_plan.md). It is the first library of the `render/` family (see [Families of libraries](../development/code_standards.md#families-of-libraries)). Only its structure exists so far: the `prepareExecution` and `resize` of its frame pipeline throw.
+[im3e/render/vulkan/](../../im3e/render/vulkan/) is the native Vulkan renderer that will replace ANARI, as planned in the [Vulkan Renderer Plan](../work_in_progress/vulkan_renderer_plan.md). It is the first library of the `render/` family (see [Families of libraries](../development/code_standards.md#families-of-libraries)). Its frame pipeline draws a triangle whose vertices are hard-coded in its shader ([triangle.slang](../../im3e/render/vulkan/lib/src/triangle.slang)), into a color image of its own, with dynamic rendering, then blits it to the output image.
 
 Its public header, `<im3e/render/vulkan/vulkan_render_engine.h>`, declares `IVulkanRenderEngine`, created by `createVulkanRenderEngine(device)`. Rendering involves three objects:
 
@@ -286,7 +287,7 @@ The context will create and own the resources shared between views, as they are 
 - `mock_im3e_vulkan` ([im3e/vulkan/mock/](../../im3e/vulkan/mock/)) mocks the interfaces of `im3e_vulkan`: device, images, command buffers, Vulkan function tables. `mock_im3e_geo` ([im3e/geo/mock/](../../im3e/geo/mock/)) mocks the height maps of `im3e_geo`, and `mock_im3e_utils` mocks loggers and stats. Mocks of private interfaces, such as `MockVulkanLoader`, are test helpers of their library, in its `test/common/` target (`test_common_im3e_vulkan`, and `test_common_im3e_render_vulkan` for `MockVulkanRenderContext`).
 - Test executables are declared with `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` ([cmake/im3e_tests.cmake](../../cmake/im3e_tests.cmake)), which label them for `ctest -L` and exclude them from coverage.
 
-Current coverage by module: `utils`, `utils/core`, `vulkan` have unit and integration tests; `property`, `scene` and `render/vulkan` have unit tests; `geo` tests the quad tree; `guis` has integration tests only; `anari` has no tests yet.
+Current coverage by module: `utils`, `utils/core`, `vulkan` and `render/vulkan` have unit and integration tests; `property` and `scene` have unit tests; `geo` tests the quad tree; `guis` has integration tests only; `anari` has no tests yet.
 
 ## Applications
 

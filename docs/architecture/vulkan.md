@@ -24,7 +24,7 @@ This document describes `im3e_vulkan`, the library that holds the Vulkan code of
 - `im3e_api` declares the GUI contracts, which take an `ICommandBuffer` (`IGuiPanel::draw`) and return an `IDevice` (`IWindowApplication::getDevice`).
 - `im3e_test_utils` creates a device for integration tests.
 
-The libraries below it (`im3e_utils_core`, `im3e_utils`, `im3e_property`, `im3e_scene`, `im3e_geo`) don't depend on Vulkan. `im3e_vulkan` publicly links the Vulkan headers, VMA (Vulkan Memory Allocator) and `im3e_utils`.
+The libraries below it (`im3e_utils_core`, `im3e_utils`, `im3e_property`, `im3e_scene`, `im3e_geo`) don't depend on Vulkan. `im3e_vulkan` publicly links the Vulkan headers, VMA (Vulkan Memory Allocator), `im3e_utils` and `im3e_shader`, whose `CompiledShader` its shader helpers take.
 
 It follows the layout of [Library folders](../development/code_standards.md#library-folders):
 
@@ -53,6 +53,7 @@ Public headers are included through `<im3e/vulkan/...>`:
 | `vulkan_functions.h` | `VulkanGlobalFcts`, `VulkanInstanceFcts`, `VulkanDeviceFcts`: tables of the Vulkan functions the project uses.                                                                                          |
 | `utils.h`            | Helpers rather than interfaces: `VkUniquePtr`/`VkSharedPtr` for Vulkan handles, `throwIfVkFailed`, `getVkList`, `getFormatProperties`, `VkExtent2D` comparisons.                                        |
 | `sync_utils.h`       | `createVkSemaphore`, `createVkFence` and `waitForVkFence`, built on `IDevice`.                                                                                                                          |
+| `shader_utils.h`     | `createVkShaderModule` from a `CompiledShader`, an empty `createVkPipelineLayout`, and `createVkGraphicsPipeline` for dynamic rendering, with fixed state and a `GraphicsPipelineConfig`.               |
 
 ### Interfaces and helper functions
 
@@ -66,9 +67,9 @@ The headers form three levels, so that each one includes the headers it needs wi
 
 1. `utils.h` holds what the interfaces themselves use, such as `VkUniquePtr` and `throwIfVkFailed`. It doesn't depend on any interface of `im3e_vulkan`, as `device.h`, `image.h` and `command_buffer.h` include it.
 2. The interface headers: `device.h`, `image.h`, `command_buffer.h`, `frame_pipeline.h`.
-3. Helpers built on the interfaces, in headers named after what they cover, with a `_utils` suffix: `sync_utils.h` for semaphores and fences, and later a `shader_utils.h` for shader modules and pipelines, which needs `im3e_shader`. They include the interface headers they use. A header named after the interface, such as `device_utils.h`, is avoided, as most helpers take an `IDevice` and it would collect unrelated functions.
+3. Helpers built on the interfaces, in headers named after what they cover, with a `_utils` suffix: `sync_utils.h` for semaphores and fences, and `shader_utils.h` for shader modules and pipelines, which needs `im3e_shader`. They include the interface headers they use. A header named after the interface, such as `device_utils.h`, is avoided, as most helpers take an `IDevice` and it would collect unrelated functions.
 
-Helpers are implemented in `.cpp` files rather than inline: they call Vulkan through function pointers, which costs far more than the call itself, and they are not called in hot loops. Only trivial functions, such as `toVkExtent3D`, and templates are defined in headers.
+Helpers are implemented in `.cpp` files rather than inline: the work Vulkan does in them, such as creating an object or waiting for the GPU, costs far more than calling the helper, and they are not called in hot loops. Only trivial functions, such as `toVkExtent3D`, and templates are defined in headers.
 
 ## Device creation
 
@@ -104,7 +105,7 @@ This keeps Vulkan an optional run-time dependency, and makes every Vulkan call m
 
 ## Frame pipelines
 
-`IFramePipeline` is the central abstraction for rendering: `prepareExecution(commandBuffer, viewportSize, outputImage)` records the commands that render a frame into an output image, and `resize(extent, frameInFlightCount)` adapts to a new size. The ImGui GUI (`ImguiPipeline`), the ANARI renderer (`AnariFramePipeline`), the Vulkan renderer (`VulkanFramePipeline`, not implemented yet) and the test pipelines implement it, and they can be nested: the ImGui pipeline draws a render panel, which runs an ANARI pipeline into an offscreen image. See [Run-time flow of a frame](index.md#run-time-flow-of-a-frame).
+`IFramePipeline` is the central abstraction for rendering: `prepareExecution(commandBuffer, viewportSize, outputImage)` records the commands that render a frame into an output image, and `resize(extent, frameInFlightCount)` adapts to a new size. The ImGui GUI (`ImguiPipeline`), the ANARI renderer (`AnariFramePipeline`), the Vulkan renderer (`VulkanFramePipeline`) and the test pipelines implement it, and they can be nested: the ImGui pipeline draws a render panel, which runs an ANARI pipeline into an offscreen image. See [Run-time flow of a frame](index.md#run-time-flow-of-a-frame).
 
 ## Tests
 
@@ -116,4 +117,4 @@ This keeps Vulkan an optional run-time dependency, and makes every Vulkan call m
 - **`IDevice` exposes raw Vulkan handles and function tables.** Users call Vulkan directly, so the interfaces don't hide Vulkan from them.
 - **Single queue.** `IDevice` has one command queue, used for graphics, transfers and presentation.
 - **The window application creates the device.** A host application can't provide its own device, nor create one without GLFW (see `GlfwWindowApplication`).
-- **No rendering resources yet.** A Vulkan renderer needs buffers, shader modules, graphics pipelines, descriptor sets and depth images, which `im3e_vulkan` doesn't provide yet. Shaders are already compiled to SPIR-V at build time, by `im3e_shader` (see [Shaders: `im3e_shader`](index.md#shaders-im3e_shader)).
+- **Few rendering resources yet.** `shader_utils.h` creates shader modules, empty pipeline layouts and a minimal graphics pipeline, from shaders compiled to SPIR-V at build time by `im3e_shader` (see [Shaders: `im3e_shader`](index.md#shaders-im3e_shader)). Buffers, descriptor sets, depth images and pipeline layouts from reflection are added by the milestones of the [Vulkan Renderer Plan](../work_in_progress/vulkan_renderer_plan.md) that need them.
