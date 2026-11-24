@@ -4,6 +4,7 @@
 
 #include <im3e/utils/core/throw_utils.h>
 #include <im3e/utils/loggers.h>
+#include <im3e/vulkan/shader_utils.h>
 #include <im3e/vulkan/utils.h>
 
 #include <array>
@@ -16,47 +17,12 @@ namespace {
 
 constexpr auto ColorVkFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
-auto createShaderModule(const IDevice& device)
-{
-    auto vkDevice = device.getVkDevice();
-    auto& fcts = device.getFcts();
-
-    const auto& shader = shaders::getTriangleShader();
-    const auto& spirv = shader.getSpirv();
-
-    const VkShaderModuleCreateInfo vkCreateInfo{
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = spirv.size_bytes(),
-        .pCode = spirv.data(),
-    };
-
-    VkShaderModule vkShaderModule{};
-    throwIfVkFailed(fcts.vkCreateShaderModule(vkDevice, &vkCreateInfo, nullptr, &vkShaderModule),
-                    "Failed to create shader module");
-    return makeVkUniquePtr<VkShaderModule>(vkDevice, vkShaderModule, fcts.vkDestroyShaderModule);
-}
-
-auto createPipelineLayout(const IDevice& device)
-{
-    auto vkDevice = device.getVkDevice();
-    auto& fcts = device.getFcts();
-
-    const VkPipelineLayoutCreateInfo vkCreateInfo{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-    };
-
-    VkPipelineLayout vkLayout{};
-    throwIfVkFailed(fcts.vkCreatePipelineLayout(vkDevice, &vkCreateInfo, nullptr, &vkLayout),
-                    "Failed to create pipeline layout");
-    return makeVkUniquePtr<VkPipelineLayout>(vkDevice, vkLayout, fcts.vkDestroyPipelineLayout);
-}
-
 auto createGraphicsPipeline(const IDevice& device, VkPipelineLayout vkPipelineLayout)
 {
     auto vkDevice = device.getVkDevice();
     auto& fcts = device.getFcts();
 
-    auto vkShaderModule = createShaderModule(device);
+    auto vkShaderModule = createVkShaderModule(device, shaders::getTriangleShader());
 
     const VkPipelineRenderingCreateInfo vkPipelineRenderingCreateInfo{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
@@ -156,7 +122,7 @@ public:
       : m_context(throwIfArgNull(std::move(context), "Vulkan frame pipeline requires a context"))
       , m_device(m_context->getDevice())
       , m_logger(m_device->createLogger("VulkanFramePipeline"))
-      , m_vkPipelineLayout(createPipelineLayout(*m_device))
+      , m_vkPipelineLayout(createVkPipelineLayout(*m_device))
       , m_vkPipeline(createGraphicsPipeline(*m_device, m_vkPipelineLayout.get()))
     {
     }
