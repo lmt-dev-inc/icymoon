@@ -8,6 +8,7 @@
 #include <im3e/vulkan/shader_utils.h>
 #include <im3e/vulkan/utils.h>
 
+#include <cstdint>
 #include <utility>
 
 using namespace im3e;
