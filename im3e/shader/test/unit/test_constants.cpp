@@ -1,6 +1,5 @@
 #include "test_constants.slang.h"
 
-#include <im3e/shader/compiled_shader.h>
 #include <im3e/test_utils/test_utils.h>
 
 #include <cstdint>

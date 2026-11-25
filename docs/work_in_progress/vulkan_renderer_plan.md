@@ -18,13 +18,15 @@ The renderer grows through visible steps: a triangle, then a camera, a plane, a 
     - [2. Triangle](#2-triangle)
     - [3. Camera and reflection](#3-camera-and-reflection)
     - [4. Planes in a scene](#4-planes-in-a-scene)
-    - [5. One terrain tile](#5-one-terrain-tile)
-    - [6. Lighting and basic PBR](#6-lighting-and-basic-pbr)
-    - [7. Streamed terrain](#7-streamed-terrain)
-    - [8. Remove ANARI](#8-remove-anari)
-    - [9. Background tile loading](#9-background-tile-loading)
-    - [10. Screen-space level of detail](#10-screen-space-level-of-detail)
+    - [5. Interactive integration tests](#5-interactive-integration-tests)
+    - [6. One terrain tile](#6-one-terrain-tile)
+    - [7. Lighting and basic PBR](#7-lighting-and-basic-pbr)
+    - [8. Streamed terrain](#8-streamed-terrain)
+    - [9. Remove ANARI](#9-remove-anari)
+    - [10. Background tile loading](#10-background-tile-loading)
+    - [11. Screen-space level of detail](#11-screen-space-level-of-detail)
   - [Testing](#testing)
+    - [Splitting `im3e_test_utils`](#splitting-im3e_test_utils)
   - [Later](#later)
 
 ## Goal
@@ -43,15 +45,16 @@ Out of scope: ray tracing, real-time simulation, Python bindings, and large-terr
 
 ### Libraries
 
-| Library              | Folder                | Content                                                                   | Created in milestone |
-| -------------------- | --------------------- | ------------------------------------------------------------------------- | -------------------- |
-| `im3e_shader`        | `im3e/shader/`        | C++ types for compiled shaders and reflection data, shared Slang modules. | 1                    |
-| `im3e_vulkan`        | `im3e/vulkan/`        | Gains shader modules, pipelines, depth images and buffers.                | exists               |
-| `im3e_render_vulkan` | `im3e/render/vulkan/` | Frame pipeline, object renderers and their shaders.                       | 2                    |
-| `im3e_scene`         | `im3e/scene/`         | Gains scene content: planes, terrains, light.                             | exists               |
-| `im3e_terrain`       | `im3e/terrain/`       | Tile mesh generation, then tile selection and cache.                      | 5                    |
+| Library                    | Folder                      | Content                                                                   | Created in milestone |
+| -------------------------- | --------------------------- | ------------------------------------------------------------------------- | -------------------- |
+| `im3e_shader`              | `im3e/shader/`              | C++ types for compiled shaders and reflection data, shared Slang modules. | 1                    |
+| `im3e_vulkan`              | `im3e/vulkan/`              | Gains shader modules, pipelines, depth images and buffers.                | exists               |
+| `im3e_render_vulkan`       | `im3e/render/vulkan/`       | Frame pipeline, object renderers and their shaders.                       | 2                    |
+| `im3e_scene`               | `im3e/scene/`               | Gains scene content: planes, terrains, light.                             | exists               |
+| `im3e_testing_interactive` | `im3e/testing/interactive/` | Runs the integration tests that render in a window.                       | 5                    |
+| `im3e_terrain`             | `im3e/terrain/`             | Tile mesh generation, then tile selection and cache.                      | 6                    |
 
-All follow the [library folder rules](../development/code_standards.md#library-folders). `render/` is a group folder, as described in [Families of libraries](../development/code_standards.md#families-of-libraries), so headers are included as `<im3e/render/vulkan/...>`.
+All follow the [library folder rules](../development/code_standards.md#library-folders). `render/` is a group folder, as described in [Families of libraries](../development/code_standards.md#families-of-libraries), so headers are included as `<im3e/render/vulkan/...>`. `testing/` is a group folder too, created by [splitting `im3e_test_utils`](#splitting-im3e_test_utils) before milestone 5.
 
 `im3e_vulkan` links `im3e_shader` to create pipelines from its reflection data. `im3e_shader` itself depends on neither Vulkan nor Slang, as it only holds plain data, so simulation or another backend can use it too.
 
@@ -76,8 +79,8 @@ Reflection data is produced at build time and embedded with the SPIR-V, as plain
 | Shader stages and entry point names    | Entry points of the compiled shader                    | 3         |
 | Pipeline layout, push constant ranges  | Parameters of the shader                               | 3         |
 | C++ struct matching the push constants | Generated struct, with `static_assert`s on its offsets | 3         |
-| Vertex input attributes                | Vertex inputs of the entry point                       | 5         |
-| Descriptor set layouts                 | `ParameterBlock<T>` parameters of the shader           | 6         |
+| Vertex input attributes                | Vertex inputs of the entry point                       | 6         |
+| Descriptor set layouts                 | `ParameterBlock<T>` parameters of the shader           | 7         |
 
 The tool uses the Slang reflection API rather than `slangc -reflection-json`. The JSON would need a parser for a format we found no specification for, and the Slang user guide directs reflection users to the API.
 
@@ -94,9 +97,9 @@ The tool uses the Slang reflection API rather than `slangc -reflection-json`. Th
 ### ANARI
 
 - **Frozen.** `im3e/anari/` stays where it is and is not moved to `im3e/render/anari/`, or ported to the new scene.
-- **Deleted at parity** (milestone 8).
+- **Deleted at parity** (milestone 9).
 - Logic the new renderer needs is rewritten in the new libraries, leaving ANARI untouched. The temporary duplication disappears with the deletion.
-- ANARI still has to compile when shared interfaces change, such as `IFramePipeline`. Changes to those are best kept for after milestone 8 where possible.
+- ANARI still has to compile when shared interfaces change, such as `IFramePipeline`. Changes to those are best kept for after milestone 9 where possible.
 
 ## Changes to the Architecture Review
 
@@ -106,27 +109,29 @@ The tool uses the Slang reflection API rather than `slangc -reflection-json`. Th
 | Step 5: the new renderer is validated by image comparison with ANARI.        | ANARI uses ray tracers (`visrtx`, `helide`), so a rasterizer can't match it pixel for pixel. Comparison is visual, and tests check the new renderer's own output. |
 | Step 4: logic moves out of `AnariHeightField` and `AnariWorld`.              | The logic is rewritten in new libraries, and ANARI is left as it is until it is deleted.                                                                          |
 | Target architecture: `im3e_render_anari`.                                    | Never created.                                                                                                                                                    |
-| Target architecture: quad tree in `im3e_terrain`.                            | Kept, but only moved in milestone 8, as ANARI uses it until then.                                                                                                 |
+| Target architecture: quad tree in `im3e_terrain`.                            | Kept, but only moved in milestone 9, as ANARI uses it until then.                                                                                                 |
+| Step 1: split `im3e_test_utils` into helpers and fixtures (finding T1).      | Split into three libraries under `im3e/testing/` before milestone 5 (see [Splitting `im3e_test_utils`](#splitting-im3e_test_utils)).                              |
 | Open question: WebGPU as the main native API.                                | Closed for now: the renderer is Vulkan.                                                                                                                           |
 
 Once this plan is accepted, the review's roadmap should point to it.
 
 ## Milestones
 
-| #   | Milestone                    | Depends on | What can be observed                                              |
-| --- | ---------------------------- | ---------- | ----------------------------------------------------------------- |
-| 1   | Shader compilation           |            | A `.slang` file builds like a `.cpp` file.                        |
-| 2   | Triangle                     | 1          | A triangle in the viewer and in a headless test.                  |
-| 3   | Camera and reflection        | 2          | Orbiting the triangle with the mouse.                             |
-| 4   | Planes in a scene            | 3          | Two intersecting planes, with correct depth, editable in the GUI. |
-| 5   | One terrain tile             | 4          | The coarsest tile of a real height map.                           |
-| 6   | Lighting and basic PBR       | 5          | Lit plane and terrain, with editable materials.                   |
-| 7   | Streamed terrain             | 5          | Navigating a full height map, with a level of detail property.    |
-| 8   | Remove ANARI                 | 6, 7       | ANARI is gone from the code, the build and the dependencies.      |
-| 9   | Background tile loading      | 7          | Tile loading no longer stalls frames.                             |
-| 10  | Screen-space level of detail | 9          | Detail depends on the distance to the camera.                     |
+| #   | Milestone                     | Depends on | What can be observed                                                 |
+| --- | ----------------------------- | ---------- | -------------------------------------------------------------------- |
+| 1   | Shader compilation            |            | A `.slang` file builds like a `.cpp` file.                           |
+| 2   | Triangle                      | 1          | A triangle in the viewer and in a headless test.                     |
+| 3   | Camera and reflection         | 2          | Orbiting the triangle with the mouse.                                |
+| 4   | Planes in a scene             | 3          | Two intersecting planes, with correct depth, editable in the GUI.    |
+| 5   | Interactive integration tests | 4          | An integration test of the planes, navigated and edited in a window. |
+| 6   | One terrain tile              | 4          | The coarsest tile of a real height map.                              |
+| 7   | Lighting and basic PBR        | 6          | Lit plane and terrain, with editable materials.                      |
+| 8   | Streamed terrain              | 6          | Navigating a full height map, with a level of detail property.       |
+| 9   | Remove ANARI                  | 7, 8       | ANARI is gone from the code, the build and the dependencies.         |
+| 10  | Background tile loading       | 8          | Tile loading no longer stalls frames.                                |
+| 11  | Screen-space level of detail  | 10         | Detail depends on the distance to the camera.                        |
 
-Milestones 6 and 7 can be done in either order. Milestones 9 and 10 are not needed to remove ANARI.
+Milestone 5 also depends on [splitting `im3e_test_utils`](#splitting-im3e_test_utils), a separate issue. It comes before the terrain milestones so that their integration tests can be evaluated in a window, but none of them strictly needs it. Milestones 7 and 8 can be done in either order. Milestones 10 and 11 are not needed to remove ANARI.
 
 ### 1. Shader compilation
 
@@ -209,7 +214,37 @@ Work:
 - An integration test checks pixels on both sides of the intersection.
 - Unit tests cover the scene, and the scene doesn't include any renderer or graphics API header.
 
-### 5. One terrain tile
+### 5. Interactive integration tests
+
+**Goal:** any integration test that renders can also be run in a window, to navigate its scene, edit its properties, and debug or profile it with tools such as Nsight Graphics or RenderDoc. Many rendering features, such as tile streaming or level of detail selection, are best judged by looking at them while moving around, which pixel checks can't do.
+
+Tests stay in the integration test executable of their library, and are chosen with the filter of GoogleTest, so this scales with the number of libraries and tests:
+
+```
+integration_im3e_render_vulkan --gtest_filter=VulkanFramePipelineIntegration.drawsPlanes --interactive
+```
+
+This avoids a design where every test registers in one list, shown by one application: it puts all integration tests in one executable, and makes them tedious to browse. GoogleTest already names each test by executable, suite and name, and IDE extensions such as C++ TestMate for VS Code show them as a tree and launch one with extra arguments.
+
+Requires [splitting `im3e_test_utils`](#splitting-im3e_test_utils) first, so that the new library is created in its final place, and the test functions already choose the GoogleTest `main`.
+
+Work:
+
+1. Have `PipelineIntegrationTest` run its frames through a runner interface, with a headless runner as the default, so that `im3e_testing_vulkan` doesn't depend on a GUI.
+2. Let tests give the fixture their scene and camera, so that a runner can show them. Tests that don't still run in a window, without navigation or properties.
+3. Create `im3e_testing_interactive` in `im3e/testing/interactive/`, with a windowed runner: a window with a render panel running the test's pipeline, the properties and stats panels, and `MapCameraController` on the test's camera. The pipeline is resized with the panel. The library is named after what a test executable gains by linking it rather than after the GUI it uses.
+4. Add a GoogleTest `main` to `im3e_testing_interactive`, which installs the windowed runner when `--interactive` is given. The test is reported as skipped once the window is closed, as its checks don't apply to an image that was resized and navigated.
+5. Give `im3e_add_integration_tests_executable` an `INTERACTIVE` option that links this `main` instead of `gtest_main`, and use it for `integration_im3e_render_vulkan`. Executables without the option, and runs without `--interactive`, don't create a window, so headless runs such as CI are unchanged.
+6. Describe how to run a test interactively in the development documents, including a VS Code launch configuration that asks for the test filter.
+
+**Done when:**
+
+- The integration test of the planes of milestone 4 runs in a window with `--interactive`, can be navigated, and its planes can be edited in the properties panel.
+- Without `--interactive`, the integration tests create no window and pass as before.
+- A frame of an interactive test can be captured with Nsight Graphics.
+- Unit tests cover the choice of runner from the arguments.
+
+### 6. One terrain tile
 
 **Goal:** real data on screen: the coarsest tile of a height map, which covers the whole map. Tile shading only needs to make the shape readable at this point, for example by showing normals as colors.
 
@@ -229,7 +264,7 @@ Work:
 - An integration test renders a small synthetic height map and checks its pixels.
 - `im3e_terrain` doesn't link Vulkan.
 
-### 6. Lighting and basic PBR
+### 7. Lighting and basic PBR
 
 **Goal:** planes and terrain are lit by a directional light, with basic PBR materials. Based on the GLSL BRDF of a previous project.
 
@@ -245,7 +280,7 @@ Work:
 - Changing the light and the materials in the properties panel updates the viewer.
 - An integration test checks the shading of a plane for known light directions and materials, including an emissive one.
 
-### 7. Streamed terrain
+### 8. Streamed terrain
 
 **Goal:** the viewer navigates a full height map, as the ANARI viewer does. Based on [anari_height_field.cpp](../../im3e/anari/src/anari_height_field.cpp), which doesn't change.
 
@@ -264,7 +299,7 @@ Work:
 - Unit tests with `MockHeightMap` cover selection, reuse, eviction and empty tiles.
 - Navigating and changing the level of detail produce no validation errors.
 
-### 8. Remove ANARI
+### 9. Remove ANARI
 
 **Goal:** the new renderer is the only one.
 
@@ -281,7 +316,7 @@ Work:
 - A search for `anari` in code and build files finds nothing.
 - All presets build from a clean Conan install.
 
-### 9. Background tile loading
+### 10. Background tile loading
 
 **Goal:** reading tiles no longer stalls frames. Tiles are currently read during `prepareExecution`, despite the name `updateAsync`.
 
@@ -296,7 +331,7 @@ Work:
 - Unit tests cover cancelling and replacing pending requests.
 - The stats panel shows no tile reads on the render thread.
 
-### 10. Screen-space level of detail
+### 11. Screen-space level of detail
 
 **Goal:** the level of detail of each tile depends on its screen-space error, replacing the single level chosen by a property.
 
@@ -315,8 +350,24 @@ Work:
 - **Integration tests are headless, from milestone 2.** `createDevice` works without a window, and `DeviceIntegrationTest` already uses it that way. `PipelineIntegrationTest` runs an `IFramePipeline` into an image and checks pixels and pixel regions with a tolerance. Validation errors are logged as errors, which fail the tests.
 - **Integration tests don't run in CI yet:** the workflows only run the `unit_test` label. Once ray tracing is no longer required (milestone 2), they could run on lavapipe. This is worth a separate small issue right after that milestone, so that each following milestone is covered.
 - **Unit tests** use `MockVulkanFunctions` and the mocks of each library, and run without a GPU.
-- `im3e_test_utils` is used as it is. Splitting it (finding T1 of the review) is a separate topic.
+- **Integration tests that render can run in a window, from milestone 5**, to evaluate features by navigating them, and to debug or profile them. The headless checks remain the automated tests.
 - Comparing whole images against stored references can be added if pixel checks turn out not to be enough.
+
+### Splitting `im3e_test_utils`
+
+`im3e_test_utils` is used as it is until milestone 5. Before that milestone, a separate issue splits it into a group of libraries, which closes finding T1 of the review: today every test links Vulkan, GLFW and ImGui through it, including the unit tests of `im3e_utils_core`.
+
+- **`im3e_testing_core`** in `im3e/testing/core/`: the GoogleTest names imported into `im3e` (`test_utils.h`), printers and matchers for GLM and standard types, `IntegrationTest`, and the test output path helper. Depends on GoogleTest, glm, fmt and `im3e_utils`.
+- **`im3e_testing_vulkan`** in `im3e/testing/vulkan/`: printers for Vulkan types, `DeviceIntegrationTest` and `PipelineIntegrationTest`, and later the runner interface of milestone 5 and the benchmark runner. Depends on `im3e_testing_core` and `im3e_vulkan`.
+- **`im3e_testing_interactive`** in `im3e/testing/interactive/`, created by milestone 5: the windowed runner and its GoogleTest `main`. Depends on `im3e_testing_vulkan` and `im3e_guis`.
+
+Design points:
+
+- **`vulkan` and `interactive` stay separate.** `im3e_guis` depends on `im3e_vulkan`, so Vulkan fixtures that linked it would make the integration tests of `im3e_vulkan` link a library built on top of it. Executables without the `INTERACTIVE` option of milestone 5 must also not link GLFW and ImGui.
+- **`im3e_guis` is dropped.** `im3e_test_utils` links it publicly, but none of its files includes a header of it.
+- **The GoogleTest `main` comes from the test functions.** `im3e_test_utils` links `GTest::gtest_main` publicly, so every test executable gets its `main`, and `im3e_testing_interactive` couldn't provide another one. `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` link `gtest_main` instead, and milestone 5 makes the second one link the interactive `main` when asked.
+- **`IntegrationTest` needs the loggers of `im3e_utils`**, so the unit tests of `im3e_utils_core` link `im3e_utils` through `im3e_testing_core`. That is much less than today. It can move to a library of its own once `im3e_utils` follows the library folder rules.
+- **The issue touches every test.** About 80 files include `<im3e/test_utils/...>` or link `im3e_test_utils`, and the [code standards](../development/code_standards.md#tests) and architecture documents name them.
 
 ## Later
 
@@ -325,4 +376,5 @@ Not part of this plan, but known to be coming:
 - **Precision on large terrains.** Depth precision and floating-point precision will both become problems, and need a design for coordinate spaces, including how GPS or equivalent coordinates fit in when overlaying data from different sources.
 - **Compute shaders and simulation.** Compute pipelines are added to `im3e_vulkan` with their first user. `im3e_shader` and the reflection path already work for them.
 - **Prettier rendering effects**, such as shadows or image-based lighting, as new features of the renderer.
+- **Benchmarks of integration tests**, as a third runner in `im3e_testing_vulkan`, next to the headless and windowed ones of milestone 5: rendering a number of frames headless and reporting GPU timings from timestamp queries.
 - **WebGPU**, once the project is mature and published.

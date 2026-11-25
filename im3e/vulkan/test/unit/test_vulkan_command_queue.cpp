@@ -74,9 +74,12 @@ struct VulkanCommandQueueTest : public Test
 
     void expectFenceCreated(VkFence vkFence)
     {
-        EXPECT_CALL(m_mockDevice, createVkFence(VK_FENCE_CREATE_SIGNALED_BIT)).WillOnce(Invoke([vkFence](Unused) {
-            return VkUniquePtr<VkFence>(vkFence, [](auto*) {});
-        }));
+        EXPECT_CALL(
+            m_rMockFcts,
+            vkCreateFence(m_mockVkDevice,
+                          Pointee(Field(&VkFenceCreateInfo::flags, VkFenceCreateFlags{VK_FENCE_CREATE_SIGNALED_BIT})),
+                          IsNull(), NotNull()))
+            .WillOnce(DoAll(SetArgPointee<3>(vkFence), Return(VK_SUCCESS)));
     }
 
     void expectCommandReset(VkCommandBuffer vkCommandBuffer)

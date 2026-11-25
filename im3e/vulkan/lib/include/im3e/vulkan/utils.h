@@ -8,6 +8,7 @@
 #include <vk_mem_alloc.h>
 
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 constexpr bool operator==(const VkExtent2D& rVkExtent1, const VkExtent2D& rVkExtent2)
@@ -33,7 +34,7 @@ using VkWeakPtr = std::weak_ptr<typename std::remove_pointer<T>::type>;
 
 template <typename T>
 auto makeVkUniquePtr(VkDevice vkDevice, T pValue,
-                     std::function<void(VkDevice, T, const VkAllocationCallbacks*)> destructor)
+                     std::type_identity_t<std::function<void(VkDevice, T, const VkAllocationCallbacks*)>> destructor)
 {
     return VkUniquePtr<T>(pValue, [vkDevice, destructor](auto* pV) {
         if (destructor)

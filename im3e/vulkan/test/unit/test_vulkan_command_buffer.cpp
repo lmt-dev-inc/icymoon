@@ -15,9 +15,8 @@ struct VulkanCommandBufferTest : public Test
                 *pVkCommandBuffer = m_mockVkCommandBuffer;
                 return VK_SUCCESS;
             }));
-        ON_CALL(m_mockDevice, createVkFence(_)).WillByDefault(InvokeWithoutArgs([this] {
-            return VkUniquePtr<VkFence>(m_mockVkFence, [](auto*) {});
-        }));
+        ON_CALL(m_rMockFcts, vkCreateFence(m_mockVkDevice, NotNull(), IsNull(), NotNull()))
+            .WillByDefault(DoAll(SetArgPointee<3>(m_mockVkFence), Return(VK_SUCCESS)));
         return std::make_shared<VulkanCommandBuffer>(m_mockQueue, m_mockDevice, m_mockVkPool, "test_buffer");
     }
 
@@ -52,7 +51,11 @@ TEST_F(VulkanCommandBufferTest, constructor)
             EXPECT_THAT(pDebugInfo->pObjectName, StrEq("Im3eCommandBuffer.buffer"));
             return VK_SUCCESS;
         }));
-    EXPECT_CALL(m_mockDevice, createVkFence(VK_FENCE_CREATE_SIGNALED_BIT));
+    EXPECT_CALL(
+        m_rMockFcts,
+        vkCreateFence(m_mockVkDevice,
+                      Pointee(Field(&VkFenceCreateInfo::flags, VkFenceCreateFlags{VK_FENCE_CREATE_SIGNALED_BIT})),
+                      IsNull(), NotNull()));
     VulkanCommandBuffer buffer(m_mockQueue, m_mockDevice, m_mockVkPool, "buffer");
 
     EXPECT_THAT(buffer.getVkCommandBuffer(), Eq(mockVkBuffer));

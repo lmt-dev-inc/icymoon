@@ -6,8 +6,12 @@ im3e_add_library(
     include/im3e/vulkan/device.h
     include/im3e/vulkan/frame_pipeline.h
     include/im3e/vulkan/image.h
+    include/im3e/vulkan/shader_utils.h
+    include/im3e/vulkan/sync_utils.h
     include/im3e/vulkan/utils.h
     include/im3e/vulkan/vulkan_functions.h
+    src/shader_utils.cpp
+    src/sync_utils.cpp
     src/utils.cpp
     src/vulkan_command_buffer.cpp
     src/vulkan_command_buffer.h
@@ -35,6 +39,7 @@ target_link_libraries(im3e_vulkan
   PUBLIC
     fmt::fmt
     GPUOpen::VulkanMemoryAllocator
+    im3e_shader
     im3e_utils
     Vulkan::Headers
   PRIVATE
