@@ -36,11 +36,11 @@ function(im3e_add_unit_tests_executable)
         message(FATAL_ERROR "Invalid arguments passed to im3e_add_unit_tests_executable")
     endif()
 
-    add_executable(${ARG_TARGET} ${ARG_SOURCES})
-    if (ARG_SHADERS)
-        im3e_target_shaders(TARGET ${ARG_TARGET} SHADERS ${ARG_SHADERS})
-    endif()
-    im3e_copy_runtime_dlls(${ARG_TARGET})
+    im3e_add_executable(
+      TARGET ${ARG_TARGET} 
+      SOURCES ${ARG_SOURCES} 
+      SHADERS ${ARG_SHADERS}
+    )
     set_property(GLOBAL APPEND PROPERTY IM3E_COVERAGE_TEST_TARGETS ${ARG_TARGET})
 
     gtest_discover_tests(${ARG_TARGET}
@@ -73,11 +73,11 @@ function(im3e_add_integration_tests_executable)
         message(FATAL_ERROR "Invalid arguments passed to im3e_add_integration_tests_executable")
     endif()
 
-    add_executable(${ARG_TARGET} ${ARG_SOURCES})
-    if (ARG_SHADERS)
-        im3e_target_shaders(TARGET ${ARG_TARGET} SHADERS ${ARG_SHADERS})
-    endif()
-    im3e_copy_runtime_dlls(${ARG_TARGET})
+    im3e_add_executable(
+      TARGET ${ARG_TARGET} 
+      SOURCES ${ARG_SOURCES} 
+      SHADERS ${ARG_SHADERS}
+    )
     set_property(GLOBAL APPEND PROPERTY IM3E_COVERAGE_TEST_TARGETS ${ARG_TARGET})
 
     gtest_discover_tests(${ARG_TARGET}

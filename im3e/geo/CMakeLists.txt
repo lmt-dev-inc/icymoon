@@ -24,5 +24,9 @@ target_link_libraries(im3e_geo
     GDAL::GDAL
 )
 
+add_dependencies(im3e_geo 
+    im3e_resources_proj
+)
+
 add_subdirectory(mock)
 add_subdirectory(test)
