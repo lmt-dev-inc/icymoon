@@ -113,3 +113,14 @@ TEST_F(VulkanDeviceTest, constructor)
     EXPECT_THAT(device->getImageFactory(), NotNull());
     EXPECT_THAT(device->getCommandQueue(), NotNull());
 }
+
+TEST_F(VulkanDeviceTest, isValidationEnabled)
+{
+    auto device = createDevice();
+
+    EXPECT_CALL(m_mockInstance.getMockExtensions(), isValidationEnabled()).WillOnce(Return(true));
+    EXPECT_THAT(device->isValidationEnabled(), IsTrue());
+
+    EXPECT_CALL(m_mockInstance.getMockExtensions(), isValidationEnabled()).WillOnce(Return(false));
+    EXPECT_THAT(device->isValidationEnabled(), IsFalse());
+}
