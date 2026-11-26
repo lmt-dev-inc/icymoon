@@ -6,6 +6,7 @@ im3e_add_executable(
 
 target_link_libraries(im3e_viewer
   PRIVATE
+    CLI11::CLI11
     fmt::fmt
     glm::glm
     im3e_guis
