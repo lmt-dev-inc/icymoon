@@ -247,6 +247,7 @@ im3e/shader/                                   group
 ```
 
 - **The executable is in `app/`**, which has no `include/` or `src/` folder: nothing is public, so its files are directly in the folder (see [Targets and groups](#targets-and-groups)).
+- **Created with `im3e_add_executable`** (`cmake/im3e_executables.cmake`). It copies the DLLs the executable imports next to it on Windows. Build tools that find their DLLs another way pass `NO_RUNTIME_DLL_COPY`, e.g. `im3e_shader_compiler`, which runs with the folder of Slang on the `PATH`.
 - **Names come from paths**, as for libraries: `app/` is left out like `lib/`, so `im3e/shader/compiler/app/` defines `im3e_shader_compiler`, and its tests are `test_im3e_shader_compiler`.
 - **When its code needs unit tests of its own**, it moves to a library in `lib/` next to `app/`, and `app/` keeps only `main`.
 
@@ -285,7 +286,7 @@ im3e/shader/
 ```
 
 - **Shaders are like `.cpp` files, modules are like headers.** A shader is a `.slang` file with entry points. A module has none, and is imported by shaders. Both must use the `.slang` extension, as `import` only finds files by that name, so their extension can't tell them apart.
-- **Shaders are listed in `SHADERS`**, an argument of `im3e_add_library`, `im3e_add_internal_library`, `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` ([cmake/im3e_shaders.cmake](../../cmake/im3e_shaders.cmake)). Each shader has its own build step, which runs again when the shader or a module it imports changes. Modules are listed in `SOURCES`, so that IDEs show them.
+- **Shaders are listed in `SHADERS`**, an argument of `im3e_add_library`, `im3e_add_internal_library`, `im3e_add_executable`, `im3e_add_unit_tests_executable` and `im3e_add_integration_tests_executable` ([cmake/im3e_shaders.cmake](../../cmake/im3e_shaders.cmake)). Each shader has its own build step, which runs again when the shader or a module it imports changes. Modules are listed in `SOURCES`, so that IDEs show them.
 - **Shaders go in `src/`**, as they are private to their target, and so do the modules only their target uses.
 - **Modules shared between libraries go in `include/`**, next to the public headers of the library that owns them, and are imported through their path with dots: `include/im3e/shader/constants.slang` is imported with `import im3e.shader.constants;`. General-purpose modules, used by libraries of different families, go in `im3e_shader`.
 - **Imports follow includes.** The import paths of a shader are the include directories of its target (see [Include directories](#include-directories)): a shader can import the modules its target's C++ code could include headers from, and the shared modules of the libraries its target links. A target makes more modules importable by adding their folder with `target_include_directories`. A shader can't import a module with the same file name as itself, e.g. `import lighting;` in `lighting.slang`, as Slang looks in the shader's own folder first and finds the shader: import shared modules through their path, e.g. `import im3e.render.lighting;`.

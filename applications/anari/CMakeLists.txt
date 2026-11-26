@@ -1,4 +1,6 @@
-add_executable(im3e_anari_viewer
+im3e_add_executable(
+  TARGET im3e_anari_viewer
+  SOURCES
     anari_dem_surface_generator.cpp
     anari_dem_surface_generator.h
     dem_block_sampler.h
@@ -20,9 +22,3 @@ target_link_libraries(im3e_anari_viewer
     im3e_utils
     im3e_vulkan
 )
-
-add_dependencies(im3e_anari_viewer
-    im3e_resources_proj
-)
-
-im3e_copy_runtime_dlls(im3e_anari_viewer)
