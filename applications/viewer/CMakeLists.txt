@@ -8,7 +8,7 @@ target_link_libraries(im3e_viewer
   PRIVATE
     CLI11::CLI11
     fmt::fmt
-    glm::glm
     im3e_guis
     im3e_render_vulkan
+    im3e_utils
 )
