@@ -63,8 +63,10 @@ with `ctest --preset`.
 On Linux, the job also runs the integration tests that don't need a display
 (`-L "integration_test" -LE "display"`). The runners have no GPU, so it installs lavapipe, Mesa's
 CPU implementation of Vulkan (`mesa-vulkan-drivers`), and the Khronos validation layer
-(`vulkan-validationlayers`), whose errors fail the tests. Windows runners don't run them, as there
-is no packaged CPU driver for Windows.
+(`vulkan-validationlayers`), whose errors fail the tests. The integration tests also fail if the
+validation layer isn't found, so that they can't pass without validation, e.g. after a change of
+package on the runner image. Windows runners don't run them, as there is no packaged CPU driver
+for Windows.
 
 The runner comes from the configuration's prefix, as configurations are named
 `<os>-<compiler>-<variant>`: `win-` runs on `windows-2022`, anything else on `ubuntu-26.04`. Windows

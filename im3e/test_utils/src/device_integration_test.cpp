@@ -45,6 +45,11 @@ void DeviceIntegrationTest::SetUp()
     EXPECT_THAT(s_pLoggerTracker->getErrors(), IsEmpty()) << "Start of error log tracking";
     s_pLoggerTracker->clearErrors();
 
+    // Validation errors are what make integration tests fail: running them without validation would hide errors.
+    ASSERT_THAT(s_pDevice->isValidationEnabled(), IsTrue())
+        << "Vulkan validation is not enabled: integration tests require the Khronos validation layer (Vulkan SDK, or "
+           "vulkan-validationlayers on Linux)";
+
     m_pErrorTrackerScope = UniquePtrWithDeleter<void>(reinterpret_cast<void*>(0x1234), [](auto*) {
         EXPECT_THAT(s_pLoggerTracker->getErrors(), IsEmpty()) << "End of error log tracking";
         s_pLoggerTracker->clearErrors();

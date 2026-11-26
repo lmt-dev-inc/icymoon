@@ -36,12 +36,15 @@ TEST_F(VulkanDeviceIntegration, constructor)
 {
     auto pDevice = createDevice(*s_pLogger);
     ASSERT_THAT(pDevice, NotNull());
+    EXPECT_THAT(pDevice->isValidationEnabled(), IsFalse());
 }
 
 TEST_F(VulkanDeviceIntegration, constructorWithDebugEnabled)
 {
     auto pDevice = createDevice(*s_pLogger, DeviceConfig{.isDebugEnabled = true});
     ASSERT_THAT(pDevice, NotNull());
+    EXPECT_THAT(pDevice->isValidationEnabled(), IsTrue())
+        << "Vulkan validation is not enabled: integration tests require the Khronos validation layer";
 }
 
 TEST_F(VulkanDeviceIntegration, destroyDeviceBeforeDestroyingImage)
