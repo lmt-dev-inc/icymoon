@@ -52,10 +52,19 @@ function(im3e_add_unit_tests_executable)
     im3e_exclude_from_coverage()
 endfunction()
 
-# Creates an integration tests executable, labelled integration_test. Takes the same arguments as
-# im3e_add_unit_tests_executable.
+# Creates an integration tests executable, labelled integration_test.
+#
+#   im3e_add_integration_tests_executable(
+#     TARGET <target>
+#     SOURCES <sources>...
+#     [SHADERS <.slang files with entry points>...]
+#     [REQUIRES_DISPLAY]
+#   )
+#
+# REQUIRES_DISPLAY also labels the tests "display", for executables with tests that open a window. Runs without a
+# display, such as CI, exclude them with ctest -LE display. The label applies to the whole executable.
 function(im3e_add_integration_tests_executable)
-    set(options)
+    set(options REQUIRES_DISPLAY)
     set(oneValueArgs TARGET)
     set(multiValueArgs SOURCES SHADERS)
     cmake_parse_arguments(ARG
@@ -80,10 +89,17 @@ function(im3e_add_integration_tests_executable)
     )
     set_property(GLOBAL APPEND PROPERTY IM3E_COVERAGE_TEST_TARGETS ${ARG_TARGET})
 
+    set(_LABELS "integration_test")
+    if (ARG_REQUIRES_DISPLAY)
+        list(APPEND _LABELS "display")
+    endif()
+    # gtest_discover_tests writes property values unquoted, so a list must keep its ; escaped to stay one value
+    string(REPLACE ";" "\\;" _LABELS "${_LABELS}")
+
     gtest_discover_tests(${ARG_TARGET}
       NO_PRETTY_VALUES
       PROPERTIES
-        LABELS "integration_test"
+        LABELS "${_LABELS}"
     )
 
     im3e_exclude_from_coverage()

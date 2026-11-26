@@ -348,7 +348,7 @@ Work:
 ## Testing
 
 - **Integration tests are headless, from milestone 2.** `createDevice` works without a window, and `DeviceIntegrationTest` already uses it that way. `PipelineIntegrationTest` runs an `IFramePipeline` into an image and checks pixels and pixel regions with a tolerance. Validation errors are logged as errors, which fail the tests.
-- **Integration tests don't run in CI yet:** the workflows only run the `unit_test` label. Once ray tracing is no longer required (milestone 2), they could run on lavapipe. This is worth a separate small issue right after that milestone, so that each following milestone is covered.
+- **Integration tests run in CI on Linux, from milestone 2,** on lavapipe with the validation layer. Tests that open a window are labelled `display` and excluded (see [GitHub Actions](../development/github_actions.md#_buildyml)).
 - **Unit tests** use `MockVulkanFunctions` and the mocks of each library, and run without a GPU.
 - **Integration tests that render can run in a window, from milestone 5**, to evaluate features by navigating them, and to debug or profile them. The headless checks remain the automated tests.
 - Comparing whole images against stored references can be added if pixel checks turn out not to be enough.

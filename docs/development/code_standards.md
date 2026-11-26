@@ -342,7 +342,7 @@ IcyMoon is meant to be used as a library from other languages, Python first. Its
 ## Tests
 
 - Tests use GoogleTest and GoogleMock (`im3e/test_utils/test_utils.h`).
-- Each test type is a target in its own folder of the library's `test/` group (see [Libraries](#libraries)), and its files are prefixed with the type, so that they are easy to tell apart when navigating: unit tests are in `test/unit/test_<name>.cpp`, integration tests in `test/integration/integration_<name>.cpp`. They are labelled `unit_test` and `integration_test` for `ctest -L`.
+- Each test type is a target in its own folder of the library's `test/` group (see [Libraries](#libraries)), and its files are prefixed with the type, so that they are easy to tell apart when navigating: unit tests are in `test/unit/test_<name>.cpp`, integration tests in `test/integration/integration_<name>.cpp`. They are labelled `unit_test` and `integration_test` for `ctest -L`. Integration test executables with tests that open a window pass `REQUIRES_DISPLAY` to `im3e_add_integration_tests_executable`, which also labels them `display`, so that runs without a display, such as CI, can exclude them.
 - Test suites are named after what they test with a `Test` suffix: `TEST(PathUtilsTest, toUtf8)`.
 - Checks use `EXPECT_THAT` / `ASSERT_THAT` with matchers, not the comparison macros (`EXPECT_EQ`, `EXPECT_NE`, `EXPECT_TRUE`, `EXPECT_LT`...):
 

@@ -1,4 +1,4 @@
-# Job file: configures, builds and runs the unit tests of each given configuration.
+# Job file: configures, builds and runs the tests of each given configuration.
 # Called by the trigger files, see docs/development/github_actions.md.
 name: build
 
@@ -47,3 +47,14 @@ jobs:
 
       - name: Unit Tests
         run: ctest --preset ${{ matrix.config }} -L "unit_test" -j 10
+
+      # Integration tests run on Linux only, on lavapipe (Mesa's CPU Vulkan driver), as the runners
+      # have no GPU. The package lists were updated by the setup action.
+      - name: Install Vulkan CPU Driver and Validation Layers
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y mesa-vulkan-drivers vulkan-validationlayers
+
+      # Runners have no display: tests that open a window are labelled "display"
+      - name: Integration Tests
+        if: runner.os == 'Linux'
+        run: ctest --preset ${{ matrix.config }} -L "integration_test" -LE "display" --output-on-failure -j 10

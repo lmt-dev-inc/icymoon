@@ -20,7 +20,7 @@ without duplicating any steps.
     pr.yml             # trigger: pull requests to main
     main.yml           # trigger: pushes to main
     scheduled.yml      # trigger: Monday and Thursday at 06:00 UTC, or manually
-    _build.yml         # job: configure, build and run unit tests, one matrix entry per configuration
+    _build.yml         # job: configure, build and run tests, one matrix entry per configuration
 ```
 
 | File            | Name in GitHub | Runs on                                    | Jobs    |
@@ -59,6 +59,12 @@ Job files are prefixed with `_`, as GitHub doesn't allow subdirectories under
 Takes `configs`, a JSON list of [dev.py configurations](../../README.md#devpy-commands), and runs
 one job per configuration: setup, `cmake --preset`, `cmake --build --preset` and the unit tests
 with `ctest --preset`.
+
+On Linux, the job also runs the integration tests that don't need a display
+(`-L "integration_test" -LE "display"`). The runners have no GPU, so it installs lavapipe, Mesa's
+CPU implementation of Vulkan (`mesa-vulkan-drivers`), and the Khronos validation layer
+(`vulkan-validationlayers`), whose errors fail the tests. Windows runners don't run them, as there
+is no packaged CPU driver for Windows.
 
 The runner comes from the configuration's prefix, as configurations are named
 `<os>-<compiler>-<variant>`: `win-` runs on `windows-2022`, anything else on `ubuntu-26.04`. Windows

@@ -163,6 +163,11 @@ ctest --preset lnx-gcc-debug -L "unit_test" # to run unit tests only
 ctest --preset lnx-gcc-debug -L "integration_test" # to run integration tests only
 ```
 
+Integration tests that open a window are also labelled `"display"`. Exclude them where there is no display:
+```bash
+ctest --preset lnx-gcc-debug -L "integration_test" -LE "display"
+```
+
 ### Test Coverage
 
 The coverage configurations are `lnx-gcc-coverage` and `win-clang-coverage`. Instrumented executables write coverage data to the build directory when tests run, and two CMake targets process it:

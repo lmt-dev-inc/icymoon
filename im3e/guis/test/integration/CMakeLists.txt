@@ -8,6 +8,7 @@ im3e_add_integration_tests_executable(
     integration_imgui_pipeline.cpp
     integration_imgui_render_panel.cpp
     integration_imgui_vulkan_backend.cpp
+  REQUIRES_DISPLAY
 )
 
 target_include_directories(integration_im3e_guis
