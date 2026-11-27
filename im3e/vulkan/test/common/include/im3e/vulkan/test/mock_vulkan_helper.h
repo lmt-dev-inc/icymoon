@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 namespace im3e {
@@ -49,6 +50,15 @@ inline void expectInstanceExtensionsEnumerated(MockVulkanGlobalFcts& rMockFcts, 
             *pPropertyCount = static_cast<uint32_t>(extensions.size());
             std::ranges::copy(extensions, pProperties);
             return VK_SUCCESS;
+        }));
+}
+
+/// @brief Make the mock report the given layers as supported by the instance.
+inline void setSupportedInstanceLayers(MockVulkanGlobalFcts& rMockFcts, std::vector<VkLayerProperties> layers)
+{
+    ON_CALL(rMockFcts, vkEnumerateInstanceLayerProperties(NotNull(), _))
+        .WillByDefault(Invoke([layers = std::move(layers)](auto* pPropertyCount, auto* pProperties) {
+            return fillVkList(layers, pPropertyCount, pProperties);
         }));
 }
 

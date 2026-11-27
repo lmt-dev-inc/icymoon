@@ -30,6 +30,10 @@ public:
     virtual auto getImageFactory() const -> std::shared_ptr<const IImageFactory> = 0;
     virtual auto getCommandQueue() const -> std::shared_ptr<const ICommandQueue> = 0;
     virtual auto getCommandQueue() -> std::shared_ptr<ICommandQueue> = 0;
+
+    /// @brief Whether Vulkan validation is enabled. It can only be enabled when the device is created with debug
+    /// enabled, and the validation layer is found. Validation messages are then forwarded to the device's logger.
+    virtual auto isValidationEnabled() const -> bool = 0;
 };
 
 using IsPresentationSupportedFct = std::function<bool(VkInstance, VkPhysicalDevice, uint32_t queueFamilyIndex)>;

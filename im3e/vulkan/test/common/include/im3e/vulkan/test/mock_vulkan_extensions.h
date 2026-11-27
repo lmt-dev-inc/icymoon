@@ -17,6 +17,7 @@ public:
     MOCK_METHOD((const std::vector<const char*>&), getLayers, (), (const, override));
 
     MOCK_METHOD(bool, areDebugUtilsEnabled, (), (const, override));
+    MOCK_METHOD(bool, isValidationEnabled, (), (const, override));
 
     void setFakeInstanceExtensions(std::vector<const char*> extensions)
     {

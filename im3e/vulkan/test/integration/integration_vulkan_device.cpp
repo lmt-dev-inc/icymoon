@@ -36,12 +36,41 @@ TEST_F(VulkanDeviceIntegration, constructor)
 {
     auto pDevice = createDevice(*s_pLogger);
     ASSERT_THAT(pDevice, NotNull());
+    EXPECT_THAT(pDevice->isValidationEnabled(), IsFalse());
 }
 
 TEST_F(VulkanDeviceIntegration, constructorWithDebugEnabled)
 {
     auto pDevice = createDevice(*s_pLogger, DeviceConfig{.isDebugEnabled = true});
     ASSERT_THAT(pDevice, NotNull());
+    EXPECT_THAT(pDevice->isValidationEnabled(), IsTrue())
+        << "Vulkan validation is not enabled: integration tests require the Khronos validation layer";
+}
+
+TEST_F(VulkanDeviceIntegration, constructorWithDebugEnabled_logsValidationErrors)
+{
+    auto pDevice = createDevice(*s_pLogger, DeviceConfig{.isDebugEnabled = true});
+    ASSERT_THAT(pDevice, NotNull());
+    ASSERT_THAT(pDevice->isValidationEnabled(), IsTrue())
+        << "Vulkan validation is not enabled: integration tests require the Khronos validation layer";
+
+    // A wrong sType is always invalid, and is caught by the stateless checks of the validation layer. The debug
+    // callback doesn't abort the call, so it still reaches the driver, which ignores sType: apart from it, the create
+    // info is the one of a valid unsignaled fence.
+    const VkFenceCreateInfo vkInvalidCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+    };
+    VkFence vkFence{};
+    pDevice->getFcts().vkCreateFence(pDevice->getVkDevice(), &vkInvalidCreateInfo, nullptr, &vkFence);
+    if (vkFence != VK_NULL_HANDLE)
+    {
+        pDevice->getFcts().vkDestroyFence(pDevice->getVkDevice(), vkFence, nullptr);
+    }
+
+    EXPECT_THAT(m_pLoggerTracker->getErrors(), Contains(HasSubstr("VUID-VkFenceCreateInfo-sType-sType")))
+        << "The validation error was not logged as an error. If validation is narrowed with vkconfig, make sure "
+           "parameter validation is enabled";
+    m_pLoggerTracker->clearErrors();
 }
 
 TEST_F(VulkanDeviceIntegration, destroyDeviceBeforeDestroyingImage)

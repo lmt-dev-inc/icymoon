@@ -32,6 +32,8 @@ public:
     MOCK_METHOD(std::shared_ptr<const ICommandQueue>, getCommandQueue, (), (const, override));
     MOCK_METHOD(std::shared_ptr<ICommandQueue>, getCommandQueue, (), (override));
 
+    MOCK_METHOD(bool, isValidationEnabled, (), (const, override));
+
     auto createMockProxy() -> std::unique_ptr<IDevice>;
 
     auto getMockLogger() -> MockLogger& { return m_mockLogger; }

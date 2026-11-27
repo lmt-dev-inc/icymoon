@@ -35,6 +35,8 @@ public:
     }
     auto getCommandQueue() -> std::shared_ptr<ICommandQueue> override { return m_rMock.getCommandQueue(); }
 
+    auto isValidationEnabled() const -> bool override { return m_rMock.isValidationEnabled(); }
+
 private:
     MockDevice& m_rMock;
 };

@@ -38,6 +38,8 @@ public:
     auto getCommandQueue() const -> std::shared_ptr<const ICommandQueue> override { return m_commandQueue; }
     auto getCommandQueue() -> std::shared_ptr<ICommandQueue> override { return m_commandQueue; }
 
+    auto isValidationEnabled() const -> bool override { return m_instance->getExtensions().isValidationEnabled(); }
+
 private:
     std::unique_ptr<ILogger> m_logger;
     std::shared_ptr<IStatsProvider> m_statsProvider;

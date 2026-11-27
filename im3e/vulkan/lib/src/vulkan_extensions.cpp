@@ -6,15 +6,24 @@
 
 #include <algorithm>
 #include <ranges>
+#include <string_view>
+#include <vector>
 
 using namespace im3e;
 
 namespace {
 
-void insertIfUnique(const char* item, std::vector<const char*>& items)
+constexpr auto ValidationLayerName = "VK_LAYER_KHRONOS_validation";
+
+auto contains(const std::vector<const char*>& items, std::string_view item) -> bool
 {
     const auto toStringView = [](const char* item) { return std::string_view{item}; };
-    if (std::ranges::find(items, std::string_view{item}, toStringView) == items.end())
+    return std::ranges::find(items, item, toStringView) != items.end();
+}
+
+void insertIfUnique(const char* item, std::vector<const char*>& items)
+{
+    if (!contains(items, item))
     {
         items.push_back(item);
     }
@@ -34,7 +43,7 @@ void addLayers(bool isVkValidationEnabled, std::vector<const char*>& layers)
 {
     if (isVkValidationEnabled)
     {
-        insertIfUnique("VK_LAYER_KHRONOS_validation", layers);
+        insertIfUnique(ValidationLayerName, layers);
     }
 }
 
@@ -113,6 +122,10 @@ auto generateLayers(const ILogger& logger, const VulkanGlobalFcts& fcts, bool is
     {
         logger.warning("Some layers were removed because they are not supported by the current instance");
     }
+    if (isVkValidationEnabled && !contains(layers, ValidationLayerName))
+    {
+        logger.warning(fmt::format("Vulkan validation is disabled: {} was not found", ValidationLayerName));
+    }
     return layers;
 }
 
@@ -125,6 +138,7 @@ public:
       , m_instanceExtensions(generateInstanceExtensions(logger, fcts, m_debugUtilsEnabled, requiredInstanceExtensions))
       , m_deviceExtensions(generateDeviceExtensions())
       , m_layers(generateLayers(logger, fcts, m_debugUtilsEnabled))
+      , m_validationEnabled(contains(m_layers, ValidationLayerName))
     {
     }
 
@@ -133,12 +147,14 @@ public:
     auto getLayers() const -> const std::vector<const char*>& override { return m_layers; }
 
     auto areDebugUtilsEnabled() const -> bool override { return m_debugUtilsEnabled; }
+    auto isValidationEnabled() const -> bool override { return m_validationEnabled; }
 
 private:
     const bool m_debugUtilsEnabled = false;
     std::vector<const char*> m_instanceExtensions;
     std::vector<const char*> m_deviceExtensions;
     std::vector<const char*> m_layers;
+    const bool m_validationEnabled = false;
 };
 
 }  // namespace
