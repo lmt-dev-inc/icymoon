@@ -386,7 +386,7 @@ constexpr auto SpirVCode = {spirVCode};
 
 auto {functionName}() -> const im3e::CompiledShader&
 {{
-    static const im3e::CompiledShader shader{{SpirVCode}};
+    static const im3e::CompiledShader shader{{SpirVCode, ShaderReflection{{}}}};
     return shader;
 }}
 )";

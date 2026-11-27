@@ -18,7 +18,7 @@ constexpr std::array<uint32_t, 5U> SpirvHeader{0x07230203U, 0x00010500U, 0U, 1U,
 
 TEST(CompiledShaderTest, constructor)
 {
-    const CompiledShader shader(SpirvHeader);
+    const CompiledShader shader(SpirvHeader, ShaderReflection{});
 
     EXPECT_THAT(shader.getSpirv().data(), Eq(SpirvHeader.data()));
     EXPECT_THAT(shader.getSpirv().size(), Eq(SpirvHeader.size()));
@@ -26,12 +26,12 @@ TEST(CompiledShaderTest, constructor)
 
 TEST(CompiledShaderTest, constructor_withEmptyCode)
 {
-    EXPECT_THROW(CompiledShader(std::span<const uint32_t>()), std::invalid_argument);
+    EXPECT_THROW(CompiledShader(std::span<const uint32_t>(), ShaderReflection{}), std::invalid_argument);
 }
 
 TEST(CompiledShaderTest, constructor_withTooShortCode)
 {
-    EXPECT_THROW(CompiledShader(std::span(SpirvHeader).first(4U)), std::invalid_argument);
+    EXPECT_THROW(CompiledShader(std::span(SpirvHeader).first(4U), ShaderReflection{}), std::invalid_argument);
 }
 
 TEST(CompiledShaderTest, constructor_withWrongMagicNumber)
@@ -39,5 +39,5 @@ TEST(CompiledShaderTest, constructor_withWrongMagicNumber)
     auto code = SpirvHeader;
     code[0] = 0x03022307U;  // Magic number with the wrong byte order
 
-    EXPECT_THROW(CompiledShader{code}, std::invalid_argument);
+    EXPECT_THROW(CompiledShader(code, ShaderReflection{}), std::invalid_argument);
 }

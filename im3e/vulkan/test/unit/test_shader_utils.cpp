@@ -19,7 +19,7 @@ struct ShaderUtilsTest : public Test
     NiceMock<MockDevice> m_mockDevice;
     MockVulkanDeviceFcts& m_mockFcts = m_mockDevice.getMockDeviceFcts();
     const VkDevice m_mockVkDevice = m_mockDevice.getMockVkDevice();
-    const CompiledShader m_shader{FakeSpirv};
+    const CompiledShader m_shader{FakeSpirv, ShaderReflection{}};
 };
 
 }  // namespace
